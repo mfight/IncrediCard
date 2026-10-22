@@ -1,0 +1,14 @@
+/* The demo page's own colors, for the text and panels the stories render
+   around the card. The component itself uses none of these. */
+:root {
+  --story-text-primary: #1f2328;
+  --story-text-secondary: #59636e;
+  --story-surface-secondary: rgb(0 0 0 / 4%);
+}
+
+body {
+  margin: 0;
+  color: var(--story-text-primary);
+  background: #ffffff;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}

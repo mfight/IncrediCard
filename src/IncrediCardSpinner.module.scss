@@ -1,0 +1,90 @@
+// The card's busy indicator: two circles and a keyframe, hand-rolled
+// so this component stays self-contained, with no external tokens and
+// no dependency on a separate spinner or icon library.
+@use "./reducedMotion/reduced-motion";
+
+.spinner {
+  position: absolute;
+  // Centered over the whole face rather than placed in the layout flow, so
+  // it never disturbs the field positions underneath it--the card is
+  // still fully laid out behind this, just inert.
+  inset: 0;
+  display: grid;
+  place-items: center;
+  // The card is read-only while processing, but the fields are still
+  // there; this must never intercept a click meant for one.
+  pointer-events: none;
+  // No z-index needed, and deliberately none added. Every element on
+  // either face (magstripe, signature row, the CVC block, the fields) is
+  // statically positioned, and CSS paints positioned elements above
+  // static siblings regardless of source order -- so `position: absolute`
+  // alone already puts this on top. (A mid-flip frame, with the card
+  // edge-on, can make the spinner look covered; it isn't.)
+}
+
+.svg {
+  // 4rem (64px) against a 32-unit viewBox, so the stroke scales with the
+  // size and the ring keeps its proportions rather than turning into a
+  // thin hoop.
+  width: 4rem;
+  height: 4rem;
+  // Inherits the face's own text color (white on "modern", dark brown on
+  // "vintage"), so it needs no per-theme rule of its own.
+  color: var(--incredicard-face-color);
+}
+
+.track,
+.dash {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 3;
+}
+
+.track {
+  opacity: 0.25;
+}
+
+.dash {
+  stroke-linecap: round;
+  // r=13, so the circumference is 2*pi*13 = 81.68. A 20-unit dash leaves
+  // roughly a quarter of the ring drawn, which reads as a distinct
+  // traveling arc rather than a nearly-closed circle.
+  stroke-dasharray: 20 62;
+  transform-origin: 50% 50%;
+  animation: incredicardSpinnerRotate 900ms linear infinite;
+}
+
+// Opt-in reversal, currently unused -- see the `reversed` prop's own
+// comment in IncrediCardSpinner.tsx before removing this as dead code.
+//
+// Neither face passes it today, and specifically the BACK one must not:
+// `.back` carries `transform: rotateY(180deg)`, which looks like it
+// should mirror its contents, but that rotation exists precisely to
+// CANCEL the flip container's own 180deg. The two compose to 360deg, so
+// the back reads un-mirrored whenever it actually faces the viewer.
+// Reversing the back instance would make its spinner genuinely run
+// backwards.
+//
+// It stays available for a future card treatment where the mirror is
+// real -- a translucent "liquid glass" back, through which the FRONT
+// spinner is visible and genuinely is mirrored.
+.reversed .dash {
+  animation-direction: reverse;
+}
+
+@keyframes incredicardSpinnerRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Hidden outright under reduced motion rather than shown standing still.
+// A static closed ring reads as decoration, not activity -- a spinner
+// that cannot spin is not saying anything. The busy state is carried
+// there by the card's slow opacity pulse and the "Processing" label
+// instead (see either face's `.processingLabel`).
+.spinner {
+  @include reduced-motion.reduced-motion {
+    display: none;
+  }
+}

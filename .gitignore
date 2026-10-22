@@ -1,0 +1,10 @@
+node_modules/
+dist/
+storybook-static/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+.vitest-attachments/
+.claude/
+.nova/

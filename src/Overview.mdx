@@ -1,0 +1,332 @@
+import { Meta, Source, ArgTypes } from "@storybook/addon-docs/blocks";
+import * as IncrediCardStories from "./IncrediCard.stories";
+
+<Meta title="IncrediCard/Overview" />
+
+# IncrediCard
+
+**IncrediCard** is a credit-card entry form with a synchronized, dimensional visual card that mirrors what's typed in real time: cardholder name, number, and expiration on the front; the security code on the back (except Amex; see Progressive Reveal), revealed by an explicit flip control sitting half on, half off the card's top-right corner (a nod to the original Skeuocard's bubble-shaped flip control). It covers the common case (typing, pasting, autofill, basic format validation), with network-aware number grouping and acceptance marks, and optional material effects (a holographic foil, a light-catching chip, a 3D tilt). Processor-hosted fields are not supported; see Design Rationale for how the component is structured to allow them.
+
+Ships in two layouts (the `layout` prop): **`"overlay"`** (default) embeds the real fields directly into the card itself, positioned where a physical card's embossed text sits. There's no separate mirror in this mode, since the fields themselves are the card's visible content. **`"stacked"`** instead renders a purely decorative card above a normal, fully labeled field list.
+
+Self-contained: the component ships its own fields, styles, strings and fonts, and depends on nothing but React. There's no CSS framework, component library, i18n framework, or page font to install alongside it. Figtree is self-hosted under its own scoped family name, so it never collides with a page that also loads Figtree; see `src/assets/fonts/OFL.txt` for its license. The small reduced-motion helper in `src/reducedMotion/` is part of this library, not an external dependency.
+
+Ships two visual themes (the `theme` prop): **`"modern"`** (default) is the Figtree-set, dark-gradient card shown throughout this page. **`"vintage"`** is an homage to an actual embossed plastic card: OCR-A for the cardholder name, OCR-B for the number, expiration and CVC (the number set larger and centered, with no extra tracking, so the grouped digits run close to the card's full width the way a real embosser lays them out), an aged-ivory card face, and a layered text-shadow standing in for genuine raised embossing. Both OCR fonts are self-hosted the same way as Figtree; see `src/assets/fonts/OCR-A-ReadMe.txt` and `src/assets/fonts/OCR-B-OFL.txt`. See the Vintage: Stacked and Vintage: Overlay stories.
+
+> **This is not a payment integration.** **IncrediCard** has no payment processor, no tokenization, no submission flow, and makes no PCI-compliance claim of any kind. It's a form component: pair it with your own payment integration exactly as you would any other credit-card input.
+
+## When to Use
+
+Use **IncrediCard** for a checkout or billing form that wants the reassurance of a familiar, physical-card visual alongside real fields: a consumer-facing purchase flow, a subscription signup, a stored-payment-method form.
+
+Reach for plain text or masked input fields instead in an internal, back-office, or admin context where the card visual adds nothing (an operations tool re-entering a number a customer read over the phone, say).
+
+## Anatomy
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" />`} />
+
+A single component renders everything by default: the visual card (front and back), the four real, accessible fields (name, number, expiration, security code), and the flip button. Every piece is wired together internally, in either layout. **IncrediCard.Field** and **IncrediCard.MaskedField** (the same building blocks used internally) are also exported, for composing your own arrangement instead (see Composing a Custom Layout).
+
+## Examples
+
+### Default (Empty, Uncontrolled)
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" />`} />
+
+### A Prefilled Value
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`<IncrediCard
+  id="payment"
+  defaultValue={{
+    cardholderName: "Alex Rivera",
+    cardNumber: "4242424242424242",
+    expirationMonth: "12",
+    expirationYear: "29",
+    cvc: "123",
+  }}
+/>`}
+/>
+
+### Controlled
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`const [value, setValue] = useState<IncrediCardValue>({
+  cardholderName: "",
+  cardNumber: "",
+  expirationMonth: "",
+  expirationYear: "",
+  cvc: "",
+});
+
+<IncrediCard id="payment" value={value} onChange={setValue} />`}
+/>
+
+### A Submission In Progress
+
+`processing` is a visual-only busy state for a submission your application owns; this component has no submission flow of its own to pause. It dims the card, switches every field to read-only, hides the flip control (a card already turning itself over makes a button offering to flip it read as broken), shows a "Processing…" label in the card's upper-right, and turns the card over on a slow 2-second loop with a spinner on each face.
+
+Under `prefers-reduced-motion` the loop is skipped entirely rather than merely un-animated (snapping between faces every two seconds with no motion connecting them is the worst reading of a setting asking for less movement), and the spinner is hidden, since one that cannot spin is decoration rather than activity. A slow opacity pulse carries the busy state there instead: fading is not movement, so it does not raise the concerns the setting exists for. The label is visible either way.
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" processing />`} />
+
+### The Overlay Layout
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" layout="overlay" />`} />
+
+### The Vintage Theme
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" theme="vintage" />`} />
+
+### The Chip's Light-Tracking Effect
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" chipReflection />`} />
+
+### The Holographic Effect
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" holographic />`} />
+
+### The Cursor Tilt
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" tilt />`} />
+
+### Scaling Up While a Field Is Focused
+
+<Source language="tsx" copyable={false} dark={true} code={`<IncrediCard id="payment" scale />`} />
+
+### Reacting to Completion
+
+`onCompletionChange` fires whenever "every field passes its own format-level check" starts or stops being true. It is deliberately **not** a claim that the card is real, funded, or chargeable. Only a payment processor can tell you that; see "Nothing Here Enforces a Complete, Charge-Ready Card" below. Use it to enable a Continue button, not to decide whether to take money.
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`const [complete, setComplete] = useState(false);
+
+<IncrediCard id="payment" onCompletionChange={setComplete} />
+<button type="button" disabled={!complete}>Continue</button>`}
+/>
+
+### Overriding the Default (English) Strings
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`<IncrediCard
+  id="payment"
+  labels={{
+    cardholderNameLabel: "Nombre en la tarjeta",
+    cardNumberLabel: "Número de tarjeta",
+  }}
+/>`}
+/>
+
+### Composing a Custom Layout
+
+**IncrediCard.Field** (plain text) and **IncrediCard.MaskedField** (adds a caret-preserving `'X'`-template mask, e.g. `"XXX XXX"`) carry no state or validation of their own. When you compose them directly, you own that yourself, exactly the way `<IncrediCard>` owns it for the fields it builds internally. Use them for a field `<IncrediCard>` has no built-in equivalent for (a billing email, say), styled consistently with the rest of a custom card-shaped form.
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`const [email, setEmail] = useState("");
+const [postalCode, setPostalCode] = useState<string | null>(null);
+
+<IncrediCard.Field
+  id="email"
+  label="Billing email"
+  type="email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
+<IncrediCard.MaskedField
+  id="postal-code"
+  label="Postal code"
+  pattern="XXX XXX"
+  characterClass="alphanumeric"
+  value={postalCode}
+  onChange={setPostalCode}
+/>`}
+/>
+
+## Usage Guidelines
+
+### The Card Face Is Presentation Only, in the "stacked" Layout
+
+Every value it shows comes from the real, controlled fields beneath it, never the other way around. Nothing about the card face is itself interactive, focusable, or announced to assistive technology; it exists purely as a synchronized visual echo (see Accessibility). This doesn't apply to `layout="overlay"`, where the fields are the card's own content, not a separate mirror of it.
+
+### The Security Code Is Never Shown in the Clear, Anywhere
+
+Not in its own field (masked like a password), and not on the card face either (a row of dots standing in for its digit count, never the digits themselves). It's the one value this component treats as permanently sensitive, matching how card-capture UIs generally handle it.
+
+### Card-Network Detection Is Deliberately Minimal
+
+Only a handful of settled prefix ranges (Visa/Mastercard/Amex/Discover/Diners Club/JCB/Maestro/UnionPay) drive number grouping and security-code length; anything else reads as neutral, never a guess. The card face carries no plain-text network name: the acceptance mark (below) already names the network, and a second statement of the same fact would be redundant. The acceptance mark is the only network branding this card shows.
+
+### The Card's Bottom-Right Acceptance Mark
+
+The card's only network branding: a first-party acceptance-mark badge for the currently detected network, always rendered (no prop, no opt-in) in the card's bottom-right corner once a network is confidently known, for each of the 8 networks this component detects. The assets ship with the component (`src/assets/images/`), sized and positioned to match a physical card's acceptance-mark placement. The position comes from a 325×204 reference card (the mark at 241,138, sized 70×56, i.e. inset 14px from the right edge and 10px up from the bottom), converted to `cqw`-relative CSS so it scales with the card's responsive size rather than staying fixed at one width. It fades in over 200ms when a network is first detected, and fades back out the same way if the number is cleared, rather than appearing and vanishing instantly.
+
+Each of these 8 assets is already a self-contained badge (several have their own opaque, rounded background baked in, which is how official acceptance marks are meant to be used), so this component only sizes and positions it, never re-styles or re-colors it.
+
+The mark is a plain `<img>`, not a CSS `background-image`, because of how bundlers inline small assets. Under Vite's default 4KB inlining threshold, several of these files (Visa, Discover, JCB) resolve to a raw, non-base64 `data:` URI that keeps the source SVG's single quotes unescaped. Assigning that string to `element.style.backgroundImage` (the mechanism React uses for a `style` object) silently fails: the browser's CSS `url()` tokenizer can't parse the embedded quotes, and the property setter no-ops rather than throwing. `src` has no such parsing step, so an `<img>` works with any asset shape.
+
+### Nothing Here Enforces a Complete, Charge-Ready Card
+
+Each field surfaces its own basic format and completeness feedback once left with an invalid value (never mid-type), but real payment validation (whether the card exists, has funds, isn't reported lost) can only come from your payment processor. `onCompletionChange` reports the former (every field filled in and passing this component's format checks), never the latter. Don't treat one "complete" callback firing as permission to charge a card; it isn't.
+
+### No Built-In i18n: Pass `labels` Instead
+
+This component renders plain English by default and has no i18n hook or framework dependency of its own. If your project has its own localization solution, wire it up from the outside: resolve the translated strings there, and pass them in as `labels` (any subset; everything not overridden falls back to English).
+
+### Invalid Fields Show a Border and Glow, Not Inline Error Text
+
+Errors appear only once a field has been **left** (blurred) holding something invalid or incomplete, never while it is still being typed into. Note this also means an empty card can only ever show the card-number error: the other three fields do not exist until a valid number reveals them.
+
+An invalid field then gets a red border and a soft red glow, and nothing else next to it: no inline error message. Every active error's text instead renders once, consolidated, in a plain block below the whole card (both layouts). See Accessibility for how the per-field association survives this for screen-reader users even though the visible text sits elsewhere.
+
+### Both Layouts Put the Same Things in the Same Places
+
+The decorative `"stacked"` card face and the real-field `"overlay"` card position their rows identically (chip, front-CVC row, number, expiration, name) at every card width and whether or not the card has been revealed. That is maintained deliberately rather than by coincidence: both faces always render all four rows, using invisible placeholders where a row has nothing to show (only Amex prints a CVC on the front, and expiration and name do not exist before reveal), so neither layout's `space-between` rhythm can drift from the other's. Switching `layout` changes where the fields *are*, never where they *appear*.
+
+### Progressive Reveal: Only the Number Shows Until It's Valid
+
+Name, expiration, and security code all stay hidden (in both layouts, including the decorative "stacked" card's mirror) until the card number is complete, valid (passes Luhn, correct length), and long enough to know which network's layout applies. Once revealed, the reveal is sticky: editing the number back to something incomplete afterward (fixing a typo) doesn't hide the rest of the form again, or discard whatever's already been typed into it.
+
+Which layout appears depends on the detected network: every network except Amex uses the standard layout (number, then expiration on its own row, then name (see "Expiration Sits Between the Number and the Name" below), with a 3-digit security code on the back, reached by the flip control). **Amex is the one exception**: its security code is 4 digits and prints on the front (top-right, directly above the number), and this card never offers a flip control in that case, since there's nothing on the back to show. The flip control itself stays hidden until the card is revealed (there's nothing to flip to before then either).
+
+### Expiration Sits Between the Number and the Name
+
+On the card face, expiration renders on its own row, directly below the number and above the name, matching a real physical card's "Valid Thru" placement. This applies identically in both layouts (the decorative "stacked" card face and the real on-card fields in "overlay"). The "stacked" layout's separate, fully labeled field list below the card is a different arrangement: Name comes before a row holding Expiration and CVC.
+
+Because the two layouts order their real fields differently, the field order that Tab/Shift+Tab and the arrow keys follow (`activeFieldOrder`) is layout-aware: `["number", "expiration", "name", "cvc"]` for "overlay", `["number", "name", "expiration", "cvc"]` for "stacked". Each matches what that layout actually shows on screen; a single shared order would put one layout's keyboard order out of step with its visual order.
+
+### The Card's Printed Text Scales With the Card
+
+The number, name, and expiration date are all sized as a percentage of the card's actual rendered width (`clamp()` over a `cqw` value, not a fixed px size), in both layouts and both themes. A narrower card (a tight container forcing the "stacked" card face to shrink, or the "overlay" layout squeezed by a wide field column) shrinks this text proportionally rather than holding it at a constant size that starts to look oversized relative to the card around it. Each one still has an upper bound: 20px for the number, 14px for the name and expiration in `"modern"`; 14px for the number, 12px for the expiration in `"vintage"` (the name stays 14px in both). That bound is reached once the card is at its natural full size, and not exceeded if the card is rendered larger. The security code keeps a fixed size in both themes: it's short enough that proportional scaling makes little visible difference.
+
+### The Chip Is Real Artwork That Catches the Light
+
+The chip is a real EMV contact-chip graphic (gold body, contact-line detail), not a flat color swatch, and it renders identically in both themes: a physical chip's gold contact pad doesn't change color between card styles either. It sits 30px from the left and 44px from the top on a 325×204 card, approximating where a real chip is embossed; that deliberately lines up with nothing else on the card, because a physical card's chip doesn't either. `chipReflection` (default `true`) tracks the pointer across the whole card (not just the chip's small area) as a simulated light source, so the highlight moves with the mouse. Purely decorative, and disabled entirely under `prefers-reduced-motion` (see Accessibility).
+
+### `holographic` Is a Background Effect, Never on Top of the Real Content
+
+Default `false`: an optional enhancement, decorative only. When enabled, a restrained rainbow-foil pattern sits between the card's plain background and its real printed content: chip, acceptance mark, and every field always render on top of it, never the other way around, and the pattern itself never touches interactive fields, the security code, or any focus indicator. It has a slow, always-on ambient shimmer that needs no interaction (a gentle hue shift on the pattern itself), plus a second, independent effect on devices that can hover: two layered gradients (not the pattern moving) recenter live on the pointer, each clipped to (and only visible inside) one of the artwork's two ribbon groups.
+
+Each layer combines a moving highlight (a translucent white `radial-gradient` for the upper-left ribbon group, a translucent white `linear-gradient` band for the lower woven group) with a shared static, dark repeating-rainbow texture via `background-blend-mode`, then a `filter` punches up contrast and saturation. The highlight itself is plain light in both cases, not a second color source: the texture underneath supplies all of the rainbow hue, and the highlight only brightens it into real color where the pointer is. Giving a highlight its own rainbow reads harsher and more banded, because two independent hue cycles blend into each other instead of one plain light source revealing one coherent color field.
+
+The two groups track the pointer differently on purpose, for a sense of depth: the upper-left group follows it directly at full sensitivity (reads as the nearer surface); the lower group moves in the opposite direction at reduced sensitivity on the horizontal axis, and renders at lower opacity (reads as a farther, more stable surface). That's the parallax cue real layered foil gives as the viewing angle changes, rather than two copies of the same motion. Vertically, the lower group doesn't reposition at all. Instead, the pointer's vertical position rotates its highlight band's angle up to 45° either way around its resting 115°, the same "tilt it and the light catches it differently" cue a real foil surface gives as you tilt it up or down. That highlight band is deliberately narrow: a rotating angle only reads as a visible rotation if the thing rotating is narrow enough for the rotation to move where it lands; a wide, soft band barely shifts even at a full 90° turn.
+
+Both are invisible until the pointer is over the card, fade out the moment it leaves, and stop entirely on touch and other non-hover devices, leaving a fixed, intentional still frame instead of a continuous loop (or an inert gradient) with no payoff. Front face only, in both layouts; the back (magstripe and CVC only) has no equivalent background to apply it to.
+
+The moving highlight is deliberately translucent, not opaque white: `color-dodge`/`color-burn` push any source color that's already near-white straight to pure white regardless of what's underneath, so an opaque highlight would wash out to a flat white circle at the pointer's center instead of reading as colored light. Both ribbon groups also run through a `contrast()`/`saturate()` filter tuned to keep the blended result visibly colorful at typical viewing distance. An untuned blend leaves the nearer group's colors legible but the farther, dampened group nearly imperceptible against the card background, since it already renders at lower opacity by design (see above).
+
+### `tilt` Composes With the Flip Instead of Fighting It
+
+Default `false`: an optional visual-depth interaction. On devices with a fine, hover-capable pointer, the whole card rotates toward wherever the cursor is over it, restrained to a ±24° ceiling on each axis, and eases back to flat the moment the pointer leaves. There's no separate exit animation: removing the tracked angle lets the same transition that drives the tilt carry the card back to its `0deg` resting default.
+
+The two axes deliberately use opposite conventions, not the same rule applied twice. Horizontally, whichever edge is nearer the cursor tips toward the viewer (move the pointer right, the right edge comes forward). Vertically, it's the reverse: a pointer above center pushes the card's top edge away from the viewer (and brings the bottom edge closer); a pointer below center pulls the top edge toward the viewer instead. If you change this code, check the direction by eye: the visible effect of `rotateX`/`rotateY` depends on where `perspective` sits in the DOM, so the sign is easy to get backwards from the CSS spec alone.
+
+That transition runs on a `cubic-bezier(0, 0, 0.2, 1)` ease-out. A curve that holds near its starting value before rushing to completion is fine for a one-shot flip landing on a fixed endpoint, but this same transition also governs `tilt`'s continuously retargeted tracking, and every incremental pointer movement would re-enter that slow opening stretch, so the tilt would feel slow to start. An ease-out responds immediately to a new target, which is what a cursor-follow effect needs to feel direct rather than laggy, while still decelerating smoothly into the flip's final resting angle.
+
+The flip and the tilt are two contributions to the same `transform` property on `.flipContainer`, not two separately transformed elements: the flip angle (a multiple of `180deg`) is summed directly into the same `rotateY(...)` the tilt contributes to, rather than composed via a second nested rotation. So there is no intermediate flat state for either transition to pass through: flipping while tilted just adds 180° to whatever angle the tilt already contributed, the card never snaps or resets to a straight-on orientation before, during, or after the flip, and it keeps responding to pointer movement immediately afterward.
+
+`.flipContainer` also carries `will-change: transform`, promoting it to its own GPU compositor layer ahead of time. Without this, combining `tilt` with `holographic` stutters: `tilt`'s frequent pointer-driven transform changes would force a full repaint of the hologram's `mix-blend-mode`/`filter` layers underneath on every pointer move, rather than a cheap compositor-only operation.
+
+Purely presentational, like every other pointer-driven effect on this card: it never touches the semantic fields, focus, layout, or values, and stacks safely with `chipReflection` and `holographic` (a separate hook and listener from either of those, tracking the same `.faceWrapper` root independently; see the header comment of `useIncrediCardTilt` in `IncrediCardTilt.ts`). Disabled entirely under `prefers-reduced-motion` and on any device that can't hover with a fine pointer, the same way every other cursor-driven effect on this card is.
+
+### `scale` Is JS-Driven State, Not Plain `:focus-within` CSS, and Clicking the Card Toggles It
+
+Default `false`. Two independent things can put the card into a "zoomed" state, combined into one `cardZoomed` boolean tracked once in `IncrediCard.tsx`: a real field somewhere in the set has focus (`fieldsFocused`), or the card's background was clicked to toggle zoom manually (`manuallyZoomed`, see below). While `cardZoomed` is true, the card face grows to 150% of its resting size, and it eases back down the moment it goes false.
+
+The zoom is computed in React and applied via a plain `data-zoomed` attribute rather than a CSS focus selector, for three reasons. First, a manual toggle has no focus state to key CSS off of: `manuallyZoomed` can be true with nothing focused anywhere, which no `:focus`-family selector can express. Second, `:focus-within` doesn't distinguish "a field is focused" from "the flip button is focused" (see The Flip Control Jumps Straight to the First Field on the Other Side, below). Third, `:has(input:focus)` is unreliable: `:focus` only matches while `document.hasFocus()` is true, which doesn't hold in every environment. In some automated and headless browsers, and whenever the window isn't active, `document.hasFocus()` reads `false` even though `document.activeElement` correctly points at a focused input. React's `onFocus`/`onBlur` handlers fire correctly regardless of window-activation state, so `fieldsFocused` is set from `event.target instanceof HTMLInputElement` in `handleFieldsetFocus`/`handleFieldsetBlur`, sidestepping all of these at once.
+
+Clicking the card's background (anywhere that isn't a real field or the flip control) toggles `manuallyZoomed` through the faces' internal `onCardClick` callback. Toggling off while a field holds focus also blurs it (`document.activeElement.blur()`) so the click always has a visible effect. `manuallyZoomed` resets to `false` when focus leaves the component entirely (checked in `handleFieldsetBlur` via `event.relatedTarget` not being contained within the fieldset), but deliberately survives in-component focus changes (tabbing between fields, or flipping), so it doesn't collapse mid-interaction.
+
+Deciding which way to toggle can't just read the live `cardZoomed` value inside the click handler, though. A background click that lands while a field holds focus first triggers that field's native blur (nothing else on the background is focusable, so focus has nowhere to land, and `handleFieldsetBlur` correctly reads that as "focus left entirely" and un-zooms) *before* the click handler runs. By click time, `cardZoomed` has already flipped to `false` on its own; reading it there would make "click to close a zoomed card" look identical to "click to open an unzoomed one," re-opening the zoom a beat after it correctly closed (a visible zoom-out-then-back-in flicker). So a `wasZoomedRef` snapshots `cardZoomed` on every `pointerdown` anywhere on the card (before any of the browser's default focus-shifting for that click has run), and `handleCardClick` branches on that snapshot instead of the live value.
+
+The two layouts need different click-target filtering, since they have different content inside the click target. "Stacked" (`IncrediCardFace.tsx`) is purely decorative (nothing interactive lives inside its `.faceWrapper`), so its `onClick` calls `onCardClick` unconditionally. "Overlay" (`IncrediCardEmbeddedFace.tsx`) has the real fields and the flip button as descendants of its `.faceWrapper` (that element is the scale target there), so its `handleFaceClick` excludes clicks whose target is an `HTMLInputElement` or whose target's `.closest("button")` matches before calling `onCardClick`.
+
+A manually toggled zoom also closes the moment a click lands anywhere *outside* the card, not just on the card's background a second time. `handleFieldsetBlur` closes it as soon as a focused field loses focus to something outside, but a zoom toggled by clicking the card's background can exist with nothing focused at all, so there's no blur event for an outside click to trigger. A `document`-level `pointerdown` listener, attached only while `manuallyZoomed` is `true` (an effect keyed on it), closes that gap by resetting `manuallyZoomed` whenever the click target isn't inside the fieldset. This is deliberately not a backdrop or scrim element behind the card: a full-page dimming treatment would apply to every zoom, including a plain field-focus one in a form with several fields, a much heavier visual change than "click away to close" calls for.
+
+A `transform`, not a `width`/`height` change, is what makes "doesn't affect the rest of the page layout" true by construction rather than by careful tuning: the card's layout box never changes size, so nothing around it reflows; only its painted appearance grows, which can visually overlap nearby content (the field list below it, in "stacked") rather than push it aside. This is the same tradeoff every non-reflowing "zoom on focus/hover" effect makes, and it reads as the card coming forward to meet whoever's interacting with it rather than a jarring layout shift.
+
+`tilt` freezes flat for as long as `cardZoomed` is true, in both layouts: a card that kept tilting under the pointer while someone was trying to read or type into a much larger card would fight the very reason it grew. `useIncrediCardTilt` takes the combined `cardZoomed` value as its `suppressed` parameter, tracked once at the top level and handed down to both faces identically, the same as the scale signal.
+
+### Keyboard Navigation Between Fields, and the Flip That Follows It
+
+Tab/Shift+Tab reach every field in the layout's visual order (Number → Expiration → Name → CVC in "overlay"; Number → Name → Expiration → CVC in "stacked"), in both layouts. Number is deliberately first: it's the only field visible before anything else reveals (see Progressive Reveal above), so it's also the first field in the order everything else appears after, avoiding a layout shift where a freshly revealed field jumps in ahead of the one being typed into. Arrow keys are the addition on top of Tab: Up/Down always move to the adjacent field (a single-line input gives native Up/Down nothing to do anyway); Left/Right do too, but only once the caret already sits at the respective edge of the current field's text with nothing selected. Everywhere else, Left/Right move the text caret as usual. Without that boundary check, arrow-key navigation would make it impossible to move the caret left from the middle of a name toward its start without jumping to a different field entirely.
+
+Landing on CVC (by Tab, Shift+Tab, an arrow key, or the flip control itself; see below) flips the card to the back automatically, for every network except Amex, the same way clicking directly into CVC does. Landing on any of the other three fields flips it back to the front. Each of the four fields' `onFocus` sets `flipped` to whichever side that field is printed on, so focus arriving by any route always shows the relevant side.
+
+In the "overlay" layout, this needs more than an `onFocus` handler: the field on whichever side isn't showing is `inert` (see Accessibility below), and a browser will not focus an `inert` element by any means, including plain Tab. Left alone, Tab from Expiration skips over an un-flipped CVC entirely. Tab/Shift+Tab and the arrow keys are therefore routed through the same mechanism: flip first, then focus the target once the flip's re-render has cleared `inert` from the DOM. A plain synchronous "flip then focus" doesn't work, because React batches the state update, so the target is still `inert` on the very next line. The "stacked" layout doesn't strictly need this (its decorative card face has no focusable content to be `inert`) but goes through the same code path anyway: the cost is a single imperceptible extra render, not a second, diverging implementation to maintain.
+
+### The Flip Control Jumps Straight to the First Field on the Other Side
+
+Clicking the flip control doesn't just turn the card over; it also moves focus to the first real field on whichever side is now showing (CVC on the back; Number on the front), reusing the same flip-then-deferred-focus mechanism the keyboard navigation above needs. `scale`'s grow effect isn't triggered as a special case for this: it follows naturally once the deferred focus lands on a real field, the same as any other way of focusing one.
+
+This is why the flip control never counts as "a field is focused." Under plain `:focus-within`, which matches when any focusable descendant has focus, clicking the flip control (a real `<button>`) would focus it and trigger the scale-up transform mid-click. The button would then move to a new, larger position between the click's `mousedown` (which focuses it) and `mouseup`, so the browser's `click` event would never fire (its two halves no longer land on the same element), and the flip would only register on a second click. Both `scale`'s state (`fieldsFocused`, checking `event.target instanceof HTMLInputElement`) and `tilt`'s focus suppression exclude the flip control for this reason.
+
+The same failure mode applies in the opposite direction when the card is *already* zoomed. Clicking the flip button focuses it, which blurs whatever field held focus, so `fieldsFocused` briefly drops to `false` before the deferred focus lands on the new side's first field. Correcting this inside the click handler is too late: `mousedown` (which focuses the button and blurs the field) fires and fully re-renders *before* the browser's `click` event, so by the time the click handler runs, the card has already shrunk and the button has already moved, which can drop the click entirely. So `handleFieldsetBlur` latches `manuallyZoomed` to `true` in the *same* state update as `fieldsFocused` going `false`, whenever focus is only moving to something else *within* the component (most often the flip control) and the card was already zoomed. `cardZoomed` therefore never goes `false` in between: no shrink, no moved button, no dropped click. The result: flipping while zoomed stays zoomed; flipping while zoomed out zooms in and flips, matching what focusing the new field would have done anyway.
+
+### Vintage Is an Approximation, Not a Real Bevel
+
+CSS has no way to actually emboss arbitrary, live-typed text: a genuine bevel needs real 3D geometry per glyph, which doesn't exist for an `<input>`'s rendered characters. The `"vintage"` theme's raised look is a standard flat substitute: two layered `text-shadow`s (a light highlight, a dark counter-shadow) on top of the self-hosted OCR-A and OCR-B fonts. It reads as "embossed" at a glance, the same way most CSS letterpress and emboss effects do, but it's not a faithful physical simulation; don't rely on it for anything beyond decoration.
+
+## Do and Don't
+
+- **Do pair IncrediCard with your payment processor's validation.** Run your processor's client-side tokenization and validation as well. **IncrediCard** checks format only, never whether a card is real or chargeable.
+- **Do set `processing` while your submission is in flight.** Turn it on during your own submission, so the fields lock and the card face shows that it's waiting.
+- **Don't persist, log or send raw card values.** Use the `cardNumber` and `cvc` values from `onChange` only as far as your active submission needs them.
+- **Don't rely on the detected card network beyond display.** Treat it as a best-effort guess from the number's prefix, not a validated fact about the card.
+- **Don't assume every user reaches the revealed fields the same way.** Expect a pasted, complete number to reveal every field in one step, just like typing it digit by digit. There's no separate step to confirm the network.
+
+## Accessibility
+
+**`layout="stacked"`**: the card face is entirely `aria-hidden`, since every value it mirrors is already the real, accessible content of a labeled field elsewhere in the form. A screen-reader user loses nothing; the card face only duplicates those values visually for sighted users.
+
+**`layout="overlay"`**: each field's visible label is hidden (`hideLabel`) but still real (still in the accessibility tree, still what a screen reader announces as the field's name), since the card's layout already conveys what each position means, the same way a real card needs no separate "this is the number" caption next to its embossed digits. Whichever face (front or back) isn't showing is also [`inert`](https://developer.mozilla.org/docs/Web/API/HTMLElement/inert): a CSS 3D transform hides it visually, but doesn't remove it from the tab order or the accessibility tree, so without this a keyboard user could tab into a field that's rotated out of view, with no visible focus indicator anywhere.
+
+Either layout: the front/back flip is a real 3D transform, neutralized under `prefers-reduced-motion` (the state still changes instantly; only the animated transition is removed). The chip's reflective effect (`chipReflection`, purely decorative and `aria-hidden` like the rest of the card's chrome) is disabled entirely under `prefers-reduced-motion`. Unlike the flip, there's no underlying state for it to preserve, so it's removed rather than made instant. `holographic`'s ambient shimmer follows the same rule, and additionally stops on any device that can't hover (a fixed, non-animated rendering of the pattern's real colors there, not a frozen mid-animation frame); its pointer response reuses the same pointer-tracking mechanism `chipReflection` does, so it's inert under the same conditions.
+
+To check reduced-motion behavior without touching your OS settings, open the **Reduced Motion** story, or turn on the `reducedMotion (story only)` control on the **Processing**, **Effects** or **Device Tilt** story. That control is not a component prop: `prefers-reduced-motion` is an OS-level media feature that a page cannot set, so rather than faking it, every reduced-motion rule in this component is written through a single mixin (`src/reducedMotion/reduced-motion.scss`) that emits both the real media query and an attribute selector the control toggles. The two therefore cannot drift (a rule added to one is by construction in the other), and the three effects gated in JavaScript rather than CSS (chip reflection, tilt, the processing flip loop) read the same condition through `prefersReducedMotion()`, so nothing keeps running while the CSS goes still.
+
+The real OS-level setting (macOS: Accessibility > Display; Windows: Settings > Accessibility > Visual effects) is what actual users hit, and it drives the same rules.
+
+Each field's `errorText` is still real and still associated via `aria-describedby`, visually hidden (not removed), the same technique this component uses for a suppressed helper text. A screen-reader user reaching an invalid field still hears its specific error the moment they focus it; the plain, non-`aria-live` block of consolidated error text below the card is an *additional* affordance for sighted users, not a replacement for that per-field association.
+
+## Design Rationale
+
+`layout="stacked"` is split into two pieces on purpose: an internal, presentation-only card face, and the real semantic fields that are **IncrediCard**'s only actual input surface. That boundary is what would let a processor-hosted field integration replace the field layer (an iframe a payment processor controls, standing in for the number and security-code inputs) without touching the card face at all: the face only ever receives already-resolved display strings, never the fields themselves. `layout="overlay"` keeps the same boundary from the other direction: its card component only ever receives already-built field elements to position, never their internal wiring, so such an integration could swap in just as cleanly regardless of which layout you chose.
+
+Every field (**IncrediCard.Field** and **IncrediCard.MaskedField**), the masking engine, the card-network detection, and the card-face chrome are this component's own self-contained code, not composed from another component library. **IncrediCard.Field** and **IncrediCard.MaskedField** are public, stable API (a compound namespace on **IncrediCard** itself, not separate top-level exports); the masking engine and card-network detection are internal implementation details, free to change without notice.
+
+## Theming With CSS Custom Properties
+
+Overridable values are exposed as `--theme-incredicard-*` CSS custom properties, each with a built-in default. Set one on any ancestor (or on the component itself via `className`) to override it; leave it unset to keep the default. Several are resolved internally into an unprefixed `--incredicard-*` property, which is the name the tables and descriptions below use; override the `--theme-` form, not the unprefixed one.
+
+The card face's visual surface is governed by `--incredicard-face-*`/`--theme-incredicard-face-*` properties (radius, background, text color, shadow): the same names in either layout and either theme (`"vintage"` just supplies different defaults for the same set; see the Vintage stories). Every real field reads its own `--theme-incredicard-field-*` properties (background, border, text color, padding, font size, font family); in `layout="overlay"`, those are re-themed per on-card slot (transparent background, card-colored text) through the same ancestor-override mechanism, not a special case. `holographic`'s blend mode and resting opacity (`--incredicard-holo-blend-mode`/`--incredicard-holo-opacity`) are deliberately internal, with no `--theme-*` counterpart: they exist to let the two built-in themes tune the same effect for their own backgrounds, not as an override point.
+
+Five more **are** `--theme-*`-overridable, because they are the ones you'd actually reach for when tuning the effect rather than re-theming the card:
+
+| Property | Default | What it sets |
+| --- | --- | --- |
+| `--incredicard-face-lines-opacity` | `0.08` | How strongly the ribbon lines are *printed* on the card, before any light reaches them. `0` is a legitimate setting: a card whose lines exist only where the light falls. |
+| `--incredicard-holo-resting-saturation` | `0.35` | How much of the artwork's rainbow survives away from the light. This is a floor, not a ceiling; see below. |
+| `--incredicard-holo-glare-strength` | `1` | Scales all four glare layers together, preserving the ratios between them that carry the depth cue. |
+| `--incredicard-holo-color-radius` | `72%` | Extent of the pointer-centered falloff, shared by the color layer's mask and by every glare layer, so the lit region is one geometry rather than five. |
+| `--incredicard-holo-falloff-color` | `#1f1f1f` | What the glare fades *toward* away from its highlight. Must be the blend mode's no-op color, or near it. `"vintage"` overrides it to `#e0e0e0` because `color-burn` is `color-dodge`'s mirror. |
+
+The effect these five describe is worth stating once, since no single property implies it: the foil is drawn twice, desaturated across the whole card and again at full saturation inside a soft circle that follows the pointer (or the device-orientation signal on touch). So the card reads as brushed silver until light crosses it, and the color arrives *with* the light rather than sitting on the card permanently. A uniform desaturation would read wrong: real foil desaturates with viewing angle, not evenly across its surface.
+
+## API
+
+<ArgTypes of={IncrediCardStories} />

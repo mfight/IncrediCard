@@ -1,0 +1,55 @@
+// Self-contained: no external tokens or shared stylesheets.
+//
+// Wraps the chip svg (IncrediCardChip.tsx) and the reflection overlay
+// together--`overflow: hidden` here (not inside the svg itself) is what
+// confines the reflection to roughly the chip's own rounded silhouette.
+// The border-radius below is an approximate match to the svg's own
+// `rx="8"` corner rounding at this render size (8/46 of the svg's own
+// native width, scaled to this wrapper's own 36px width)--not expected
+// to be pixel-exact, since it only clips the CSS reflection overlay, not the
+// artwork itself (the chip's own real rounded corners come from the
+// svg's own geometry, unaffected by this).
+.chipWrapper {
+  position: relative;
+  display: inline-block;
+  width: 2.25rem;
+  // Matches the svg's own native 46:33 viewBox ratio, rather than
+  // forcing it into some other box and letting `preserveAspectRatio`
+  // silently letterbox/crop it.
+  aspect-ratio: 46 / 33;
+  overflow: hidden;
+  border-radius: 0.375rem;
+  flex: none;
+}
+
+.chipSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.reflection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+// The chip's one reflection mode: a soft radial highlight centered on
+// `--incredicard-chip-light-x`/`-y`, two custom properties this component
+// itself never sets--`useIncrediCardChipLight` (IncrediCardChip.tsx)
+// writes them onto the whole card's own `.faceWrapper` ancestor as the
+// pointer moves over it, and ordinary CSS custom-property inheritance
+// carries them down to here. No animation/transition of its own: the
+// motion comes entirely from that ancestor rewriting the properties on
+// each pointermove (already gated behind `prefers-reduced-motion` and
+// `chipReflection` there, not repeated here)--absent that (no
+// listener ever attached, or the pointer simply hasn't moved over the
+// card yet this mount), the `50%`/`50%` fallback centers a static, still
+// subtle highlight rather than rendering nothing at all.
+.chipWrapper[data-chip-reflection] .reflection {
+  background: radial-gradient(
+    circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+    rgb(255 255 255 / 65%),
+    transparent 55%
+  );
+}
