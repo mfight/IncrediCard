@@ -1,0 +1,39 @@
+IncrediCard
+Copyright 2026 Mark Fight
+
+This product is licensed under the Apache License, Version 2.0 (see
+LICENSE), except for the third-party material listed below, which keeps
+its own terms.
+
+
+Third-party material
+--------------------
+
+Fonts (src/assets/fonts/; dist/licenses/ in the published package)
+
+  Figtree
+    Copyright 2022 The Figtree Project Authors.
+    SIL Open Font License, Version 1.1 (OFL.txt).
+
+  OCR-B
+    Copyright (c) 2019, Raisty (https://github.com/raisty), with Reserved
+    Font Name OCR-B.
+    SIL Open Font License, Version 1.1 (OCR-B-OFL.txt).
+
+  OCR-A
+    By John Sauter, distributed by its author as a free font. See
+    OCR-A-ReadMe.txt.
+
+Card-network acceptance marks (src/assets/images/acceptance-*.svg)
+
+  These depict the marks of American Express, Diners Club, Discover, JCB,
+  Maestro, Mastercard, UnionPay and Visa, which are trademarks of their
+  respective owners. They are not licensed under the Apache License, and
+  nothing in this product grants any right to use those trademarks. They
+  are shown only to identify a card's network.
+
+Ribbon-line artwork (src/assets/images/incredicard-front-holo.svg,
+incredicard-front-holo-a.svg, incredicard-front-holo-b.svg)
+
+  Adapted from a licensed stock illustration. Not licensed under the
+  Apache License.

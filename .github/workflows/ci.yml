@@ -1,0 +1,65 @@
+name: CI
+
+# Types, lint and guards, unit tests, every story as a test in Chromium,
+# and the package itself: it builds, installs and works in a fresh consumer
+# project.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Types, lint and guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: react-hooks/refs baseline
+        run: npm run lint:refs
+      - run: npm run check:american-english
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npm test
+
+  storybook:
+    # Every story as a test in real Chromium: render, `play` functions and
+    # enforced addon-a11y checks.
+    name: Storybook tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:storybook
+
+  package:
+    # npm pack, installed into a throwaway Vite + React app: server
+    # rendering through the exports, and a production build in Chromium.
+    name: Package installs in a fresh consumer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:consumer

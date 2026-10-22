@@ -1,0 +1,132 @@
+// The side-by-side layout example. Storybook's `layout: "centered"`
+// parameter (set in the stories file's `meta`) doesn't stretch its
+// subject, so `.incredicard` sits at its `min-width: 279px` floor by
+// default, well under the `@container (min-width: 640px)` threshold that
+// `.layout`'s row-layout switch needs. This wrapper is wide enough to
+// trigger the side-by-side layout, the one responsive state no other
+// story shows.
+.wideWrapper {
+  width: 45rem;
+  max-width: 100%;
+}
+
+// The Effects story's caption: the effects are all on at once, with the
+// Storybook controls as the way to turn any of them off, and this legend
+// names the prop behind each one so a reader can map what they see to
+// something they can pass.
+.effectsLegend {
+  width: 100%;
+  max-width: 26.25rem;
+  margin-block-start: 1.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  // The --story-* colors come from .storybook/preview.css. They style the
+  // demo page around the card only; the component itself uses none of
+  // them, and this legend is Storybook page furniture, not shipped code.
+  color: var(--story-text-secondary);
+}
+
+.effectsLegendIntro {
+  margin: 0 0 0.75rem;
+}
+
+.effectsLegendList {
+  margin: 0;
+  display: grid;
+  // The prop name column sizes to the longest name rather than a guessed
+  // width, so adding an effect later cannot silently misalign the rest.
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 0.75rem;
+}
+
+.effectsLegendTerm {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--story-text-primary);
+  white-space: nowrap;
+}
+
+.effectsLegendDescription {
+  margin: 0;
+}
+
+// Reads as a quiet aside rather than a warning. The same secondary text
+// color as the legend above, not a lighter one: a paler gray would be
+// marginal contrast for a paragraph at this size, so the smaller type
+// carries the hierarchy instead.
+.effectsLegendNote {
+  margin-block-start: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--story-text-secondary);
+}
+
+// The DeviceTilt story's permission trigger. Page furniture standing in
+// for a call your app makes early (at sign-in, say), not a control the
+// component ships.
+.motionActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-block-start: 0.25rem;
+}
+
+.storyButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--story-text-secondary);
+  border-radius: 0.5rem;
+  color: var(--story-text-primary);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--story-surface-secondary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--story-text-primary);
+    outline-offset: 2px;
+  }
+}
+
+// The resolved state, shown verbatim rather than prettified: the four
+// values are the helper's own return type, and a reader hitting one of
+// them here should be able to match it to the string their own code will
+// receive. `unavailable` in particular means the request was never made
+// (no user gesture, or an insecure origin) rather than refused, and
+// blurring that into "denied" would send someone looking for a decision
+// iOS never recorded.
+.motionStatus {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--story-text-secondary);
+}
+
+// The DeviceTilt story's live sensor readout. Monospace and
+// tabular so the numbers stop jittering sideways while a phone is moving
+// -- an unstable column is unreadable at exactly the moment it matters.
+.tiltReadout {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.125rem 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.375rem;
+  background: var(--story-surface-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+
+  dt {
+    margin: 0;
+    color: var(--story-text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--story-text-primary);
+  }
+}

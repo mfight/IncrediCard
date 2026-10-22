@@ -1,0 +1,50 @@
+// One definition of "motion should be reduced", used by every
+// reduced-motion rule in IncrediCard.
+//
+// WHY THIS EXISTS AT ALL, since the obvious question is why a plain
+// `@media (prefers-reduced-motion: reduce)` is not enough:
+//
+// `prefers-reduced-motion` is an OS-level media feature. A page cannot set
+// it, nothing in the browser lets JavaScript pretend it is on, and
+// Storybook has no built-in control for it (browser devtools can emulate
+// it, but only for one developer's session). So a story that genuinely
+// shows the component's reduced-motion appearance cannot fake the query;
+// it has to make the condition ADDRESSABLE.
+//
+// This mixin emits the real media query AND an attribute selector, so the
+// two cannot drift: a rule added to one is by construction in the other.
+//
+// The alternative -- having the story blanket-disable animations and
+// transitions -- would misrepresent the component, because these rules
+// routinely do MORE than stop motion: under reduced motion the spinner is
+// hidden and the processing state switches to an opacity pulse, for
+// example. A blunt override would freeze each effect mid-animation
+// instead, displaying a state the component never actually produces --
+// the opposite of what a story demonstrating that state is for.
+//
+// The attribute is a STORY-ONLY affordance, set on <html>. Your
+// application's users only ever hit the real media query.
+//
+// The `@if &` is load-bearing, not defensive tidiness. `&` is null at the
+// top level of a stylesheet -- including at the top level of an `@layer`
+// -- and Sass emits `html[data-reduced-motion] & .x` verbatim there rather
+// than erroring. That selector parses as valid CSS and matches nothing,
+// so the attribute half would silently do nothing while the media-query
+// half kept working: a failure invisible to `tsc`, to the linter, and to
+// any story that only checks the real query. The `@else` branch emits a
+// plain `html[data-reduced-motion]` block for top-level includes instead.
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+
+  @if & {
+    :global(html[data-reduced-motion]) & {
+      @content;
+    }
+  } @else {
+    :global(html[data-reduced-motion]) {
+      @content;
+    }
+  }
+}

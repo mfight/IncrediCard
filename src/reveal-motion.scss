@@ -1,0 +1,97 @@
+// The short fade shared by the card's late-appearing pieces: the
+// Expiration and Name rows and Amex's front CVC once a valid number
+// reveals them, and the acceptance mark once a network is detected.
+// These are mixins rather than classes because both faces
+// (IncrediCardFace, the decorative mirror, and IncrediCardEmbeddedFace,
+// the real-field overlay) need the identical motion, but each attaches
+// it to elements that already carry their own unrelated rules.
+//
+// **Literal values, no tokens.** IncrediCard is self-contained (see
+// either face's module header) and depends on no external motion
+// tokens: every duration and curve is written out (`transform 200ms
+// ease`, `transform 280ms cubic-bezier(0, 0, 0.2, 1)`). 200ms matches
+// the card's scale transition, so the fade sits in step with it rather
+// than introducing another timing. `cubic-bezier(0, 0, 0.2, 1)` is a
+// decelerating ease-out, the standard entrance curve, and the same one
+// both faces use for their flip transitions.
+@use "./reducedMotion/reduced-motion";
+
+$incredicard-reveal-duration: 200ms;
+$incredicard-reveal-easing: cubic-bezier(0, 0, 0.2, 1);
+
+// For things that only ever APPEAR and are never taken away again: the
+// Expiration and Name rows and Amex's front CVC. Those sit behind a
+// monotonic reveal latch (IncrediCard.tsx's `revealed`, which stays
+// true once a valid number has been entered even if the number is then
+// edited back to nonsense), so a fade-out direction would be unreachable
+// code.
+//
+// `both`, not `forwards`: with no delay the two behave the same in
+// practice, but `both` also applies the `from` state backwards, so there
+// is no frame where the element could paint at full opacity before the
+// animation takes hold.
+@mixin incredicard-reveal-fade-in {
+  animation: incredicardRevealFadeIn $incredicard-reveal-duration $incredicard-reveal-easing both;
+
+  // Like the component's other animations (the chip shine, the hologram
+  // shift, the flip), the motion is dropped entirely under reduced
+  // motion, not shortened. The element still appears, just without the
+  // fade.
+  @include reduced-motion.reduced-motion {
+    animation: none;
+  }
+}
+
+// For the acceptance mark, which unlike the field rows genuinely comes
+// AND goes: it tracks the detected network, so clearing the card number
+// takes it away again, and it should fade out as well as in.
+//
+// Two mechanisms on purpose, because neither covers both directions:
+//
+//   * A transition cannot fire on first paint, so the initial appearance
+//     needs the keyframe animation.
+//   * An animation cannot run on an element being removed from the DOM,
+//     and cannot be reversed by a class change either.
+//
+// So the element stays mounted once it has ever had artwork (each face
+// latches the last non-empty src; see their comments) and hiding is
+// a plain opacity transition, while the very first appearance is the
+// animation.
+//
+// The animation MUST NOT use a fill mode here. Filled animated values
+// beat transitioned ones in the cascade, so a lingering `both`/`forwards`
+// fill would pin opacity at 1 and silently swallow every later fade-out.
+// With no fill, the animation governs only its own 200ms and the base
+// rule takes over cleanly afterward, which is what lets the transition
+// work at all.
+@mixin incredicard-reveal-fade-in-out {
+  opacity: 1;
+  animation: incredicardRevealFadeIn $incredicard-reveal-duration $incredicard-reveal-easing;
+  transition: opacity $incredicard-reveal-duration $incredicard-reveal-easing;
+
+  @include reduced-motion.reduced-motion {
+    animation: none;
+    transition: none;
+  }
+}
+
+// Paired with the mixin above: applied while there is no detected
+// network to show, so the mark fades out instead of disappearing.
+//
+// `pointer-events: none` because the mark stays mounted over the card's
+// bottom-right corner even while hidden. An invisible decorative image
+// must not intercept clicks aimed at the card beneath it.
+@mixin incredicard-reveal-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes incredicardRevealFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

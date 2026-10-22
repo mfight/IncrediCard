@@ -1,0 +1,159 @@
+// IncrediCard's field styling. Every value below is a plain literal or a
+// --incredicard-field-*/--theme-incredicard-field-* custom property with
+// a hardcoded default, so an ancestor can re-skin every IncrediCard field
+// at once by setting the --theme-* properties (the on-card slot
+// overrides in IncrediCardEmbeddedFace.module.scss work this way), with
+// no external stylesheet required.
+@use "./reducedMotion/reduced-motion";
+
+.field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--theme-incredicard-field-label-color, #374151);
+}
+
+// Padding and font size are themeable custom properties (not plain
+// literal rules on .container/.input), like every other visual property
+// here, so code wrapping a field in an ancestor class (the on-card slots
+// in IncrediCardEmbeddedFace.module.scss, in particular) can zero the
+// padding and rescale the text purely through CSS inheritance. CSS
+// Modules gives `.container`/`.input` a per-file hashed identity, so
+// there's no stable way to target them from a *different* module's
+// selector; a shared custom property is what crosses that boundary
+// cleanly.
+.size-sm {
+  --incredicard-field-padding: var(--theme-incredicard-field-padding, 0.375rem 0.75rem);
+  --incredicard-field-font-size: var(--theme-incredicard-field-font-size, 0.75rem);
+}
+
+.size-md {
+  --incredicard-field-padding: var(--theme-incredicard-field-padding, 0.5rem 1rem);
+  --incredicard-field-font-size: var(--theme-incredicard-field-font-size, 0.875rem);
+}
+
+.size-lg {
+  --incredicard-field-padding: var(--theme-incredicard-field-padding, 0.625rem 1.25rem);
+  --incredicard-field-font-size: var(--theme-incredicard-field-font-size, 1rem);
+}
+
+.size-xl {
+  --incredicard-field-padding: var(--theme-incredicard-field-padding, 0.75rem 1.5rem);
+  --incredicard-field-font-size: var(--theme-incredicard-field-font-size, 1.125rem);
+}
+
+.container {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--incredicard-field-padding);
+  font-size: var(--incredicard-field-font-size);
+  // Unset by default (falls through to `inherit`, i.e. the component
+  // root's font-family). Only the "vintage" theme's classes, applied via
+  // containerClassName (.vintageNameField/.vintageMonoField in
+  // IncrediCard.module.scss), set --incredicard-field-font-family, using
+  // the same shared-custom-property technique as padding and font size
+  // above, for the same reason.
+  font-family: var(--incredicard-field-font-family, inherit);
+  border-style: solid;
+  border-width: var(--theme-incredicard-field-border-width, 0.0625rem);
+  border-radius: var(--theme-incredicard-field-radius, 0.5rem);
+  background: var(--theme-incredicard-field-background, #ffffff);
+  border-color: var(--theme-incredicard-field-border-color, #d1d5db);
+  color: var(--theme-incredicard-field-color, #111827);
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+
+  &:hover {
+    border-color: var(--theme-incredicard-field-border-color-hover, #9ca3af);
+  }
+
+  &:has(:focus-visible) {
+    border-color: var(--theme-incredicard-field-focus-color, #2563eb);
+    box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-focus-shadow, rgb(37 99 235 / 35%));
+  }
+}
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+
+  &::placeholder {
+    color: var(--theme-incredicard-field-placeholder-color, #9ca3af);
+  }
+}
+
+.description {
+  font-size: 0.75rem;
+  color: var(--theme-incredicard-field-description-color, #6b7280);
+}
+
+.errorDescription {
+  color: var(--theme-incredicard-field-error-color, #dc2626);
+}
+
+// A visible glow, not just a recolored border: inside IncrediCard this is
+// the *only* visual indication of an invalid field (the inline errorText
+// paragraph is visually hidden via the `hideErrorText` prop, in favor of
+// one consolidated block of error text IncrediCard.tsx renders below the
+// whole card). A border-color change alone would be too subtle to carry
+// that weight.
+.field[data-invalid] .container {
+  border-color: var(--theme-incredicard-field-error-color, #dc2626);
+  box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow, rgb(220 38 38 / 20%));
+}
+
+// Kept red (not the ordinary blue focus ring) when an already-invalid
+// field is also focused--otherwise the two box-shadows would compete,
+// and a field a user is actively correcting would misleadingly stop
+// looking invalid the moment they click into it.
+.field[data-invalid] .container:has(:focus-visible) {
+  border-color: var(--theme-incredicard-field-error-color, #dc2626);
+  box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow-focus, rgb(220 38 38 / 35%));
+}
+
+.field[data-readonly] .container {
+  background: var(--theme-incredicard-field-background-readonly, #f3f4f6);
+}
+
+.field[data-disabled] .container {
+  background: var(--theme-incredicard-field-background-disabled, #f3f4f6);
+  border-color: var(--theme-incredicard-field-border-color-disabled, #e5e7eb);
+  color: var(--theme-incredicard-field-color-disabled, #9ca3af);
+  cursor: not-allowed;
+}
+
+// Visually hidden but still in the accessibility tree (unlike
+// display:none): the standard visually-hidden technique.
+.visuallyHidden {
+  position: absolute;
+  width: 0.0625rem;
+  height: 0.0625rem;
+  padding: 0;
+  margin: -0.0625rem;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

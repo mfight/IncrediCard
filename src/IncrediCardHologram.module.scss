@@ -1,0 +1,871 @@
+// Self-contained: no external tokens; the only import is this package's
+// reduced-motion mixin.
+//
+// A restrained holographic material effect: a mix-blend-mode'd, gently
+// hue-shifting foil pattern (`.holo`, the exported artwork) plus four
+// cursor-reactive gradients (two per ribbon shape in that artwork,
+// tracking the pointer in opposite directions; see the block above
+// `.glareRadial`). They sit between the card's printed background and
+// its printed content, and are never an ancestor of that content:
+// IncrediCardFace.tsx and IncrediCardEmbeddedFace.tsx render this
+// wrapper as the FIRST child of `.face`, a sibling to the text and chip
+// rather than a wrapper around them. That way `filter`/`mix-blend-mode`
+// below only touch these elements' own pixels and never recolor or dim
+// the card number, name, expiration or CVC text on top.
+@use "./reducedMotion/reduced-motion";
+
+// Declared once because `.holo` sets it in two places: its resting
+// declaration, and again inside the `(hover: none)` block that restores
+// it when device orientation is driving the card. Two literal
+// shorthands would be free to drift into different shimmer speeds on
+// touch and pointer devices, a difference nobody would see side by side
+// and so nobody would catch.
+$holo-shift: incredicardHoloShift 10s ease-in-out infinite;
+
+.hologramWrapper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.holo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  // The foil artwork, as a referenced file rather than inlined path data
+  // (see IncrediCardHologram.tsx's header for why a file is safe here).
+  //
+  // This is the EXACT file `.face::before` prints the card's faint lines
+  // with (IncrediCardFace.module.scss), at a different opacity. Not a
+  // matching copy but the same file, which is why this layer lights up
+  // precisely the lines already drawn underneath it, and why the printed
+  // and lit lines can't drift out of alignment.
+  //
+  // `100% 100%` and the file's `preserveAspectRatio="none"` are a pair
+  // and neither works alone. The size makes the image fill this element's
+  // box; the attribute makes the svg's 325x204 viewBox stretch to that
+  // box instead of scaling uniformly and centering itself inside it.
+  // Without the attribute, the default `xMidYMid meet` would letterbox:
+  // the card renders 340x214.4 (1.586) against the artwork's 1.593, so
+  // the drawing would sit ~0.5px short top and bottom. Every layer in
+  // this file (this one and all four masks below) goes through that
+  // identical mapping, which makes their alignment structural rather than
+  // something to keep re-checking.
+  background-image: url("./assets/images/incredicard-front-holo.svg");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: 0 0;
+  // A blend mode, not flat translucent opacity: the pattern reads as
+  // light reflecting off the card's surface (interacting with whatever
+  // color sits beneath it) rather than a rainbow sticker pasted on top.
+  //
+  // Themeable through a custom property, because no single blend mode
+  // serves both of this component's themes. `color-dodge` (the default,
+  // tuned for "modern"'s dark gradient) only ever brightens, so it washes
+  // out to almost nothing against "vintage"'s light cream/gold
+  // background; `overlay` splits the difference but reads as
+  // underwhelming on both rather than good on either. The
+  // `[data-theme="vintage"]` blocks in IncrediCardFace.module.scss and
+  // IncrediCardEmbeddedFace.module.scss override both this and the
+  // opacity below with values tuned for a light backdrop.
+  mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
+  // The foil AT REST. It shows whether or not a pointer is anywhere near
+  // the card, so it is half of what reads as "the ribbons in the
+  // background," the other half being `--incredicard-face-lines-opacity`.
+  // Both are kept low and the four glare caps below are high to
+  // compensate: the intended read is a card that is nearly plain until
+  // light crosses it, rather than one wearing its rainbow all the time.
+  opacity: var(--incredicard-holo-opacity, 0.22);
+  // Silver rather than rainbow at rest: the background ribbons are
+  // slightly desaturated. The knob is declared next to the other face
+  // variables (see `--incredicard-holo-resting-saturation` in
+  // IncrediCardFace.module.scss) and drives this layer AND the printed
+  // lines together, because between them they are "the background
+  // ribbons." This layer is the louder of the two by some distance, so
+  // desaturating only the print would barely register.
+  //
+  // Nothing else in this file is desaturated. The four glare layers keep
+  // the artwork's full palette, which is the whole trade: the card wears
+  // brushed silver until light crosses it, and the color arrives with
+  // the light rather than sitting there all the time.
+  //
+  // The declaration has to be repeated in the keyframes below. A CSS
+  // animation's value for a property REPLACES the declared one while it
+  // runs, so a lone `filter: saturate(...)` here would stop applying the
+  // moment the shimmer started: correct at rest, silently wrong in
+  // motion, and on a 10s loop hard to connect to its cause.
+  //
+  // Routed through a private `--incredicard-holo-sat` rather than read here
+  // directly, because `.holoColor` below is this same rule at full
+  // saturation and the two have to share one set of keyframes; otherwise
+  // their hue rotations drift apart and the seam between them becomes
+  // visible. This is the only place the public property is read.
+  --incredicard-holo-sat: var(--incredicard-holo-resting-saturation, 1);
+
+  filter: saturate(var(--incredicard-holo-sat, 1));
+  // Slow, subtle resting movement that works without any hover or
+  // pointer input: a narrow hue-rotate oscillation, not a full 0-360deg
+  // spin. The svg's diagonal stripes are already a complete rainbow, so a
+  // full color cycle on top reads as a garish strobe rather than a
+  // shimmer. The artwork itself never moves or shifts position; see the
+  // glare layers below for the pointer-reactive part: the *gradients*,
+  // not the artwork, track the cursor.
+  animation: $holo-shift;
+
+  // An intentional static treatment for devices that can't hover: the
+  // ambient loop stops too, because continuous animation with no
+  // possible pointer payoff is just battery and attention cost on a touch
+  // device. It lands on a clean still frame rather than one paused
+  // mid-cycle: the only thing the keyframes below add over this rule's
+  // declared `filter` is the `hue-rotate`, so `animation: none` reverts
+  // to the pattern's real, un-rotated colors at the resting desaturation
+  // instead of freezing on whatever frame happened to be mid-flight.
+  @media (hover: none) {
+    animation: none;
+
+    // ...unless device orientation is actually driving the card.
+    // The premise of the rule above is "no possible pointer
+    // payoff," and an orientation signal is exactly that payoff
+    // arriving: the shimmer now has something to shimmer alongside.
+    // `data-incredicard-orientation` is set on the card root by
+    // useIncrediCardChipLight, which is the only place that knows -- CSS
+    // cannot ask whether a sensor is feeding the page.
+    //
+    // Scoped inside `prefers-reduced-motion: no-preference` rather than
+    // left to fight the reduced-motion include below on specificity,
+    // which it would win (0,2,0 against that include's media-query form
+    // at 0,1,0). The JS never sets the attribute under reduced motion
+    // anyway, so this is belt-and-suspenders for a preference that flips
+    // after mount -- but a rule whose correctness rests on a selector
+    // never matching is a worse rule than one that cannot match.
+    @media (prefers-reduced-motion: no-preference) {
+      [data-incredicard-orientation] & {
+        animation: $holo-shift;
+      }
+    }
+  }
+
+  @include reduced-motion.reduced-motion {
+    animation: none;
+  }
+}
+
+// Saturation stays high close to the moving highlight and fades out as
+// you move away from the highlight's center.
+//
+// `.holo` above is the same artwork, desaturated, covering the whole
+// card. This is the identical layer at FULL saturation, confined to a
+// soft circle centered on the pointer. So the fill's color is not a
+// property of the card; it is a property of where the light is. Silver
+// everywhere, true rainbow under the highlight, a gradual handoff
+// between the two.
+//
+// A flat `filter: saturate(0.35)` over the whole card does exactly what
+// it says and still reads wrong, because real foil does not desaturate
+// uniformly: it desaturates with ANGLE, staying brightest and most
+// colorful where the light is actually returning to the eye.
+//
+// Additive rather than a true crossfade: this layer is added on top of
+// the silver one, rather than the silver one being punched out
+// underneath it. Two reasons, and the second is the deciding one:
+//
+//   * Physically it is the better read. The lit region should be both
+//     more colorful AND brighter than the rest; a crossfade holds total
+//     brightness flat and swaps only hue, which looks like a filter
+//     sliding around rather than light landing.
+//   * A crossfade needs `.holo`'s own mask to be the exact inverse of
+//     this one, which puts `--incredicard-chip-light-active` INSIDE a
+//     `mask-image` to collapse the radius to 0 at rest--otherwise the
+//     card goes hollow in the middle whenever nothing is hovering. A
+//     gradient does not interpolate on `mask-image` in any engine, so
+//     that state change would pop with no way to ease it. Gating plain
+//     `opacity` instead, exactly as the four glare layers below already
+//     do, buys the same on/off behavior with a real 200ms fade.
+//
+// `backdrop-filter: saturate()` under an inverse mask would cover the
+// printed lines too, in a single element, but it is avoided: it is
+// expensive, it would sit inside a card that is simultaneously
+// 3D-transformed and blending, and that combination is where Safari's
+// compositing bugs tend to surface. `mask-image` and `filter` are already
+// load-bearing here and behave consistently across Chromium, Firefox and
+// WebKit.
+.holoColor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("./assets/images/incredicard-front-holo.svg");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: 0 0;
+  // The falloff itself: opaque at the pointer, gone by
+  // `--incredicard-holo-color-radius`, smooth in between. Centered on the
+  // same two properties `.glareRadial` reads, so the color arrives
+  // exactly where that layer's highlight is rather than merely near it.
+  //
+  // Percentages in a `radial-gradient` stop run along the gradient ray,
+  // and the default sizing is `farthest-corner`, so 60% means 60% of the
+  // distance from the pointer to the furthest corner of the card. That
+  // region grows as the pointer nears an edge, which is the behavior
+  // this wants: the lit patch keeps roughly its on-screen size instead
+  // of being clipped short against the near edge.
+  //
+  // No `-webkit-` pair on this one. The other masks in this file carry
+  // one because unprefixed `mask-image` went unsupported in WebKit for
+  // years; a gradient mask is supported unprefixed everywhere this
+  // component targets today, and a duplicate declaration is one more
+  // thing to keep in step. If this ever has to reach a WebKit old enough
+  // to care, it needs the prefix on BOTH lines, not this one alone.
+  mask-image: radial-gradient(
+    circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+    #000000 0%,
+    transparent var(--incredicard-holo-color-radius, 72%)
+  );
+  mask-repeat: no-repeat;
+  mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
+  // Full saturation--the entire point of the layer. Read both by the
+  // `filter` here and by the shared keyframes below; see `.holo`'s own
+  // comment for why the value travels through a private property.
+  --incredicard-holo-sat: 1;
+
+  filter: saturate(var(--incredicard-holo-sat, 1));
+  // Matched to `.holo`'s own resting opacity rather than set
+  // independently, so the lit region reads as the same material at the
+  // same weight with its color back--not as a second, brighter sheet
+  // laid over the first. Gated on `--incredicard-chip-light-active` the way the
+  // glare layers are, so this renders as nothing at all when no pointer
+  // or sensor is driving the card.
+  opacity: calc(
+    var(--incredicard-chip-light-active, 0) * var(--incredicard-holo-opacity, 0.22)
+  );
+  transition: opacity 200ms ease-out;
+  animation: $holo-shift;
+
+  @media (hover: none) {
+    transition: none;
+    animation: none;
+
+    // Both restored under a live orientation signal, exactly as on
+    // `.holo` above and the glare layers below--see `.holo`'s own block
+    // for the full reasoning.
+    @media (prefers-reduced-motion: no-preference) {
+      [data-incredicard-orientation] & {
+        transition: opacity 200ms ease-out;
+        animation: $holo-shift;
+      }
+    }
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+    animation: none;
+  }
+}
+
+// `saturate()` is repeated in both frames, ahead of the hue rotation, so
+// the shimmer does not undo `.holo`'s own desaturation while it runs--see
+// that rule's own comment on why an animated property wins over the
+// declared one.
+//
+// It reads `--incredicard-holo-sat`, which is why one `@keyframes` can serve
+// both foil layers: custom properties resolve per ELEMENT inside
+// keyframes, so `.holo` animates desaturated and `.holoColor` animates
+// at full saturation from this same block, with their hue rotations
+// locked in step. Two near-identical keyframe blocks would be free to
+// drift, and the drift would show up exactly at the seam where the two
+// layers overlap.
+@keyframes incredicardHoloShift {
+  0%,
+  100% {
+    filter: saturate(var(--incredicard-holo-sat, 1)) hue-rotate(-15deg);
+  }
+
+  50% {
+    filter: saturate(var(--incredicard-holo-sat, 1)) hue-rotate(15deg);
+  }
+}
+
+// The cursor-reactive layers. The gradients applied to the artwork move
+// and change with cursor position, the way light moves across a real
+// holographic foil; the svg artwork itself never translates underneath a
+// fixed viewport. They are
+// split across the artwork's two ribbon groups: `.glareRadial` covers
+// the ribbons starting at the upper left and running down (gradA's 8
+// paths), and `.glareLinear`, a similar linear gradient that moves
+// slightly offset from the cursor, covers the second set (gradB's 16
+// paths). Their texture layers use darkened versions of the artwork's
+// own seven hues, in the same order, so they read as the same material
+// catching the light differently rather than a second, mismatched
+// effect layered on top.
+//
+// Each of those is doubled into a PAIR: two separate, opposite
+// gradients over each ribbon path. So there are four layers below, not
+// two: `.glareRadial`/`.glareRadialReverse` sharing the upper-left
+// ribbon's mask, `.glareLinear`/`.glareLinearReverse` sharing the lower
+// band's. A mask image can be referenced by any number of elements, so a
+// pair costs one extra span and no extra artwork.
+//
+// What "opposite" means here is specifically the MOVING highlight, not
+// the static foil texture underneath it. Each reverse layer mirrors its
+// partner's own pointer response--the radial one centers on
+// `100% - x`/`100% - y` instead of `x`/`y`, the linear one rotates and
+// pans by the same magnitudes with the signs flipped--while both layers
+// of a pair keep the identical, fixed `115deg` rainbow texture. That
+// division is the point rather than an omission: the texture is the
+// card's own foil grain, one material with one direction, and giving
+// the reverse layer a counter-angled copy would set two rainbow grids
+// crossing at 230deg, which is a plaid, not a hologram. Only the light
+// moves in two directions, which is what a real foil does when it has
+// depth--a near surface and a far one catching the same source at once,
+// so the highlight appears to travel INTO the material as the pointer
+// crosses it rather than sliding across a single flat sheet.
+//
+// All four are clipped to their own ribbon's silhouette, not a plain
+// rectangle or circle, so the gradient appears only inside the svg
+// pattern.
+//
+// The masks are the artwork's own svg FILES (`-holo-a.svg`/
+// `-holo-b.svg`, one ribbon each), not `<mask>` elements referenced by
+// id, and that choice is what keeps the glare aligned with the printed
+// lines. `mask-size` sizes mask IMAGES and has no effect on a `<mask>`
+// element: its geometry is decided by `maskUnits`, and
+// `maskUnits="userSpaceOnUse"` pins it to fixed units that do not scale
+// with the element. Such a mask would stay 325x203 while the card
+// renders 340x214.4, leaving the glare 15px short on the right and
+// 11.4px short at the bottom, with a `mask-size` declaration that reads
+// as if it were doing the work but isn't.
+//
+// A `mask-image: url(...)` IS a mask image, so `mask-size: 100% 100%`
+// genuinely applies, and it resolves against this element's box: the
+// same box, and the same `preserveAspectRatio="none"` stretch, that
+// `.holo` above puts the visible artwork through. There is no size for
+// the mask and the artwork to disagree about. Masking against a file
+// also masks by ALPHA (a `mask-image` pointing at an image defaults to
+// alpha, where a `<mask>` element defaults to luminance), which is why
+// these exports work directly with their gradient fills left in place.
+// A luminance mask would need a separate fill-less copy of every path,
+// or it would mask with the rainbow's own uneven brightness.
+//
+// The saturation falloff applies to all four of these as well as to
+// `.holoColor` above: saturation stays high close to the moving
+// highlights and fades out away from the highlight's center.
+//
+// Localizing only the fill is not enough. With the glare switched off,
+// `.holoColor`'s falloff is obvious: warm saturated color at the pointer
+// grading to silver across the card. With the glare on it vanishes,
+// because these four carry the full rainbow across the ENTIRE ribbon at
+// four times the fill's weight.
+//
+// So each one gets a third background layer: a radial white-to-dark
+// gradient centered on THAT layer's own highlight (the pointer for the
+// two forward layers, the mirrored point for the two reverse ones, so
+// the counter-motion is preserved), multiplied into the texture beneath
+// it. `background-blend-mode: color-dodge, multiply, normal` -- read
+// bottom-up, the texture multiplies with the falloff, then the highlight
+// color-dodges over that result.
+//
+// Multiply-toward-dark rather than a mask: under `mix-blend-mode:
+// color-dodge`, a BLACK source pixel leaves the backdrop exactly as it
+// found it (the formula is backdrop / (1 - source); at source 0 that is
+// the backdrop). Darkening this layer toward black is therefore already
+// equivalent to masking it out, using only background layers and blend
+// modes with long-standing support in every engine. The alternative, a
+// second `mask-image` layer composited with `mask-composite: intersect`,
+// degrades badly on any engine that does not support it: the result is
+// the UNION of the two masks, a hard-edged circle of glare painted over
+// the whole card.
+//
+// `--incredicard-holo-falloff-color` is #1f1f1f, not #000000, and that
+// is the difference between "saturation fades" and "the glare turns
+// off." Pure black extinguishes the far side of the card entirely; a
+// floor at 12% leaves distant ribbons lit but drained, with the
+// desaturated `.holo` showing through as silver. The ribbons stay
+// visible everywhere, and the COLOR concentrates where the light is.
+//
+// It is also the one value that must change per theme. `color-burn` is
+// `color-dodge`'s mirror and its no-op color is WHITE, so "vintage"
+// overrides this to #e0e0e0 -- the same 12% offset, reflected. Left at
+// #1f1f1f, that theme would paint the far half of the card solid black
+// on hover, an inversion rather than a softening. See its own block in
+// IncrediCardFace.module.scss.
+//
+// Shared positioning/masking/fade-in-on-hover rules are duplicated
+// across all four classes below rather than factored into a shared
+// placeholder, following this component's preference for small,
+// duplicated pieces over a cross-cutting abstraction: each layer can be
+// read, and tuned, on its own.
+.glareRadial {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mask-image: url("./assets/images/incredicard-front-holo-a.svg");
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  mask-position: 0 0;
+  -webkit-mask-image: url("./assets/images/incredicard-front-holo-a.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-position: 0 0;
+  // Layers blended INTO each other before the result ever touches the
+  // card: a repeating rainbow stripe pattern under a pointer-tracked
+  // highlight, combined with `background-blend-mode`, then contrast and
+  // saturation punched up with `filter`.
+  //
+  // Layer 1: the pointer-tracked radial highlight. Layer 2: a static
+  // `repeating-linear-gradient` rainbow (many parallel stripes, not one
+  // smooth sweep), giving the surface a foil-like texture for the
+  // highlight to move across rather than one soft blob of color. Layer
+  // 3: the saturation falloff described above this rule.
+  //
+  // The texture is deliberately dark and saturated rather than the
+  // artwork's light pastel stops. Two light layers blended under any
+  // blend mode push the result toward white. With a dark
+  // texture, `color-dodge` brightens each stripe toward its real hue
+  // only where the highlight is strong and leaves it dark and rich
+  // elsewhere, which reads as light grazing a textured surface instead of
+  // a flat wash.
+  //
+  // The highlight's core is a *translucent* white (`rgb(255 255 255 /
+  // 55%)`), not opaque `#ffffff`. `color-dodge` divides the backdrop by
+  // (1 - source), so as the source approaches full white the result
+  // clamps to pure white regardless of backdrop, and no later
+  // `filter: saturate()` can recover color from a pixel that is already
+  // white by the time the filter runs. Backing off the highlight's
+  // opacity leaves real backdrop hue for `color-dodge` to brighten
+  // *into*, rather than overpowering it.
+  background-image:
+    radial-gradient(
+      circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+      rgb(255 255 255 / 55%) 0%,
+      transparent 60%
+    ),
+    repeating-linear-gradient(
+      115deg,
+      #6e2159 0%,
+      #6e4a35 8%,
+      #62661f 16%,
+      #1f6640 24%,
+      #1c5c66 32%,
+      #24276e 40%,
+      #4a2166 48%,
+      #6e2159 56%
+    ),
+    radial-gradient(
+      circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+      #ffffff 0%,
+      var(--incredicard-holo-falloff-color, #1f1f1f)
+        var(--incredicard-holo-color-radius, 72%)
+    );
+  background-blend-mode: color-dodge, multiply, normal;
+  // Punches up contrast and saturation on the blended result, so the
+  // foil reads as more vivid than a plain gradient would. The values are
+  // this high because the translucent highlight above leaves real color
+  // for the filter to amplify.
+  filter: contrast(1.75) saturate(2.2);
+  mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
+  // Invisible at rest, not just centered: `--incredicard-chip-light-active` is
+  // only set while a pointer or orientation sensor is driving the card
+  // (see that property's comment in IncrediCardChip.tsx for why this
+  // can't be inferred from the x/y coordinates alone, since 50%/50% is
+  // itself a real, reachable pointer position). `calc()` folds the "how
+  // strong once active" cap, the on/off flag, and the shared strength
+  // dial into one expression, rather than needing a wrapping element per
+  // factor.
+  //
+  // The four caps (0.96 here, 0.52, 0.79 and 0.46 below) are a set. The
+  // ratios between them are the tuning (nearer/farther, radial/linear)
+  // and should survive any change in overall loudness, so scale all four
+  // by one factor rather than adjusting one. This layer is the strongest
+  // of the four because it is the "nearer" surface, reinforcing the depth
+  // cue its faster pointer tracking already establishes.
+  //
+  // The overall level is where hover reads as vivid while no layer clips
+  // to 1; past that, the ratios stop meaning anything because the top
+  // layers saturate and the depth cue flattens out. If hover ever looks
+  // barely distinguishable from rest, the caps are too low. It is not
+  // that `color-dodge` lacks backdrop luminance to work with: raising the
+  // dial brings the full rainbow back, which it could not do if the
+  // backdrop were the limit.
+  //
+  // `--incredicard-holo-glare-strength` is that dial, defaulting to 1 so
+  // it changes nothing unless set. It exists so that adjusting overall
+  // intensity doesn't mean editing four numbers in four rules and hoping
+  // their ratios survive. Setting it in devtools adjusts all four layers
+  // together, live.
+  opacity: calc(
+    var(--incredicard-chip-light-active, 0) * 0.96 *
+      var(--incredicard-holo-glare-strength, 1)
+  );
+  transition: opacity 200ms ease-out;
+
+  @media (hover: none) {
+    // No pointer to react to, so this matches `.holo`'s static treatment
+    // above: the layer stays invisible unless something sets the active
+    // flag, and the transition is removed.
+    //
+    // Device orientation can set that flag, and when it does this layer
+    // fades in for real, so the fade gets its transition back. Same
+    // attribute and same reduced-motion scoping as `.holo` above; see
+    // that block for both.
+    transition: none;
+
+    @media (prefers-reduced-motion: no-preference) {
+      [data-incredicard-orientation] & {
+        transition: opacity 200ms ease-out;
+      }
+    }
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}
+
+// `.glareRadial`'s own opposite number, on the SAME ribbon and
+// the same mask--see the block above `.glareRadial` for why the pair
+// exists and what "opposite" is scoped to.
+//
+// The mirror is `calc(100% - x)`/`calc(100% - y)`: the highlight sits at
+// the point reflected through the card's own center, so it travels the
+// other way along both axes as the pointer moves, and the two highlights
+// cross at dead center. `radial-gradient` can express this directly in
+// its own `at X% Y%` argument--no `background-position` gymnastics
+// needed, the same reason `.glareRadial` above never needed them either.
+// The fallback folds to `calc(100% - 50%)`, i.e. 50%, so an unset
+// pointer still resolves to the same centered position its partner does
+// (and at rest neither renders at all anyway--`--incredicard-chip-light-active`
+// gates both).
+//
+// Two deliberate differences from its partner, so the pair reads as one
+// material with depth rather than as a double image. The highlight is
+// weaker (45% white against 55%) and its falloff is wider (`transparent
+// 72%` against 60%)--a broad, soft counter-glow behind a tighter, more
+// defined primary, which is the same near/far distinction `.glareLinear`
+// already draws with its own damped tracking. Both layers stack via
+// `color-dodge`, which only ever brightens, so the second one has to be
+// the quieter of the two or their overlap clips toward white and undoes
+// the color both of them are there to produce: the same washout
+// `.glareRadial`'s comment describes avoiding.
+.glareRadialReverse {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mask-image: url("./assets/images/incredicard-front-holo-a.svg");
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  mask-position: 0 0;
+  -webkit-mask-image: url("./assets/images/incredicard-front-holo-a.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-position: 0 0;
+  // Layer 2 is byte-identical to its partner's own texture layer, at the
+  // identical fixed `115deg`, on purpose--see the block above
+  // `.glareRadial` for why only the light opposes and never the grain.
+  background-image:
+    radial-gradient(
+      circle at calc(100% - var(--incredicard-chip-light-x, 50%))
+        calc(100% - var(--incredicard-chip-light-y, 50%)),
+      rgb(255 255 255 / 45%) 0%,
+      transparent 72%
+    ),
+    repeating-linear-gradient(
+      115deg,
+      #6e2159 0%,
+      #6e4a35 8%,
+      #62661f 16%,
+      #1f6640 24%,
+      #1c5c66 32%,
+      #24276e 40%,
+      #4a2166 48%,
+      #6e2159 56%
+    ),
+    radial-gradient(
+      circle at calc(100% - var(--incredicard-chip-light-x, 50%)) calc(100% - var(--incredicard-chip-light-y, 50%)),
+      #ffffff 0%,
+      var(--incredicard-holo-falloff-color, #1f1f1f)
+        var(--incredicard-holo-color-radius, 72%)
+    );
+  background-blend-mode: color-dodge, multiply, normal;
+  filter: contrast(1.75) saturate(2.2);
+  mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
+  opacity: calc(
+    var(--incredicard-chip-light-active, 0) * 0.52 *
+      var(--incredicard-holo-glare-strength, 1)
+  );
+  transition: opacity 200ms ease-out;
+
+  @media (hover: none) {
+    transition: none;
+
+    // Restored under a live orientation signal, exactly as on
+    // `.glareRadial` above--see that block's own comment.
+    @media (prefers-reduced-motion: no-preference) {
+      [data-incredicard-orientation] & {
+        transition: opacity 200ms ease-out;
+      }
+    }
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}
+
+.glareLinear {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mask-image: url("./assets/images/incredicard-front-holo-b.svg");
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  mask-position: 0 0;
+  -webkit-mask-image: url("./assets/images/incredicard-front-holo-b.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-position: 0 0;
+  // Same blend-then-filter structure as `.glareRadial` above (see that
+  // rule's comment for the full reasoning and the provenance note): a
+  // moving highlight over a static repeating rainbow texture. Here the
+  // highlight is a `linear-gradient` band rather than a radial one,
+  // panned via `background-position` over an oversized
+  // (`background-size: 300% 300%`) canvas. `linear-gradient()` has no
+  // focal-point syntax the way `radial-gradient(... at X% Y%)` does, so
+  // this uses the "large canvas, shift the visible window" technique,
+  // driven by the tracked pointer position.
+  //
+  // The band is translucent white, not a second rainbow. Blending a full
+  // rainbow sweep on TOP of the already-rainbow texture below via
+  // `color-dodge` compounds two independent hue cycles into erratic,
+  // hard-edged local jumps wherever their bands cross out of phase,
+  // instead of one coherent color field. Plain light, with the texture
+  // supplying all the color, is the same structure `.glareRadial` uses;
+  // what still distinguishes the two glares is the shape of the light (a
+  // linear band vs. a radial falloff) and how each tracks the pointer
+  // (see below).
+  //
+  // The band is narrow (`transparent 46%`/`54%`, an 8%-wide falloff on
+  // each side of the peak) because the Y-axis rotation below
+  // (`--incredicard-chip-light-rotate`) needs it. A wide, soft band's brightened
+  // region barely shifts when its axis rotates: even a full 90deg swing
+  // is nearly imperceptible on a 30%-wide band, while at this width the
+  // same swing reads as a clear shift in which part of the ribbon lights
+  // up.
+  //
+  // Tracks the SAME pointer as `.glareRadial`, but deliberately not the
+  // same way: the two ribbon shapes are separate holographic effects
+  // that track the cursor differently, to give more of a 3D hologram
+  // effect. A fixed offset (say +20%/-20%) would keep the two layers
+  // permanently parallel (same direction, same speed, just never quite
+  // overlapping), which reads as one effect nudged rather than two
+  // independent surfaces. Inverting the sign and damping the magnitude on
+  // X (`* -0.6`, not `* 1`) is what creates a depth illusion:
+  // `.glareRadial` moves WITH the pointer at full sensitivity (the nearer
+  // surface), while this layer moves AGAINST it at 60% sensitivity on X
+  // (a farther, more stable surface). That is the same parallax cue real
+  // multi-layer foil or lenticular stock gives as the viewing angle
+  // changes, rather than two copies of the same motion.
+  //
+  // Y doesn't drive `background-position` at all; it rotates the band's
+  // angle instead. `--incredicard-chip-light-rotate` is computed in
+  // IncrediCardChip.tsx (`writeLight`) as a plain JS number and written
+  // out already `deg`-suffixed, because CSS `calc()` has no operation
+  // that converts a `%`-typed custom property into a `deg`-typed result
+  // (multiplying a percentage by a plain number stays a percentage).
+  //
+  // Only the highlight rotates; the texture layer stays fixed at its
+  // literal `115deg`, with no offset, in both glares. The highlight is
+  // plain translucent light with no hue of its own, so rotating it
+  // against a fixed-angle texture just changes WHERE it brightens the
+  // texture, the same "light grazing a tilted surface" cue a real foil
+  // gives as it tilts. Rotating the texture's rainbow bands too would
+  // bring back the hard-edged, out-of-phase color seams described above,
+  // since the texture's colors would then slide past each other rather
+  // than staying put. Layer 2 uses the same dark palette as
+  // `.glareRadial`'s texture for the same reason: two light layers blend
+  // toward white, and a dark textured backdrop under a light moving
+  // highlight is what gives `color-dodge` something to brighten.
+  background-image:
+    linear-gradient(
+      calc(115deg + var(--incredicard-chip-light-rotate, 0deg)),
+      transparent 46%,
+      rgb(255 255 255 / 55%) 50%,
+      transparent 54%
+    ),
+    repeating-linear-gradient(
+      115deg,
+      #6e2159 0%,
+      #6e4a35 8%,
+      #62661f 16%,
+      #1f6640 24%,
+      #1c5c66 32%,
+      #24276e 40%,
+      #4a2166 48%,
+      #6e2159 56%
+    ),
+    radial-gradient(
+      circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+      #ffffff 0%,
+      var(--incredicard-holo-falloff-color, #1f1f1f)
+        var(--incredicard-holo-color-radius, 72%)
+    );
+  background-size:
+    300% 300%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    calc(50% - (var(--incredicard-chip-light-x, 50%) - 50%) * 0.6) 50%,
+    0 0,
+    0 0;
+  background-blend-mode: color-dodge, multiply, normal;
+  // The same contrast/saturation boost as `.glareRadial`. This layer's
+  // damped, inverted tracking (see this rule's header comment) already
+  // moves less and renders at a lower opacity than `.glareRadial`, so it
+  // needs at least as much punch to read clearly as its own distinct
+  // effect rather than fading into the background.
+  filter: contrast(1.75) saturate(2.2);
+  mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
+  // Same fade-in-on-hover contract as `.glareRadial` above (see that
+  // class's comment, including why the four caps scale together), but a
+  // lower cap (0.79, vs. that layer's 0.96): the "farther," oppositely
+  // tracking surface reads as more subtle, reinforcing the depth cue its
+  // damped, inverted pointer tracking already establishes rather than
+  // fighting it with equal visual weight.
+  opacity: calc(
+    var(--incredicard-chip-light-active, 0) * 0.79 *
+      var(--incredicard-holo-glare-strength, 1)
+  );
+  // `opacity` only, not `background-position` too. Transitioning a
+  // multi-layer `background-position` built from this nested a `calc()`
+  // (subtract, then multiply, inside a comma-separated multi-layer value)
+  // can get stuck at its pre-transition value instead of interpolating,
+  // even though the formula itself resolves correctly without a
+  // transition. `.glareRadial` has no `background-position` transition
+  // either (its position lives inside the gradient function's own
+  // `at X% Y%` argument, not as a separately animatable property), so the
+  // two layers share the same shape. Pointermove fires often enough that
+  // the step change is not perceptible in practice.
+  transition: opacity 200ms ease-out;
+
+  @media (hover: none) {
+    transition: none;
+
+    // Restored under a live orientation signal, exactly as on
+    // `.glareRadial` above--see that block's own comment.
+    @media (prefers-reduced-motion: no-preference) {
+      [data-incredicard-orientation] & {
+        transition: opacity 200ms ease-out;
+      }
+    }
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}
+
+// `.glareLinear`'s own opposite number, on the SAME ribbon and
+// the same mask--see the block above `.glareRadial` for why the pair
+// exists and what "opposite" is scoped to.
+//
+// Both of `.glareLinear`'s own pointer responses are mirrored here, and
+// only their signs change--the magnitudes stay identical, so the pair
+// stays symmetric rather than one member quietly out-traveling the
+// other. The band's own angle becomes `115deg - rotate` against that
+// layer's own `115deg + rotate`, so the two bands scissor open and shut
+// around the shared `115deg` grain as the pointer moves down the card,
+// instead of sweeping in parallel. The pan becomes `50% + (x - 50%) *
+// 0.6` against its own `50% - (x - 50%) * 0.6`, so they slide past each
+// other on X and meet at center.
+//
+// Which makes this the only layer of the four that tracks the pointer
+// the "plain" way: `.glareLinear`'s inversion (see that rule's header
+// comment for why it is inverted) is what this one inverts back. That is
+// not an accident to tidy up: the two ribbons each carry one
+// with-the-pointer highlight and one against-the-pointer highlight, so
+// both shapes show the same depth cue instead of the card having a
+// "near" ribbon and a "far" ribbon. The asymmetry that remains between
+// the two ribbons is the shape of the light on them (a radial falloff
+// against a linear band), which is what tells the two apart.
+//
+// Weaker than its partner for the same stacking reason
+// `.glareRadialReverse` above is weaker than its own (0.46 against 0.79,
+// the same ~0.58 ratio), and weaker again than that layer--this pair
+// sits on the lower woven band, which is denser than the upper ribbon,
+// so the same opacity puts noticeably more lit area on screen.
+.glareLinearReverse {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mask-image: url("./assets/images/incredicard-front-holo-b.svg");
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  mask-position: 0 0;
+  -webkit-mask-image: url("./assets/images/incredicard-front-holo-b.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-position: 0 0;
+  // Layer 2 is byte-identical to its partner's own texture layer, at the
+  // identical fixed `115deg`, on purpose--see the block above
+  // `.glareRadial` for why only the light opposes and never the grain.
+  background-image:
+    linear-gradient(
+      calc(115deg - var(--incredicard-chip-light-rotate, 0deg)),
+      transparent 46%,
+      rgb(255 255 255 / 45%) 50%,
+      transparent 54%
+    ),
+    repeating-linear-gradient(
+      115deg,
+      #6e2159 0%,
+      #6e4a35 8%,
+      #62661f 16%,
+      #1f6640 24%,
+      #1c5c66 32%,
+      #24276e 40%,
+      #4a2166 48%,
+      #6e2159 56%
+    ),
+    radial-gradient(
+      circle at calc(100% - var(--incredicard-chip-light-x, 50%)) calc(100% - var(--incredicard-chip-light-y, 50%)),
+      #ffffff 0%,
+      var(--incredicard-holo-falloff-color, #1f1f1f)
+        var(--incredicard-holo-color-radius, 72%)
+    );
+  background-size:
+    300% 300%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    calc(50% + (var(--incredicard-chip-light-x, 50%) - 50%) * 0.6) 50%,
+    0 0,
+    0 0;
+  background-blend-mode: color-dodge, multiply, normal;
+  filter: contrast(1.75) saturate(2.2);
+  mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
+  opacity: calc(
+    var(--incredicard-chip-light-active, 0) * 0.46 *
+      var(--incredicard-holo-glare-strength, 1)
+  );
+  transition: opacity 200ms ease-out;
+
+  @media (hover: none) {
+    transition: none;
+
+    // Restored under a live orientation signal, exactly as on
+    // `.glareRadial` above--see that block's own comment.
+    @media (prefers-reduced-motion: no-preference) {
+      [data-incredicard-orientation] & {
+        transition: opacity 200ms ease-out;
+      }
+    }
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}

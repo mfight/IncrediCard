@@ -1,0 +1,636 @@
+// Self-contained: this stylesheet depends on no external token files.
+// It declares the same --incredicard-face-* variable names as
+// IncrediCardFace.module.scss (not a second, differently named set), so
+// a consumer re-skinning the card surface gets one override vocabulary
+// that works no matter which layout (`stacked`/`overlay`) is active.
+//
+// The `@use`s below are this component's own partials. See
+// reveal-motion.scss's header for why its fade is written as literal
+// values.
+@use "./reveal-motion";
+@use "./reducedMotion/reduced-motion";
+
+
+.faceWrapper {
+  --incredicard-face-radius: var(--theme-incredicard-face-radius, 0.75rem);
+  // The same exported artwork as IncrediCardFace.module.scss; see that
+  // file's comment here for the full reasoning (why the ribbons are a
+  // separate layer rather than part of this image, and the
+  // `rx="12"`/`--incredicard-face-radius` coupling). This element is the
+  // same 340px/1.586 box as that one, so the artwork maps through it
+  // identically. Duplicated rather than shared, so each face's
+  // stylesheet stands alone.
+  --incredicard-face-background: var(
+    --theme-incredicard-face-background,
+    url("./assets/images/incredicard-front-black.svg") 0 0 / 100% 100%
+      no-repeat
+  );
+  --incredicard-face-lines-opacity: var(
+    --theme-incredicard-face-lines-opacity,
+    0.08
+  );
+  --incredicard-holo-resting-saturation: var(
+    --theme-incredicard-holo-resting-saturation,
+    0.35
+  );
+  // See IncrediCardFace.module.scss's identical declarations.
+  --incredicard-holo-glare-strength: var(
+    --theme-incredicard-holo-glare-strength,
+    1
+  );
+  --incredicard-holo-color-radius: var(
+    --theme-incredicard-holo-color-radius,
+    72%
+  );
+  // Base-theme declaration as well as the vintage override below -- see
+  // IncrediCardFace.module.scss for why leaving it to the hologram
+  // stylesheet's inline fallback would make the `--theme-*` alias inert.
+  --incredicard-holo-falloff-color: var(
+    --theme-incredicard-holo-falloff-color,
+    #1f1f1f
+  );
+  --incredicard-face-color: var(--theme-incredicard-face-color, #ffffff);
+  --incredicard-face-shadow: var(
+    --theme-incredicard-face-shadow,
+    0 0.5rem 1.5rem rgb(0 0 0 / 30%)
+  );
+
+  position: relative;
+  width: 100%;
+  max-width: 21.25rem;
+  aspect-ratio: 1.586 / 1; // ID-1 (ISO/IEC 7810) card ratio, as in IncrediCardFace.module.scss
+  perspective: 62.5rem;
+  color: var(--incredicard-face-color);
+  // Its own size query container; see IncrediCardFace.module.scss's
+  // identical comment for the full reasoning (the on-card field slots'
+  // `cqw`-based font sizes below need to track this element's actual
+  // rendered width, not the root component's wider one).
+  container-type: inline-size;
+  // The `scale` emphasis effect; see the `[data-zoomed]` rule below and
+  // the `scale` prop comment in IncrediCard.tsx. Declared
+  // unconditionally (see the identical `.faceContainer` rule in
+  // IncrediCard.module.scss for why an idle transition costs nothing).
+  transition: transform 200ms ease;
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+
+  &.processing {
+    opacity: 0.6;
+
+    // Under reduced motion the spinner is hidden and the flip loop is
+    // skipped, so nothing on the card moves at all. A slow opacity pulse
+    // restores a sense of activity without reintroducing motion: fading
+    // is not movement, so it does not raise the vestibular problems
+    // `prefers-reduced-motion` exists to avoid. Deliberately gentle and
+    // slow -- a 0.45 <-> 0.75 swing over 2.6s, eased at both ends, so it
+    // reads as breathing rather than blinking.
+    @include reduced-motion.reduced-motion {
+      animation: incredicardProcessingPulse 2600ms ease-in-out infinite;
+    }
+  }
+
+  // "vintage" theme; see IncrediCardFace.module.scss's identical block
+  // for the full reasoning (same hooks, same literal defaults). The real
+  // fields this component positions get their vintage font and emboss
+  // treatment from .vintageNameField/.vintageMonoField in
+  // IncrediCard.module.scss (applied to the field itself by
+  // IncrediCard.tsx, not to this wrapper); this block only touches the
+  // card surface.
+  &[data-theme="vintage"] {
+    --incredicard-face-background: var(
+      --theme-incredicard-face-background,
+      linear-gradient(160deg, #f1e7d0 0%, #dbc999 55%, #c3aa73 100%)
+    );
+    --incredicard-face-color: var(--theme-incredicard-face-color, #43331d);
+    --incredicard-face-shadow: var(
+      --theme-incredicard-face-shadow,
+      0 0.5rem 1.25rem rgb(0 0 0 / 20%),
+      inset 0 0.0625rem 0 rgb(255 255 255 / 40%)
+    );
+    // See IncrediCardFace.module.scss's identical override.
+    --incredicard-holo-blend-mode: color-burn;
+    // White, not black -- see IncrediCardFace.module.scss's comment
+    // here. `color-burn`'s no-op color is the opposite of
+    // `color-dodge`'s, and getting it wrong inverts the falloff.
+    --incredicard-holo-falloff-color: var(
+      --theme-incredicard-holo-falloff-color,
+      #e0e0e0
+    );
+    --incredicard-holo-opacity: 0.35;
+    --incredicard-face-lines-opacity: var(
+      --theme-incredicard-face-lines-opacity,
+      0
+    );
+    --incredicard-holo-resting-saturation: var(
+      --theme-incredicard-holo-resting-saturation,
+      1
+    );
+  }
+}
+
+.faceWrapper[data-theme="vintage"] {
+  // The chip (IncrediCardChip) needs no override here; see
+  // IncrediCardFace.module.scss's identical comment.
+  // Smaller caps than "modern"; see the `[data-theme="vintage"]
+  // .number`/`.expiration` overrides in IncrediCardFace.module.scss for
+  // the full reasoning (same ratios). `.cvcSlot` is deliberately
+  // untouched.
+  .numberSlot {
+    // See IncrediCardFace.module.scss's identical `.number` override for
+    // the reasoning, including why this caps out around 17px: at 21px
+    // the number measures 344.6px against a 293px content box in the
+    // real OCR-B face, and would clip.
+    --theme-incredicard-field-font-size: clamp(0.75rem, 5.23cqw, 1.125rem);
+
+    // On the input itself, not the slot: neither `text-align` nor the
+    // tracking override reaches a replaced form control by inheritance
+    // from the wrapper.
+    :global(input) {
+      text-align: center;
+      // See `.number` in IncrediCardFace.module.scss for why the
+      // vintage block's 0.06em is dropped for the number specifically.
+      letter-spacing: normal;
+    }
+  }
+
+  .expirationSlot {
+    --theme-incredicard-field-font-size: clamp(0.5rem, 3.53cqw, 0.75rem);
+  }
+}
+
+// The `scale` emphasis effect for the "overlay" layout. See the `scale`
+// prop comment in IncrediCard.tsx, and the identical rule for "stacked"
+// in IncrediCard.module.scss, including its comment on why this is a
+// plain `data-zoomed` attribute rather than `:focus-within` or
+// `:has(input:focus)`. Unlike that rule, `.faceWrapper` here computes
+// AND carries `data-zoomed` itself (combining its `scale` and
+// `cardZoomed` props; see IncrediCardEmbeddedFace.tsx) rather than
+// reading an attribute set by an ancestor. The real fields this
+// component positions are its own descendants (they sit ON the card in
+// this layout), so `.faceWrapper` is both where the state is known and
+// where the scale applies, with no ancestor/descendant split like the
+// one "stacked" needs between the fieldset and `.faceContainer`.
+.faceWrapper[data-zoomed] {
+  // See IncrediCard.module.scss's identical rule for the "increase
+  // TO 150%, not BY 150%" reasoning.
+  transform: scale(1.5);
+}
+
+.flipContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  // The cursor tilt composed with the flip on this SAME `transform`; see
+  // IncrediCardFace.module.scss's identical rule for the full reasoning.
+  // Both custom properties default to `0deg`, so with `tilt` off this
+  // is just the flip.
+  transform: rotateX(var(--incredicard-tilt-x, 0deg))
+    rotateY(calc(var(--incredicard-tilt-y, 0deg) + var(--incredicard-flip-angle, 0deg)));
+  // Ease-out, because this transition also smooths tilt's continuously
+  // retargeted angle and a slow-starting curve would make tilt feel
+  // laggy. See IncrediCardFace.module.scss's identical rule.
+  transition: transform 280ms cubic-bezier(0, 0, 0.2, 1);
+  // Promotes this element to its own GPU compositor layer so tilt stays
+  // smooth over the hologram's blend layers; see
+  // IncrediCardFace.module.scss's identical rule.
+  will-change: transform;
+
+  // The tilt writes into this same `transform`, so while a
+  // pointer is actively tracking, the transition above is not smoothing
+  // the motion -- it is fighting it. Every mousemove restarts a 280ms
+  // animation toward a target that has already moved again.
+  //
+  // In Chrome that merely lags. In DESKTOP Safari it is much worse: the
+  // card barely moves while the pointer does, then completes the whole
+  // travel once it stops, and at a shorter duration it visibly vibrates.
+  // The symptom scales with how far the value moves per frame, which is
+  // also why mobile is fine -- orientation is exponentially smoothed
+  // before it is written, and a finger moves slowly, so consecutive
+  // targets sit close together.
+  //
+  // So the transition is suppressed WHILE TRACKING and restored the
+  // moment tracking stops. Everything that genuinely wants an animation
+  // still gets one: the flip, and the ease back to rest on pointer exit.
+  // The smoothing that tracking does want is done in JS instead, on the
+  // value (see useIncrediCardTilt), where it behaves the same in every
+  // engine rather than depending on how each one restarts an interrupted
+  // transition.
+  :global([data-tilt-tracking]) & {
+    transition: none;
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}
+
+// The flip angle is not toggled in CSS. It comes in as an inline custom
+// property from IncrediCard.tsx, accumulating 180deg per turn so the
+// card always rotates the same way; a `[data-flipped]` rule pinning it
+// to 180deg here would override that and make the card unwind back the
+// way it came. `data-flipped` stays on the wrapper for everything that
+// needs to know which side is up (inert management, the flip control's
+// label).
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 1rem;
+  border-radius: var(--incredicard-face-radius);
+  background: var(--incredicard-face-background);
+  box-shadow: var(--incredicard-face-shadow);
+  // Clips IncrediCardHologram to this element's rounded corners; see
+  // IncrediCardFace.module.scss's identical comment. Safe here too:
+  // every real field sits well inside `.face`'s 16px padding, so a
+  // field's 3px focus-ring glow never reaches this element's outer edge.
+  overflow: hidden;
+  backface-visibility: hidden;
+  // Bounds the hologram's blend group to this element.
+  //
+  // IncrediCardHologram uses `mix-blend-mode`, which composites an
+  // element against its BACKDROP -- and the backdrop is defined by the
+  // nearest ancestor that forms a stacking context. Without one here,
+  // which ancestor wins is left to each engine to infer. Desktop Safari
+  // resolves it such that the foil's ribbon lines paint over the card
+  // number instead of under it, visible only while hovering, which is
+  // when the glare layers switch on and there is a blend to perform.
+  // Chrome resolves it the intended way.
+  //
+  // `isolation: isolate` states the answer instead of leaving it
+  // inferred: the blend can only reach what is painted before it INSIDE
+  // `.face`, which is the card background -- exactly the surface the
+  // effect is meant to look like light on. The real fields paint after
+  // and are therefore out of reach by construction, so the effect can
+  // never recolor or dim the card number, name, expiration or CVC text.
+  // Chrome renders identically with or without it. An explicit `z-index`
+  // on the content is not needed once the group is bounded.
+  isolation: isolate;
+
+  // The printed ribbon lines, as their own layer; identical to
+  // `.face::before` in IncrediCardFace.module.scss. See that rule for
+  // why it is a pseudo-element, why `position: absolute` is load-bearing
+  // against this flex column, and why it draws the same file `.holo`
+  // does.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("./assets/images/incredicard-front-holo.svg");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-position: 0 0;
+    opacity: var(--incredicard-face-lines-opacity);
+    filter: saturate(var(--incredicard-holo-resting-saturation));
+    pointer-events: none;
+  }
+}
+
+.back {
+  transform: rotateY(180deg);
+  justify-content: flex-start;
+  gap: 1.5rem;
+}
+
+// The chip sits at 30x / 44y from the card's top-left
+// at the 325x204 reference -- approximating where a real EMV chip is
+// embossed, which is not aligned to anything else on the card. It
+// intentionally does not line up with the fields or labels.
+//
+// A RELATIVE offset, not absolute positioning, and that matters. `.topRow`
+// is one of the four flex items whose heights feed `.face`'s
+// space-between rhythm; taking the chip out of flow would collapse that
+// row to zero and shift the number, expiration and name, breaking the
+// alignment the two layouts share. A relative offset moves the chip
+// visually while leaving the layout untouched.
+//
+// The values are therefore DELTAS from where the chip already sits (the
+// face's 16px padding corner), not absolute coordinates: 30-16 = 14
+// across, 44-16 = 28 down, over the 325 reference => 4.31cqw / 8.62cqw.
+// In `cqw` so the offset tracks the card the way every other placement
+// here does, even though the chip's own 36px size is fixed.
+.chipOffset {
+  // `flex`, so this wrapper is exactly as tall as the chip. As a plain
+  // inline/block box it would establish a line box, whose descender
+  // space makes `.topRow` ~2.7px taller than the chip; that feeds
+  // straight into `.face`'s space-between rhythm and pushes the number,
+  // expiration and name down, out of alignment with the other layout.
+  display: flex;
+  position: relative;
+  inset-inline-start: 4.31cqw;
+  inset-block-start: 8.62cqw;
+}
+
+.topRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+// Groups the front-printed CVC slot (Amex only; see `cvcOnFront` in
+// IncrediCard.tsx) with the number slot, so the two share one small gap
+// instead of .face's space-between rhythm spacing them apart. The same
+// pairing as .numberGroup/.frontCvcRow in IncrediCardFace.module.scss.
+.numberGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.frontCvcRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.magstripe {
+  margin-inline: -1rem;
+  margin-block-start: 1rem;
+  height: 2.5rem;
+  background: #000000;
+}
+
+.signatureRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// --- On-card field slots ---
+// Each slot re-skins the real field it wraps entirely through
+// IncrediCardField's --theme-incredicard-field-* custom properties: an
+// ordinary ancestor override, the same mechanism (and the same variable
+// names) any other consumer of that component uses, with no change to
+// IncrediCardField/IncrediCardMaskedField themselves and no reach into
+// their hashed CSS Modules class names (see IncrediCardField.module.scss's
+// header comment on why padding and font-size are variables for exactly
+// this reason). `:global(input)` is fine here because `input` is an
+// element selector, not one of IncrediCardField's hashed classes; CSS
+// Modules only scopes class and id selectors, never plain tag selectors.
+//
+// Each field keeps its real `label` (rendered with `hideLabel`, so it
+// still provides an accessible name), just visually hidden; nothing
+// here removes it from the DOM.
+.numberSlot,
+.nameSlot,
+.expirationSlot,
+.cvcSlot {
+  --theme-incredicard-field-background: transparent;
+  // The inert states need their own transparency. The read-only and
+  // disabled rules in IncrediCardField.module.scss read SEPARATE
+  // variables (`-background-readonly` / `-background-disabled`), each
+  // falling back to an opaque #f3f4f6, so setting only the base
+  // background above would leave an on-card field painting a solid gray
+  // bar across the card art the moment it goes read-only. That happens
+  // in any overlay card while `processing`, which sets readOnly on every
+  // field. (In the "stacked" layout the fields sit below the card in an
+  // ordinary list, where a gray read-only background is exactly right.)
+  --theme-incredicard-field-background-readonly: transparent;
+  --theme-incredicard-field-background-disabled: transparent;
+  --theme-incredicard-field-border-color: transparent;
+  --theme-incredicard-field-border-color-hover: rgb(255 255 255 / 25%);
+  --theme-incredicard-field-color: var(--incredicard-face-color);
+  --theme-incredicard-field-radius: 0.125rem;
+  --theme-incredicard-field-padding: 0;
+
+  :global(input)::placeholder {
+    color: rgb(255 255 255 / 60%);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+}
+
+.numberSlot {
+  // Same `cqw`-based proportional scaling as `.number` in
+  // IncrediCardFace.module.scss: 20px at the 340px reference width (see
+  // that file's comment for the full reasoning), overridden smaller
+  // under `[data-theme="vintage"]` above.
+  --theme-incredicard-field-font-size: clamp(0.75rem, 5.88cqw, 1.25rem);
+  max-width: 100%;
+
+  :global(input) {
+    letter-spacing: 0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.nameSlot {
+  // Same treatment as `.name` in IncrediCardFace.module.scss: 14px at
+  // 340px, identical in both themes.
+  --theme-incredicard-field-font-size: clamp(0.625rem, 4.12cqw, 0.875rem);
+  // No grow factor. `.face` is a column flex, so its main axis is
+  // vertical: `flex-grow` here would mean "take the remaining *height*",
+  // not width. The slot would grow far past its field, eat every pixel
+  // of free space, and leave `.face`'s `justify-content: space-between`
+  // with nothing to distribute, packing the overlay layout's fields
+  // toward the top of the card instead of spreading them evenly like
+  // IncrediCardFace.module.scss's identical structure.
+  //
+  // `0 1 auto` is what the reference `.name` computes to. Check which
+  // axis is the main one before adding a grow factor here.
+  flex: 0 1 auto;
+  min-width: 0;
+  // Reserves `.acceptanceMark`'s footprint (below) plus a small gap; see
+  // IncrediCardFace.module.scss's identical `.name` comment for the full
+  // reasoning (this slot stretches to the card's full width on its own).
+  padding-inline-end: calc(25.85cqw + 0.5rem);
+
+  :global(input) {
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+}
+
+// The fade for the Expiration and Name rows lives on this modifier
+// rather than on `.expirationSlot`/`.nameSlot` themselves, because those
+// two classes are also worn by the unrevealed placeholders below. React
+// reconciles the placeholder and the real slot as the SAME `<div>` (same
+// type, same position), so the node is reused rather than remounted, and
+// a mount-triggered animation would never fire. Adding an `animation` to
+// an element already in the document does start it, which is what this
+// modifier arriving on reveal relies on.
+.slotRevealed {
+  @include reveal-motion.incredicard-reveal-fade-in;
+}
+
+// Reserves exactly the height a real field row occupies
+// before that field is mounted, so `.face`'s space-between rhythm is
+// the same before and after reveal (see the placeholder branch in
+// IncrediCardEmbeddedFace.tsx).
+//
+// The height is derived, not hardcoded: the zero-width space establishes
+// a line box using the same `--theme-incredicard-field-font-size` the
+// real field reads, and the transparent block border reproduces the 1px
+// top/bottom border the field's own inner `.container` carries. So a
+// change to either the font ramp or the field's border keeps the two in
+// step automatically, which a literal pixel value would not.
+//
+// The `font-size` belongs on the element, not on the `::before`: a line
+// box is at least as tall as its block's own strut, so with the slot's
+// inherited 16px still in force the row would measure 21px however small
+// the pseudo-element's text was. Setting it here brings the strut down
+// to the field's real size too.
+.slotPlaceholder {
+  box-sizing: border-box;
+  border-block: 0.0625rem solid transparent;
+  font-size: var(--theme-incredicard-field-font-size);
+  // Reproduces whatever padding the real field in this slot would carry,
+  // read from the very same custom property that field reads. It is `0`
+  // for the number/expiration/name slots and `4px 12px` for `.cvcSlot`,
+  // so one declaration keeps every placeholder the exact height of the
+  // field it stands in for.
+  padding: var(--theme-incredicard-field-padding);
+
+  &::before {
+    content: "\200b";
+  }
+}
+
+.expirationSlot {
+  // Same treatment as `.expiration` in IncrediCardFace.module.scss: 14px
+  // at 340px in "modern", overridden smaller (12px) under
+  // `[data-theme="vintage"]` above.
+  --theme-incredicard-field-font-size: clamp(0.625rem, 4.12cqw, 0.875rem);
+  flex: 0 0 auto;
+  width: 4.5em;
+
+  :global(input) {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// The card's bottom-right acceptance-mark badge; see the identical
+// `.acceptanceMark` in IncrediCardFace.module.scss for the full
+// reasoning (same design-file-derived `cqw` conversion, same
+// edge-relative anchoring, same self-contained-badge asset).
+.acceptanceMark {
+  @include reveal-motion.incredicard-reveal-fade-in-out;
+
+  position: absolute;
+  // 10px up and 14px in from the card's edge at the 325px reference; see
+  // the identical rule in IncrediCardFace.module.scss.
+  inset-block-end: 3.08cqw;
+  inset-inline-end: 4.31cqw;
+  width: 21.54cqw;
+  aspect-ratio: 70 / 56;
+  object-fit: contain;
+}
+
+.cvcSlot {
+  @include reveal-motion.incredicard-reveal-fade-in;
+
+  --theme-incredicard-field-background: rgb(255 255 255 / 80%);
+  --theme-incredicard-field-color: #111827;
+  --theme-incredicard-field-radius: 0.25rem;
+  --theme-incredicard-field-padding: 0.25rem 0.75rem;
+  --theme-incredicard-field-font-size: 0.875rem;
+  width: 5em;
+
+  :global(input) {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.025em;
+    text-align: center;
+  }
+}
+
+// Half on, half off the card's top-right corner, a nod to the original
+// Skeuocard's bubble-shaped flip control, which sat the same way.
+// Positioned relative to `.faceWrapper` (the card's border box, already
+// `position: relative`): negative offsets of exactly half this badge's
+// diameter center it on the corner point, so half its area sits over
+// the card and half spills outside it. A solid, opaque badge rather
+// than a translucent one, because it has to read clearly against both
+// the card behind its inner half and whatever sits behind its outer
+// half (usually the page background), which a transparent fill can't
+// guarantee either way.
+.flipButton {
+  position: absolute;
+  inset-block-start: -1.125rem;
+  inset-inline-end: -1.125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0.0625rem solid rgb(0 0 0 / 8%);
+  border-radius: 624.9375rem;
+  background: #ffffff;
+  box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 25%);
+  color: #374151;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+
+  &:focus-visible {
+    outline: 0.125rem solid #2563eb;
+    outline-offset: 0.125rem;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Applied while no network is detected--see reveal-motion.scss. The mark
+// stays mounted (each face latches the last artwork it was given) purely
+// so this can fade it out; unmounting it would make a fade impossible.
+.acceptanceMarkHidden {
+  @include reveal-motion.incredicard-reveal-hidden;
+}
+
+// The busy label. Visible whenever the card is processing, in both
+// layouts and at any motion preference: a card that says "busy" purely
+// through movement communicates nothing to anyone glancing at a still
+// frame. Upper-right, the one corner of the card with nothing in it: the
+// chip sits upper-left, the number/expiration/name run down the middle
+// and left, and the acceptance mark owns the lower-right.
+//
+// The 16px offsets are NOT redundant with `.face`'s `padding: 16px`.
+// An absolutely positioned box resolves its offsets against the
+// containing block's PADDING box, whose edges sit at the border -- so
+// padding does not inset it at all. At `0`, this label would sit flush
+// in the card's corner and be clipped by `.face`'s `overflow: hidden`.
+// These restate the padding deliberately so the label lines up with the
+// chip and the acceptance mark.
+.processingLabel {
+  position: absolute;
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  // Inherits the face's own color, so no per-theme rule is needed.
+  color: var(--incredicard-face-color);
+  opacity: 0.85;
+}
+
+@keyframes incredicardProcessingPulse {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
