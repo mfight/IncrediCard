@@ -88,7 +88,8 @@
   // a narrow one, and a viewport query would switch to the side-by-side
   // row layout in exactly the cramped-container case it can't fit,
   // squeezing the card face to a sliver instead of falling back to the
-  // stacked column.
+  // stacked column. The one exception is `scale`'s zoom, which is fitted
+  // to the viewport on purpose; see IncrediCardZoomFit.ts.
   container-type: inline-size;
   // `container-type: inline-size` implies size containment on the inline
   // axis, so this element's intrinsic width ignores its content (it's
@@ -229,11 +230,20 @@
 // reach "zoomed": clicking the card itself, with nothing focused.
 .incredicard[data-zoomed] .faceContainer {
   // Scales TO 150% of the resting size (not BY 150%, which would be
-  // 2.5x). `tilt` is suppressed while zoomed (see the `suppressed`
-  // parameter of useIncrediCardTilt), so a noticeably larger, stationary
-  // card reads as a deliberate zoom-to-focus moment rather than a subtle
-  // emphasis.
-  transform: scale(1.5);
+  // 2.5x) wherever that fits on screen, and to less, shifted to stay
+  // visible, where it doesn't. useIncrediCardZoomFit (IncrediCardZoomFit.ts)
+  // writes the three properties; its header comment explains why this
+  // one rule measures the viewport rather than following the container
+  // queries everything else here uses. The fallback is no zoom at all:
+  // until the fit is known, an unfitted 1.5x is exactly what overflows.
+  // `tilt` is suppressed while zoomed (see the `suppressed` parameter of
+  // useIncrediCardTilt), so a noticeably larger, stationary card reads as
+  // a deliberate zoom-to-focus moment rather than a subtle emphasis.
+  transform: translate(
+      var(--incredicard-zoom-x, 0px),
+      var(--incredicard-zoom-y, 0px)
+    )
+    scale(var(--incredicard-zoom-scale, 1));
 }
 
 // Half on, half off the card's top-right corner. The same badge as the

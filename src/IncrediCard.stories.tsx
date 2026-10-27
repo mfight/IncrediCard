@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
+import { expect, waitFor, within } from "storybook/test";
 // Imported from the index, not the component module: the index is where
 // the compound namespace is composed, and it has to be.
 import {
@@ -702,7 +703,105 @@ export const DeviceTilt: Story = {
     id: "story-device-tilt",
     holographic: true,
     tilt: true,
+    scale: true,
     chipReflection: true,
   },
   render: (args) => <DeviceTiltDemo {...args} />,
+};
+
+// Checks for the zoom's viewport fit (IncrediCardZoomFit.ts), one per
+// layout. Hidden from the sidebar (`!dev`); they exist for
+// `npm run test:storybook`.
+//
+// Overlay pins the card to the page's top-left corner, where an unfitted
+// 1.5x would run off the top and the left. Stacked leaves room above the
+// card but none to spare below, where its field sits, so the fit has to
+// shift the card up rather than down over the field.
+//
+// Whatever the test browser's viewport, the zoomed card and its flip
+// badge must end up inside it, clear of every edge, and clear of the
+// focused field and its label. Where the viewport has room for a real
+// zoom, it must also have happened: a fit that "passed" by never zooming
+// would prove nothing.
+async function expectZoomFits(canvasElement: HTMLElement) {
+  const input = within(canvasElement).getByLabelText("Card number");
+  input.focus();
+  const target = await waitFor(() => {
+    const el = canvasElement.querySelector<HTMLElement>(
+      '[style*="--incredicard-zoom-scale"]',
+    );
+    expect(el).not.toBeNull();
+    // Settled: the transform has finished its transition to the fit.
+    const scale = Number(el!.style.getPropertyValue("--incredicard-zoom-scale"));
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(el!).transform);
+    expect(Math.abs(matrix.a - scale)).toBeLessThan(0.001);
+    return el!;
+  });
+
+  const scale = Number(target.style.getPropertyValue("--incredicard-zoom-scale"));
+  const inset = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const width = document.documentElement.clientWidth;
+  const height = document.documentElement.clientHeight;
+  const badge = target.querySelector("[data-incredicard-zoom-overhang]");
+  const zoomedRects = [target, badge].flatMap((el) => (el ? [el.getBoundingClientRect()] : []));
+  for (const rect of zoomedRects) {
+    expect(rect.left).toBeGreaterThanOrEqual(inset - 0.5);
+    expect(rect.top).toBeGreaterThanOrEqual(inset - 0.5);
+    expect(rect.right).toBeLessThanOrEqual(width - inset + 0.5);
+    expect(rect.bottom).toBeLessThanOrEqual(height - inset + 0.5);
+  }
+
+  if (!target.contains(input)) {
+    const field = [input, ...((input as HTMLInputElement).labels ?? [])].map((el) =>
+      el.getBoundingClientRect(),
+    );
+    for (const rect of zoomedRects) {
+      for (const f of field) {
+        const overlaps =
+          rect.left < f.right && f.left < rect.right && rect.top < f.bottom && f.top < rect.bottom;
+        expect(overlaps).toBe(false);
+      }
+    }
+  }
+
+  // Overlay, at the corner: only the width and height limit it.
+  if (target.contains(input)) {
+    const restWidth = target.offsetWidth + (badge ? 18 : 0);
+    const room = Math.min(1.5, (width - 2 * inset) / restWidth);
+    if (room >= 1.1) expect(scale).toBeGreaterThan(1.09);
+    else expect(scale).toBe(1);
+  } else if (width - 2 * inset >= target.offsetWidth * 1.5 + 18) {
+    // Stacked, with 260px above the card: room for the full zoom, up.
+    expect(scale).toBe(1.5);
+  }
+}
+
+const zoomFitArgs = {
+  scale: true,
+  defaultValue: {
+    cardholderName: "Alex Rivera",
+    cardNumber: "4242424242424242",
+    expirationMonth: "12",
+    expirationYear: "29",
+    cvc: "123",
+  },
+} satisfies Partial<IncrediCardStoryArgs>;
+
+export const ZoomFitOverlay: Story = {
+  tags: ["!dev"],
+  parameters: { layout: "fullscreen" },
+  args: { ...zoomFitArgs, id: "story-zoom-fit-overlay" },
+  play: ({ canvasElement }) => expectZoomFits(canvasElement),
+};
+
+export const ZoomFitStacked: Story = {
+  tags: ["!dev"],
+  parameters: { layout: "fullscreen" },
+  args: { ...zoomFitArgs, id: "story-zoom-fit-stacked", layout: "stacked" },
+  render: (args) => (
+    <div style={{ paddingTop: 260, width: 400 }}>
+      <IncrediCard {...cardProps(args)} />
+    </div>
+  ),
+  play: ({ canvasElement }) => expectZoomFits(canvasElement),
 };

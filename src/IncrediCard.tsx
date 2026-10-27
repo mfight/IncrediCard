@@ -16,6 +16,7 @@ import {
 } from "./cardNetworks";
 import { getAcceptanceMarkSrc } from "./acceptanceMarks";
 import { prefersReducedMotion } from "./reducedMotion";
+import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
 import styles from "./IncrediCard.module.scss";
 
 // A plain, dependency-free "circular arrows" glyph, the same one
@@ -206,7 +207,10 @@ type IncrediCardOwnProps = {
    * affects the surrounding layout: the card's layout box keeps its
    * original size, and only its painted appearance grows, which can
    * visually overlap nearby content rather than push it aside (the same
-   * tradeoff any non-reflowing zoom effect makes). */
+   * tradeoff any non-reflowing zoom effect makes). Where 150% wouldn't
+   * fit on screen, it scales to whatever does, shifted to stay visible
+   * and, in "stacked", clear of the field being typed into. It skips the
+   * zoom when less than 110% fits (IncrediCardZoomFit.ts). */
   scale?: boolean;
   fieldSize?: IncrediCardFieldSize;
   disabled?: boolean;
@@ -641,6 +645,11 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     );
     const isOverlay = layout === "overlay";
     const isVintage = theme === "vintage";
+    // Fits the "stacked" zoom to the viewport; "overlay" fits its own in
+    // IncrediCardEmbeddedFace. See IncrediCardZoomFit.ts.
+    const zoomFitRef = useIncrediCardZoomFit<HTMLDivElement>(
+      !isOverlay && scale && cardZoomed,
+    );
 
     // Arrow-key navigation between fields, alongside native Tab. Refs to
     // each field's real `<input>` (IncrediCardField and
@@ -1077,7 +1086,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
           />
         ) : (
           <div className={styles.layout}>
-            <div className={styles.faceContainer}>
+            <div ref={zoomFitRef} className={styles.faceContainer}>
               <IncrediCardFace
                 flipped={flipped}
                 flipAngleDeg={flipTurns * 180}
@@ -1131,6 +1140,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                     flipped ? labels.showFrontLabel : labels.showBackLabel
                   }
                   className={styles.flipBadge}
+                  data-incredicard-zoom-overhang=""
                 >
                   <FlipIcon />
                 </button>

@@ -173,9 +173,13 @@
 // where the scale applies, with no ancestor/descendant split like the
 // one "stacked" needs between the fieldset and `.faceContainer`.
 .faceWrapper[data-zoomed] {
-  // See IncrediCard.module.scss's identical rule for the "increase
-  // TO 150%, not BY 150%" reasoning.
-  transform: scale(1.5);
+  // See IncrediCard.module.scss's identical rule: 150% where it fits,
+  // fitted to the viewport by useIncrediCardZoomFit where it doesn't.
+  transform: translate(
+      var(--incredicard-zoom-x, 0px),
+      var(--incredicard-zoom-y, 0px)
+    )
+    scale(var(--incredicard-zoom-scale, 1));
 }
 
 .flipContainer {

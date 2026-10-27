@@ -8,6 +8,7 @@ import {
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
+import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
 import styles from "./IncrediCardEmbeddedFace.module.scss";
 
 function classNames(...values: Array<string | false | undefined>) {
@@ -220,6 +221,9 @@ export function IncrediCardEmbeddedFace({
   // useIncrediCardTilt's header comment for why this isn't folded into
   // chipLightRef's hook.
   const tiltRef = useIncrediCardTilt(tilt, cardZoomed);
+  // `.faceWrapper` is also this layout's scale target; see
+  // IncrediCardZoomFit.ts.
+  const zoomFitRef = useIncrediCardZoomFit<HTMLDivElement>(scale && cardZoomed);
 
   // Excludes a real field or the flip control from counting as "clicked
   // the card": both are genuine descendants of `.faceWrapper` in this
@@ -245,7 +249,7 @@ export function IncrediCardEmbeddedFace({
       data-theme={theme === "vintage" ? "vintage" : undefined}
       data-zoomed={scale && cardZoomed ? "" : undefined}
       onClick={onCardClick ? handleFaceClick : undefined}
-      ref={mergeRefs(chipLightRef, tiltRef)}
+      ref={mergeRefs(chipLightRef, tiltRef, zoomFitRef)}
     >
       <div
         className={styles.flipContainer}
@@ -391,6 +395,7 @@ export function IncrediCardEmbeddedFace({
           onClick={onFlip}
           aria-label={flipped ? flipToFrontLabel : flipToBackLabel}
           className={styles.flipButton}
+          data-incredicard-zoom-overhang=""
         >
           <FlipIcon />
         </button>
