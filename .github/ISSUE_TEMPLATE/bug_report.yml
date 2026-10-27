@@ -1,0 +1,82 @@
+name: Bug report
+description: Something in IncrediCard doesn't work, looks wrong or isn't accessible.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. **Never include a real card number, security code, expiration date or cardholder name**, in the text or in a screenshot. Use a test number or digits with the right shape.
+
+        For a security problem, don't use this form: see the [security policy](https://github.com/mfight/IncrediCard/blob/main/SECURITY.md).
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Start from a story in the [demo](https://incredicard.markfight.com/) if you can.
+      placeholder: |
+        1. Open the Default story
+        2. Type 3782 into the number field
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Safari 26.1
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and device
+      placeholder: iOS 26.1, iPhone 16
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: IncrediCard version
+      description: The package version, a commit, or "the demo".
+    validations:
+      required: true
+  - type: textarea
+    id: props
+    attributes:
+      label: Props involved
+      description: Layout, theme, the effects you turned on, and anything else you passed.
+      render: tsx
+  - type: checkboxes
+    id: conditions
+    attributes:
+      label: Is any of these part of it?
+      options:
+        - label: Reduced motion
+        - label: A screen reader
+        - label: Browser autofill or a password manager
+        - label: Page zoom or a larger text size
+        - label: Pasting
+  - type: textarea
+    id: visuals
+    attributes:
+      label: Screenshots or a recording
+      description: Helpful when the problem is visual. Check that no real card data is visible.
+  - type: checkboxes
+    id: no-card-data
+    attributes:
+      label: Card data
+      options:
+        - label: This report contains no real card number, security code or other personal data.
+          required: true

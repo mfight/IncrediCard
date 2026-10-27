@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/mfight/IncrediCard/security/advisories/new
+    about: Report it privately, not in a public issue.
+  - name: Demo and documentation
+    url: https://incredicard.markfight.com/
+    about: Every prop, layout and theme, with live examples.

@@ -1,0 +1,24 @@
+name: Feature idea
+description: Suggest something IncrediCard could do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        IncrediCard is a card-entry form, not a payment integration: processing payments, tokenizing card data and submitting the form are out of scope.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you've tried instead
+      description: Workarounds, or other libraries you've looked at.

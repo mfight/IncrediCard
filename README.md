@@ -69,6 +69,10 @@ npm run test:consumer    # packs it and installs it into a fresh Vite app
 
 The Storybook tests and the consumer test need Playwright's Chromium: `npx playwright install chromium`.
 
+## Contributing
+
+Bug reports and ideas are welcome as issues; pull requests aren't being accepted yet. See [CONTRIBUTING.md](CONTRIBUTING.md), and the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem privately, see [SECURITY.md](SECURITY.md).
+
 ## Acknowledgments
 
 IncrediCard was inspired by [Skeuocard](https://kenkeiter.com/skeuocard/), originally created by Ken Keiter. IncrediCard is an independent, from-scratch React implementation and is not affiliated with or endorsed by the original project.
