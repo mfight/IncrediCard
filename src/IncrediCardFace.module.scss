@@ -12,126 +12,13 @@
 
 
 .faceWrapper {
-  --incredicard-face-radius: var(--theme-incredicard-face-radius, 0.75rem);
-  // The "modern" theme's face is exported artwork, overridable like any
-  // other `--theme-*` property.
-  //
-  // This file is the card's MATERIAL and nothing else: a vertical
-  // #2F343C-to-black gradient with a pair of inner shadows along the top
-  // edge. The ribbon lines printed on top of it are a separate layer
-  // (`.face::before` below), not part of this image.
-  //
-  // Keeping the ribbons out of this image matters for two reasons. A
-  // baked-in opacity would make every visibility adjustment an asset
-  // re-export, and a second copy of the ribbon geometry could drift from
-  // the foil's. There is exactly one ribbon file in the component
-  // (`incredicard-front-holo.svg`, drawn by both that layer and `.holo`),
-  // so the printed lines and the lit lines always match: they are the
-  // same file twice.
-  //
-  // The file's `rx="12"` matches `--incredicard-face-radius`'s 12px
-  // default. Overriding that property still rounds the element (and
-  // clips everything inside it), but the artwork's painted corner stays
-  // at 12px, so a materially different radius needs a re-export rather
-  // than just a new value here.
-  //
-  // At 1.7KB this file is under Vite's 4KB inline threshold, so the built
-  // CSS carries it as a `data:` URI and the filename does not appear in
-  // the bundle at all. Worth knowing before concluding from a grep of a
-  // build output that the asset failed to ship. The ribbon files are all
-  // well over the threshold and emit as real files.
-  --incredicard-face-background: var(
-    --theme-incredicard-face-background,
-    url("./assets/images/incredicard-front-black.svg") 0 0 / 100% 100%
-      no-repeat
-  );
-  // How strongly the ribbons are PRINTED on the card, before any light
-  // hits them. 0.08 keeps the background ribbons faint; the glare
-  // layers' intensity is tuned to compensate.
-  //
-  // A plain number rather than a color or an image, because it is the
-  // one thing about this layer anyone actually wants to adjust, and it
-  // can be tuned live in devtools without touching the artwork. Its
-  // natural partner is `--incredicard-holo-glare-strength` (see
-  // IncrediCardHologram.module.scss): this one sets how much of the
-  // pattern is there in the dark, that one sets how hard it lights up.
-  // 0 is a legitimate setting: a card whose lines exist only where the
-  // light falls.
-  --incredicard-face-lines-opacity: var(
-    --theme-incredicard-face-lines-opacity,
-    0.08
-  );
-  // How much of the artwork's own rainbow survives while no light is on
-  // the card: the background ribbons read a little more silver and a
-  // little less rainbow. 0.35 keeps a trace of hue rather than going
-  // fully gray, which is what actually reads as silver foil. Real
-  // stamped foil is not colorless; it just is not a rainbow.
-  //
-  // Drives BOTH resting layers: `.face::before` below, and `.holo` in
-  // IncrediCardHologram.module.scss. One property rather than two
-  // because "the background ribbons" is one thing to the eye, and
-  // because the foil dominates the print: the print sits at 0.08 opacity
-  // and the foil at 0.22, so desaturating the print alone changes almost
-  // nothing on screen. The four pointer-driven glare layers are
-  // deliberately NOT affected; they keep the full palette.
-  //
-  // Note what this is NOT: it is not how saturated the card looks under
-  // the pointer. Real foil desaturates with ANGLE, not uniformly, so a
-  // flat desaturation everywhere reads wrong. `.holoColor` in that same
-  // file restores the artwork's full saturation inside a soft circle
-  // tracking the highlight, so this property sets the floor the card
-  // falls back to as the light moves away, not a ceiling on the whole
-  // card.
-  //
-  // Done in CSS rather than by exporting a desaturated copy of the
-  // artwork: the printed lines and the lit foil are THE SAME FILE (see
-  // `.face::before` below), so a filter is what lets the two differ at
-  // all. Silver at rest, full color where the light lands. A second
-  // export could only achieve that by duplicating the ribbon geometry.
-  --incredicard-holo-resting-saturation: var(
-    --theme-incredicard-holo-resting-saturation,
-    0.35
-  );
-  // The remaining two hologram knobs, declared here rather than left to
-  // `var()` fallbacks inside IncrediCardHologram.module.scss, so all five
-  // hologram properties follow the same `--theme-*` override pattern.
-  // Otherwise some would be overridable through a `--theme-*` alias and
-  // others settable only by their exact internal name, with nothing
-  // marking which is which.
-  //
-  // `glare-strength` scales all four glare layers at once, preserving the
-  // ratios between them that carry the depth cue. `color-radius` is the
-  // extent of the pointer-centered falloff, shared by `.holoColor`'s
-  // mask and by all four glare layers, so the lit region stays one
-  // geometry rather than five that have to be kept in agreement.
-  --incredicard-holo-glare-strength: var(
-    --theme-incredicard-holo-glare-strength,
-    1
-  );
-  --incredicard-holo-color-radius: var(
-    --theme-incredicard-holo-color-radius,
-    72%
-  );
-  // Declared on the base theme too, not only inside the vintage block
-  // below. It looks theme-only, since vintage is the theme that has to
-  // change it, but without this declaration a "modern" card would take
-  // its value from an inline `var()` fallback in
-  // IncrediCardHologram.module.scss that no `--theme-*` name feeds, and
-  // `--theme-incredicard-holo-falloff-color` would silently do nothing.
-  --incredicard-holo-falloff-color: var(
-    --theme-incredicard-holo-falloff-color,
-    #1f1f1f
-  );
-  --incredicard-face-color: var(--theme-incredicard-face-color, #ffffff);
-  --incredicard-face-shadow: var(
-    --theme-incredicard-face-shadow,
-    0 0.5rem 1.5rem rgb(0 0 0 / 30%)
-  );
-  --incredicard-face-invalid-color: var(
-    --theme-incredicard-face-invalid-color,
-    #dc2626
-  );
-
+  // The theme's values -- `--incredicard-face-*` (radius, background,
+  // color, shadow, ribbon print strength) and `--incredicard-holo-*` --
+  // are not declared here. They are inherited from the component's root,
+  // which writes them from the theme object in themes.ts, so this face
+  // looks the same for every theme and the theme decides everything that
+  // differs. What each one does is documented where it's read: below, and
+  // in IncrediCardHologram.module.scss.
   position: relative;
   width: 100%;
   // 340px and 1000px are plain structural constants: a card-shaped max
@@ -174,61 +61,6 @@
     }
   }
 
-  // "vintage" theme: an aged-ivory embossed-plastic look in place of the
-  // "modern" dark face. Same --incredicard-face-*/--theme-* hooks, just
-  // different literal defaults, so a consumer's ancestor override still
-  // wins over either theme's default. See the `IncrediCardTheme` comment
-  // in IncrediCard.tsx.
-  &[data-theme="vintage"] {
-    --incredicard-face-background: var(
-      --theme-incredicard-face-background,
-      linear-gradient(160deg, #f1e7d0 0%, #dbc999 55%, #c3aa73 100%)
-    );
-    --incredicard-face-color: var(--theme-incredicard-face-color, #43331d);
-    --incredicard-face-shadow: var(
-      --theme-incredicard-face-shadow,
-      0 0.5rem 1.25rem rgb(0 0 0 / 20%),
-      inset 0 0.0625rem 0 rgb(255 255 255 / 40%)
-    );
-    // IncrediCardHologram's blend mode and opacity, retuned for this
-    // theme's light background. See that file's header comment on why
-    // one fixed blend mode can't serve both themes well. `color-burn` is
-    // `color-dodge`'s mirror image (darkens instead of brightens), which
-    // is what shows color against a light backdrop instead of washing
-    // out toward white.
-    --incredicard-holo-blend-mode: color-burn;
-    // The color that means "leave the backdrop alone" under the blend
-    // mode above -- WHITE for `color-burn`, where "modern" uses black
-    // for `color-dodge`. The glare layers fade toward this away from
-    // their own highlight, so getting it wrong does not soften the
-    // effect, it inverts it: black under `color-burn` drives every
-    // channel to zero, which would paint the far half of this card
-    // solid black on hover. See the glare layers' own comment on why
-    // the falloff is a multiply toward a neutral rather than a mask.
-    --incredicard-holo-falloff-color: var(
-      --theme-incredicard-holo-falloff-color,
-      #e0e0e0
-    );
-    --incredicard-holo-opacity: 0.35;
-    // No printed ribbons on this theme: its face is a plain cream
-    // gradient. Stated explicitly because `.face::before` below draws the
-    // ribbons for every theme; without this line the aged-ivory card
-    // would get rainbow foil lines printed on it. Still
-    // `--theme-*`-overridable, so a consumer that wants them can have
-    // them.
-    --incredicard-face-lines-opacity: var(
-      --theme-incredicard-face-lines-opacity,
-      0
-    );
-    // ...and its foil keeps the full palette. The silver resting
-    // treatment above is tuned against "modern"'s near-black material;
-    // `color-burn` over aged ivory is a different effect entirely and
-    // doesn't call for it.
-    --incredicard-holo-resting-saturation: var(
-      --theme-incredicard-holo-resting-saturation,
-      1
-    );
-  }
 }
 
 .flipContainer {
@@ -496,12 +328,16 @@
   @include reveal-motion.incredicard-reveal-fade-in;
 
   // Same proportional scaling as `.number` above: 14px at the 340px
-  // reference width; 14/340 = ~4.12%. Identical in both themes;
-  // "vintage" only changes this element's font, color and shadow (see
-  // the `[data-theme="vintage"]` block below), not its size.
+  // reference width; 14/340 = ~4.12%. The same in both face layouts;
+  // a theme changes only this element's font, color and shadow.
   font-size: clamp(0.625rem, 4.12cqw, 0.875rem);
   letter-spacing: 0.025em;
   text-transform: uppercase;
+  // The theme's name font and raised-character shadow (see themes.ts).
+  // Unset in a theme that has neither, which leaves both inherited,
+  // exactly as if they weren't declared.
+  font-family: var(--incredicard-name-font);
+  text-shadow: var(--incredicard-face-emboss);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -529,8 +365,7 @@
   @include reveal-motion.incredicard-reveal-fade-in;
 
   // Same treatment, same 14px/340px ratio as `.name` above in the
-  // default ("modern") theme--overridden smaller (12px) under
-  // `[data-theme="vintage"]` below.
+  // "printed" face layout; smaller (12px) in "embossed", below.
   font-size: clamp(0.625rem, 4.12cqw, 0.875rem);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -620,43 +455,34 @@
   letter-spacing: 0.025em;
 }
 
-// "vintage" theme typography for the printed text. The chip
-// (IncrediCardChip) needs no equivalent override: it's image artwork and
-// renders identically in both themes (see that component's header
-// comment).
-.faceWrapper[data-theme="vintage"] {
-  // OCR-A for the name (a real card's engraved-name look), OCR-B for
-  // everything else printed on the card (number/expiration/CVC). See
-  // the `IncrediCardTheme` comment in IncrediCard.tsx for the reasoning
-  // behind the split, and .vintageNameField/.vintageMonoField in
-  // IncrediCard.module.scss for the identical split applied to the real
-  // fields. The embossed look is the same flat two-shadow approximation
-  // used there (a light highlight, a dark counter-shadow), tuned
-  // slightly darker here since this card's background is a mid-tone
-  // gradient, not the real fields' near-white.
-  .name {
-    font-family: "IncrediCard OCR-A", ui-monospace, monospace;
-    letter-spacing: 0.06em;
-    text-shadow:
-      -0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%),
-      0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%);
-  }
+// The theme's printed-character font and raised-character shadow (see
+// themes.ts), for the three an embosser treats as printed. Unset in a
+// theme that has neither, which leaves both inherited.
+.number,
+.expiration,
+.cvc {
+  font-family: var(--incredicard-print-font);
+  text-shadow: var(--incredicard-face-emboss);
+}
 
+// The "embossed" face layout (see themes.ts): the printed text set the
+// way an embosser lays out an older raised-character card. The theme
+// supplies the fonts and the raised-character shadow; this block only
+// arranges the text.
+.faceWrapper[data-face-layout="embossed"] {
+  // Embossed characters sit further apart than printed ones.
+  .name,
   .number,
   .expiration,
   .cvc {
-    font-family: "IncrediCard OCR-B", ui-monospace, monospace;
     letter-spacing: 0.06em;
-    text-shadow:
-      -0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%),
-      0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%);
   }
 
-  // Smaller than the "modern" theme's 20px/14px caps (the card number
-  // maxes out at about 18px, the expiration at about 12px), with the
-  // same `cqw`-based proportional scaling as the base rules above, just
-  // a lower ceiling. `.cvc` is deliberately untouched and keeps whatever
-  // size it inherits in either theme.
+  // Smaller than "printed"'s 20px/14px caps (the card number maxes out at
+  // about 18px, the expiration at about 12px), with the same `cqw`-based
+  // proportional scaling as the base rules above, just a lower ceiling.
+  // `.cvc` is deliberately untouched and keeps whatever size it inherits
+  // in either layout.
   //
   // The number runs as close to full width as "XXXX XXXX XXXX XXXX" can
   // get without wrapping or truncating. At the 325x204 reference the
@@ -672,15 +498,13 @@
   // still overflows.
   .number {
     font-size: clamp(0.75rem, 5.23cqw, 1.125rem);
-    // No extra tracking, overriding the 0.06em the vintage block gives
-    // OCR-B text generally. That spacing suits the shorter expiration
-    // and CVC; across a 19-character number it adds close to 19px of
-    // width on its own, which is most of what would push the string
-    // past the content box.
+    // No extra tracking, overriding the 0.06em above. That spacing suits
+    // the shorter expiration and CVC; across a 19-character number it
+    // adds close to 19px of width on its own, which is most of what
+    // would push the string past the content box.
     letter-spacing: normal;
-    // Centered -- a real embossed card's number sits centered
-    // across the plate rather than ranged left with the smaller print
-    // below it.
+    // Centered: a real embossed card's number sits centered across the
+    // plate rather than ranged left with the smaller print below it.
     text-align: center;
   }
 

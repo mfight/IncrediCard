@@ -7,6 +7,7 @@ import {
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
+import type { IncrediCardFaceLayout } from "./themes";
 import styles from "./IncrediCardFace.module.scss";
 
 function classNames(...values: Array<string | false | undefined>) {
@@ -39,14 +40,10 @@ export type IncrediCardFaceProps = {
    * between two values -- see `flipTurns` in IncrediCard.tsx for why a
    * toggling angle makes the two directions disagree. */
   flipAngleDeg: number;
-  /** "modern" (default) or "vintage". Drives this face's background and
-   * text colors and self-hosted fonts via a `[data-theme="vintage"]`
-   * selector in IncrediCardFace.module.scss. Duplicated as a plain
-   * union here rather than imported as `IncrediCardTheme` from
-   * IncrediCard.tsx: that file already imports this one, so importing
-   * back would be circular, and two literal strings aren't worth
-   * breaking that for. */
-  theme?: "modern" | "vintage";
+  /** How the theme arranges the printed text (see themes.ts). Its colors,
+   * artwork and fonts arrive as custom properties inherited from the
+   * component root, so this face never needs the theme itself. */
+  faceLayout?: IncrediCardFaceLayout;
   /** Default true. Forwarded straight to `IncrediCardChip`'s
    * `reflection` prop. */
   chipReflection?: boolean;
@@ -143,7 +140,7 @@ export type IncrediCardFaceProps = {
 export function IncrediCardFace({
   flipped,
   flipAngleDeg,
-  theme = "modern",
+  faceLayout = "printed",
   chipReflection = true,
   holographic = false,
   tilt = false,
@@ -211,7 +208,7 @@ export function IncrediCardFace({
       )}
       aria-hidden="true"
       data-flipped={flipped || undefined}
-      data-theme={theme === "vintage" ? "vintage" : undefined}
+      data-face-layout={faceLayout}
       ref={mergeRefs(chipLightRef, tiltRef)}
       onClick={onCardClick}
     >

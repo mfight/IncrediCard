@@ -161,10 +161,9 @@ export function useIncrediCardChipLight(active: boolean) {
 // namespace, so each one gets a unique, per-instance id (see `useId()`
 // below). Every fill in this graphic (the gold body, both gray
 // contact-line assemblies) comes from the artwork itself, unaffected by
-// "modern"/"vintage" theme--the same chip sits on the card in either
-// theme; only the plastic body around it differs (see the
-// `[data-theme="vintage"]` blocks in IncrediCardFace.module.scss and
-// IncrediCardEmbeddedFace.module.scss, which don't touch `.chip`).
+// the theme--the same chip sits on the card in every theme; only the
+// plastic body around it differs (see themes.ts, which has no chip
+// values).
 //
 // SVG ids (`clip0_0_7286`, `filter0_iiii_0_7286`, etc., as exported)
 // are document-global once rendered--reused verbatim, a second

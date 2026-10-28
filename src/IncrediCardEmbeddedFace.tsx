@@ -9,6 +9,7 @@ import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
 import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
+import type { IncrediCardFaceLayout } from "./themes";
 import styles from "./IncrediCardEmbeddedFace.module.scss";
 
 function classNames(...values: Array<string | false | undefined>) {
@@ -75,16 +76,11 @@ export type IncrediCardEmbeddedFaceProps = {
    * between two values -- see `flipTurns` in IncrediCard.tsx for why a
    * toggling angle makes the two directions disagree. */
   flipAngleDeg: number;
-  /** "modern" (default) or "vintage". See the identical prop on
-   * IncrediCardFace.tsx for why this is a plain duplicated union rather
-   * than importing `IncrediCardTheme` from IncrediCard.tsx (that file
-   * already imports this one). Only changes this face's background and
-   * text colors and self-hosted fonts (see the `[data-theme="vintage"]`
-   * block in IncrediCardEmbeddedFace.module.scss). The real fields it
-   * positions get their vintage styling from
-   * `.vintageNameField`/`.vintageMonoField` in IncrediCard.module.scss,
+  /** How the theme arranges the printed text; see the identical prop on
+   * IncrediCardFace.tsx. The real fields this face positions get their
+   * fonts from `.nameField`/`.printField` in IncrediCard.module.scss,
    * applied by IncrediCard.tsx, not from this component. */
-  theme?: "modern" | "vintage";
+  faceLayout?: IncrediCardFaceLayout;
   /** Default true. Forwarded straight to `IncrediCardChip`'s
    * `reflection` prop. */
   chipReflection?: boolean;
@@ -169,7 +165,7 @@ export type IncrediCardEmbeddedFaceProps = {
 export function IncrediCardEmbeddedFace({
   flipped,
   flipAngleDeg,
-  theme = "modern",
+  faceLayout = "printed",
   chipReflection = true,
   holographic = false,
   tilt = false,
@@ -246,7 +242,7 @@ export function IncrediCardEmbeddedFace({
         processing && styles.processing,
       )}
       data-flipped={flipped || undefined}
-      data-theme={theme === "vintage" ? "vintage" : undefined}
+      data-face-layout={faceLayout}
       data-zoomed={scale && cardZoomed ? "" : undefined}
       onClick={onCardClick ? handleFaceClick : undefined}
       ref={mergeRefs(chipLightRef, tiltRef, zoomFitRef)}

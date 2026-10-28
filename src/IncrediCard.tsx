@@ -17,6 +17,11 @@ import {
 import { getAcceptanceMarkSrc } from "./acceptanceMarks";
 import { prefersReducedMotion } from "./reducedMotion";
 import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
+import {
+  getIncrediCardTheme,
+  incredicardThemeStyle,
+  type IncrediCardTheme,
+} from "./themes";
 import styles from "./IncrediCard.module.scss";
 
 // A plain, dependency-free "circular arrows" glyph, the same one
@@ -93,21 +98,9 @@ const UNTOUCHED: IncrediCardTouched = {
 
 export type IncrediCardLayout = "stacked" | "overlay";
 
-// "modern" (default): the Figtree-set, dark-gradient card. "vintage": an
-// homage to an actual embossed plastic card. OCR-A sets the name and
-// OCR-B the number, expiration, and CVC (the three a real card's embosser
-// treats as "printed" characters, distinct from the engraved name), on an
-// aged-ivory card face, with a layered text-shadow standing in for
-// genuine raised embossing. A real bevel would need 3D geometry per
-// glyph, which CSS can't produce for arbitrary live-typed text; two
-// shadows (a light highlight, a dark counter-shadow) are the standard
-// flat approximation, applied identically to the real fields' typed text
-// and to the "stacked" layout's decorative card-face mirror of it. Both
-// fonts are self-hosted under assets/fonts/, like Figtree. See
-// assets/fonts/OCR-A-ReadMe.txt (the font author's informal free-font
-// notice; OCR-A has no separate license file) and
-// assets/fonts/OCR-B-OFL.txt (SIL Open Font License 1.1) for their terms.
-export type IncrediCardTheme = "modern" | "vintage";
+// The visual themes; each is one object in themes.ts, whose keys are the
+// valid names.
+export type { IncrediCardTheme } from "./themes";
 
 // Every user-facing string this component renders, all overridable. No
 // i18n hook is built in: a portable component can't assume a project has
@@ -186,7 +179,7 @@ type IncrediCardOwnProps = {
    * "stacked": a purely decorative card (`IncrediCardFace`) above a
    * normal, fully labeled list of real fields. */
   layout?: IncrediCardLayout;
-  /** Default "modern"; see `IncrediCardTheme`'s header comment. */
+  /** Default "modern". See themes.ts for what each theme is. */
   theme?: IncrediCardTheme;
   /** Default true. Forwarded to whichever card face is active; see the
    * `reflection` prop of `IncrediCardChip` (IncrediCardChip.tsx). */
@@ -644,7 +637,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       networkInfo.numberPattern,
     );
     const isOverlay = layout === "overlay";
-    const isVintage = theme === "vintage";
+    const themeDefinition = getIncrediCardTheme(theme);
     // Fits the "stacked" zoom to the viewport; "overlay" fits its own in
     // IncrediCardEmbeddedFace. See IncrediCardZoomFit.ts.
     const zoomFitRef = useIncrediCardZoomFit<HTMLDivElement>(
@@ -890,10 +883,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isOverlay}
         placeholder={isOverlay ? labels.cardholderNamePlaceholder : undefined}
         size={fieldSize}
-        // OCR-A, standing in for a real card's engraved name, distinct
-        // from OCR-B's printed-digit look below; see `IncrediCardTheme`'s
-        // header comment.
-        containerClassName={isVintage ? styles.vintageNameField : undefined}
+        // The theme's name font, distinct from the printed characters'
+        // below; see `.nameField` in IncrediCard.module.scss.
+        containerClassName={styles.nameField}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -917,8 +909,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isOverlay}
         placeholder={isOverlay ? labels.cardNumberPlaceholder : undefined}
         size={fieldSize}
-        // OCR-B; see `IncrediCardTheme`'s header comment.
-        containerClassName={isVintage ? styles.vintageMonoField : undefined}
+        // The theme's printed-character font; see `.printField`.
+        containerClassName={styles.printField}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -944,8 +936,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isOverlay}
         placeholder={isOverlay ? labels.expirationPlaceholder : undefined}
         size={fieldSize}
-        // OCR-B; see `IncrediCardTheme`'s header comment.
-        containerClassName={isVintage ? styles.vintageMonoField : undefined}
+        // The theme's printed-character font; see `.printField`.
+        containerClassName={styles.printField}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -977,8 +969,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isOverlay}
         placeholder={isOverlay ? labels.cvcPlaceholder : undefined}
         size={fieldSize}
-        // OCR-B; see `IncrediCardTheme`'s header comment.
-        containerClassName={isVintage ? styles.vintageMonoField : undefined}
+        // The theme's printed-character font; see `.printField`.
+        containerClassName={styles.printField}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -1040,7 +1032,10 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         ref={mergeRefs(fieldsetRef, ref)}
         id={id}
         disabled={disabled}
-        data-theme={isVintage ? "vintage" : undefined}
+        data-theme={theme}
+        // The theme's values, as the custom properties every stylesheet
+        // reads (see themes.ts). Your own `style` still applies on top.
+        style={{ ...incredicardThemeStyle(themeDefinition), ...rest.style }}
         // "stacked" layout only. The `.incredicard[data-zoomed]
         // .faceContainer` rule in IncrediCard.module.scss reads this
         // directly, already fully resolved (`scale` enabled AND currently
@@ -1061,7 +1056,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
           <IncrediCardEmbeddedFace
             flipped={flipped}
             flipAngleDeg={flipTurns * 180}
-            theme={theme}
+            faceLayout={themeDefinition.faceLayout}
             chipReflection={chipReflection}
             holographic={holographic}
             tilt={tilt}
@@ -1090,7 +1085,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
               <IncrediCardFace
                 flipped={flipped}
                 flipAngleDeg={flipTurns * 180}
-                theme={theme}
+                faceLayout={themeDefinition.faceLayout}
                 chipReflection={chipReflection}
                 holographic={holographic}
                 tilt={tilt}

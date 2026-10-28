@@ -24,10 +24,8 @@
 
 // The "vintage" theme's two fonts. Never downloaded unless something
 // renders with one of these family names (an @font-face rule fetches
-// nothing by itself), which only happens with `theme="vintage"` (see
-// .vintageNameField/.vintageMonoField below, and the
-// `[data-theme="vintage"]` blocks in IncrediCardFace.module.scss and
-// IncrediCardEmbeddedFace.module.scss). Declared once, here: like
+// nothing by itself), which only happens when a theme names them (see
+// themes.ts, and .nameField/.printField below). Declared once, here: like
 // "IncrediCard Figtree" above, @font-face isn't scoped by CSS Modules the
 // way a class selector is, so registering it in this file (loaded by
 // IncrediCard.tsx, the component's entry point) lets every other module
@@ -35,8 +33,8 @@
 //
 // OCR-A stands in for a real card's engraved cardholder name; OCR-B for
 // its printed or embossed number, expiration, and CVC, the same split a
-// physical card's two character treatments make (see `IncrediCardTheme`'s
-// header comment in IncrediCard.tsx). See assets/fonts/OCR-A-ReadMe.txt
+// physical card's two character treatments make (see the "vintage"
+// theme in themes.ts). See assets/fonts/OCR-A-ReadMe.txt
 // (the font author's informal free-font notice; OCR-A has no separate
 // license file) and assets/fonts/OCR-B-OFL.txt (SIL Open Font License
 // 1.1) for each font's terms.
@@ -136,48 +134,43 @@
   }
 }
 
-// Applied via `containerClassName` (which reaches IncrediCardField's
-// `.container` div; see the prop's doc comment) only when
-// `theme === "vintage"`, to every real field this component builds. Both
-// layouts share the same field elements (see IncrediCard.tsx's header
-// comment), so setting this once covers the "stacked" field list and the
-// "overlay" on-card slots alike. `--incredicard-field-font-family` is a
-// custom property read by `.container` in IncrediCardField.module.scss,
-// the same cross-module technique used there for padding and font size
-// (see that file's comment). It's wrapped in a
-// `--theme-incredicard-field-font-family` fallback so your own ancestor
-// override still wins over this theme's default, the same precedence
-// every other themeable value here gives you. The embossed look is a flat
-// CSS approximation (see the `IncrediCardTheme` comment in
-// IncrediCard.tsx for why it can only be one): two text-shadows, a light
-// highlight top-left and a dark counter-shadow bottom-right, tuned for
-// the field's white or near-white background (see the
+// The real fields' theme typography (see themes.ts), applied by
+// IncrediCard.tsx through `containerClassName` (which reaches
+// IncrediCardField's `.container` div) to every field it builds: the name
+// field takes the theme's name font, and the number, expiration and
+// security code its printed-character font. Both layouts share the same
+// field elements, so this covers the "stacked" field list and the
+// "overlay" on-card slots alike.
+//
+// `--incredicard-field-font-family` is read by `.container` in
+// IncrediCardField.module.scss, the same cross-module technique used
+// there for padding and font size. Your own
+// `--theme-incredicard-field-font-family` on any ancestor wins over the
+// theme's font. In a theme with no font of its own, both are unset, and
+// the field inherits the component's font.
+//
+// The raised-character shadow is the theme's `fieldEmboss`, tuned for the
+// field's white or near-white background (see the
 // `--theme-incredicard-field-background` default in
-// IncrediCardField.module.scss).
-.vintageNameField,
-.vintageMonoField {
+// IncrediCardField.module.scss); unset, it leaves the input's own.
+.nameField,
+.printField {
   :global(input) {
-    text-shadow:
-      -0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 90%),
-      0.0625rem 0.0625rem 0.0625rem rgb(0 0 0 / 25%);
+    text-shadow: var(--incredicard-field-emboss);
   }
 }
 
-.vintageNameField {
+.nameField {
   --incredicard-field-font-family: var(
     --theme-incredicard-field-font-family,
-    "IncrediCard OCR-A",
-    ui-monospace,
-    monospace
+    var(--incredicard-name-font)
   );
 }
 
-.vintageMonoField {
+.printField {
   --incredicard-field-font-family: var(
     --theme-incredicard-field-font-family,
-    "IncrediCard OCR-B",
-    ui-monospace,
-    monospace
+    var(--incredicard-print-font)
   );
 }
 

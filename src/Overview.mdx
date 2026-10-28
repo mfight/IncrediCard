@@ -315,7 +315,7 @@ Every field (**IncrediCard.Field** and **IncrediCard.MaskedField**), the masking
 
 Overridable values are exposed as `--theme-incredicard-*` CSS custom properties, each with a built-in default. Set one on any ancestor (or on the component itself via `className`) to override it; leave it unset to keep the default. Several are resolved internally into an unprefixed `--incredicard-*` property, which is the name the tables and descriptions below use; override the `--theme-` form, not the unprefixed one.
 
-The card face's visual surface is governed by `--incredicard-face-*`/`--theme-incredicard-face-*` properties (radius, background, text color, shadow): the same names in either layout and either theme (`"vintage"` just supplies different defaults for the same set; see the Vintage stories). Every real field reads its own `--theme-incredicard-field-*` properties (background, border, text color, padding, font size, font family); in `layout="overlay"`, those are re-themed per on-card slot (transparent background, card-colored text) through the same ancestor-override mechanism, not a special case. `holographic`'s blend mode and resting opacity (`--incredicard-holo-blend-mode`/`--incredicard-holo-opacity`) are deliberately internal, with no `--theme-*` counterpart: they exist to let the two built-in themes tune the same effect for their own backgrounds, not as an override point.
+The card face's visual surface is governed by `--incredicard-face-*`/`--theme-incredicard-face-*` properties (radius, background, text color, shadow): the same names in either layout and every theme. A theme just supplies different defaults for the same set (see How Themes Work, below). Every real field reads its own `--theme-incredicard-field-*` properties (background, border, text color, padding, font size, font family); in `layout="overlay"`, those are re-themed per on-card slot (transparent background, card-colored text) through the same ancestor-override mechanism, not a special case. `holographic`'s blend mode and resting opacity (`--incredicard-holo-blend-mode`/`--incredicard-holo-opacity`) are deliberately internal, with no `--theme-*` counterpart: they exist to let each theme tune the same effect for its own background, not as an override point.
 
 Five more **are** `--theme-*`-overridable, because they are the ones you'd actually reach for when tuning the effect rather than re-theming the card:
 
@@ -325,9 +325,17 @@ Five more **are** `--theme-*`-overridable, because they are the ones you'd actua
 | `--incredicard-holo-resting-saturation` | `0.35` | How much of the artwork's rainbow survives away from the light. This is a floor, not a ceiling; see below. |
 | `--incredicard-holo-glare-strength` | `1` | Scales all four glare layers together, preserving the ratios between them that carry the depth cue. |
 | `--incredicard-holo-color-radius` | `72%` | Extent of the pointer-centered falloff, shared by the color layer's mask and by every glare layer, so the lit region is one geometry rather than five. |
-| `--incredicard-holo-falloff-color` | `#1f1f1f` | What the glare fades *toward* away from its highlight. Must be the blend mode's no-op color, or near it. `"vintage"` overrides it to `#e0e0e0` because `color-burn` is `color-dodge`'s mirror. |
+| `--incredicard-holo-falloff-color` | `#1f1f1f` | What the glare fades *toward* away from its highlight. Must be the blend mode's no-op color, or near it. `"vintage"` uses `#e0e0e0` because its blend mode, `color-burn`, is `color-dodge`'s mirror. A theme never sets this itself; it comes paired with the theme's blend mode, so the two can't disagree. |
 
 The effect these five describe is worth stating once, since no single property implies it: the foil is drawn twice, desaturated across the whole card and again at full saturation inside a soft circle that follows the pointer (or the device-orientation signal on touch). So the card reads as brushed silver until light crosses it, and the color arrives *with* the light rather than sitting on the card permanently. A uniform desaturation would read wrong: real foil desaturates with viewing angle, not evenly across its surface.
+
+### How Themes Work
+
+Each theme is a single object in `src/themes.ts`, and its key is the name the `theme` prop takes. The object holds everything that differs between themes: the face's colors, artwork and shadow, the hologram's blend mode and tuning, the fonts and raised-character shadows, and a face layout. The component writes the values onto its root as the `--incredicard-*` properties above, each behind its `--theme-*` override, and the stylesheets only read them. No stylesheet names a theme. Leaving a piece out of a theme is a compile error, not a card that quietly renders as another theme.
+
+The **face layout** is the one structural choice: how the printed text sits on the card. `"printed"` (used by `"modern"`) sets it the way a modern printed card does. `"embossed"` (used by `"vintage"`) sets it the way an embosser lays out a raised-character card: the number centered across the plate, smaller type caps, wider tracking. A layout is a CSS block keyed off `data-face-layout`, so themes can share one.
+
+A theme can pin any of the overridable values in its `fixed` list, when an override would make no sense against its artwork; neither built-in theme pins anything today. Themes are built in for now: `theme` takes a name, not an object.
 
 ## API
 

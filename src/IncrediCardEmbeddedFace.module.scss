@@ -12,49 +12,9 @@
 
 
 .faceWrapper {
-  --incredicard-face-radius: var(--theme-incredicard-face-radius, 0.75rem);
-  // The same exported artwork as IncrediCardFace.module.scss; see that
-  // file's comment here for the full reasoning (why the ribbons are a
-  // separate layer rather than part of this image, and the
-  // `rx="12"`/`--incredicard-face-radius` coupling). This element is the
-  // same 340px/1.586 box as that one, so the artwork maps through it
-  // identically. Duplicated rather than shared, so each face's
-  // stylesheet stands alone.
-  --incredicard-face-background: var(
-    --theme-incredicard-face-background,
-    url("./assets/images/incredicard-front-black.svg") 0 0 / 100% 100%
-      no-repeat
-  );
-  --incredicard-face-lines-opacity: var(
-    --theme-incredicard-face-lines-opacity,
-    0.08
-  );
-  --incredicard-holo-resting-saturation: var(
-    --theme-incredicard-holo-resting-saturation,
-    0.35
-  );
-  // See IncrediCardFace.module.scss's identical declarations.
-  --incredicard-holo-glare-strength: var(
-    --theme-incredicard-holo-glare-strength,
-    1
-  );
-  --incredicard-holo-color-radius: var(
-    --theme-incredicard-holo-color-radius,
-    72%
-  );
-  // Base-theme declaration as well as the vintage override below -- see
-  // IncrediCardFace.module.scss for why leaving it to the hologram
-  // stylesheet's inline fallback would make the `--theme-*` alias inert.
-  --incredicard-holo-falloff-color: var(
-    --theme-incredicard-holo-falloff-color,
-    #1f1f1f
-  );
-  --incredicard-face-color: var(--theme-incredicard-face-color, #ffffff);
-  --incredicard-face-shadow: var(
-    --theme-incredicard-face-shadow,
-    0 0.5rem 1.5rem rgb(0 0 0 / 30%)
-  );
-
+  // The theme's values are inherited from the component's root, not
+  // declared here; see IncrediCardFace.module.scss's identical note and
+  // themes.ts.
   position: relative;
   width: 100%;
   max-width: 21.25rem;
@@ -90,53 +50,15 @@
       animation: incredicardProcessingPulse 2600ms ease-in-out infinite;
     }
   }
-
-  // "vintage" theme; see IncrediCardFace.module.scss's identical block
-  // for the full reasoning (same hooks, same literal defaults). The real
-  // fields this component positions get their vintage font and emboss
-  // treatment from .vintageNameField/.vintageMonoField in
-  // IncrediCard.module.scss (applied to the field itself by
-  // IncrediCard.tsx, not to this wrapper); this block only touches the
-  // card surface.
-  &[data-theme="vintage"] {
-    --incredicard-face-background: var(
-      --theme-incredicard-face-background,
-      linear-gradient(160deg, #f1e7d0 0%, #dbc999 55%, #c3aa73 100%)
-    );
-    --incredicard-face-color: var(--theme-incredicard-face-color, #43331d);
-    --incredicard-face-shadow: var(
-      --theme-incredicard-face-shadow,
-      0 0.5rem 1.25rem rgb(0 0 0 / 20%),
-      inset 0 0.0625rem 0 rgb(255 255 255 / 40%)
-    );
-    // See IncrediCardFace.module.scss's identical override.
-    --incredicard-holo-blend-mode: color-burn;
-    // White, not black -- see IncrediCardFace.module.scss's comment
-    // here. `color-burn`'s no-op color is the opposite of
-    // `color-dodge`'s, and getting it wrong inverts the falloff.
-    --incredicard-holo-falloff-color: var(
-      --theme-incredicard-holo-falloff-color,
-      #e0e0e0
-    );
-    --incredicard-holo-opacity: 0.35;
-    --incredicard-face-lines-opacity: var(
-      --theme-incredicard-face-lines-opacity,
-      0
-    );
-    --incredicard-holo-resting-saturation: var(
-      --theme-incredicard-holo-resting-saturation,
-      1
-    );
-  }
 }
 
-.faceWrapper[data-theme="vintage"] {
-  // The chip (IncrediCardChip) needs no override here; see
-  // IncrediCardFace.module.scss's identical comment.
-  // Smaller caps than "modern"; see the `[data-theme="vintage"]
-  // .number`/`.expiration` overrides in IncrediCardFace.module.scss for
-  // the full reasoning (same ratios). `.cvcSlot` is deliberately
-  // untouched.
+// The "embossed" face layout (see themes.ts) for the on-card fields.
+// Smaller caps than "printed"; see the same layout's `.number` and
+// `.expiration` rules in IncrediCardFace.module.scss for the full
+// reasoning (same ratios). `.cvcSlot` is deliberately untouched. The
+// fields' fonts and shadow come from the theme, through `.nameField` and
+// `.printField` in IncrediCard.module.scss.
+.faceWrapper[data-face-layout="embossed"] {
   .numberSlot {
     // See IncrediCardFace.module.scss's identical `.number` override for
     // the reasoning, including why this caps out around 17px: at 21px
@@ -149,8 +71,8 @@
     // from the wrapper.
     :global(input) {
       text-align: center;
-      // See `.number` in IncrediCardFace.module.scss for why the
-      // vintage block's 0.06em is dropped for the number specifically.
+      // No extra tracking for the number; see the same layout's `.number`
+      // rule in IncrediCardFace.module.scss.
       letter-spacing: normal;
     }
   }
@@ -411,8 +333,8 @@
 .numberSlot {
   // Same `cqw`-based proportional scaling as `.number` in
   // IncrediCardFace.module.scss: 20px at the 340px reference width (see
-  // that file's comment for the full reasoning), overridden smaller
-  // under `[data-theme="vintage"]` above.
+  // that file's comment for the full reasoning); smaller in the
+  // "embossed" face layout above.
   --theme-incredicard-field-font-size: clamp(0.75rem, 5.88cqw, 1.25rem);
   max-width: 100%;
 
@@ -496,8 +418,8 @@
 
 .expirationSlot {
   // Same treatment as `.expiration` in IncrediCardFace.module.scss: 14px
-  // at 340px in "modern", overridden smaller (12px) under
-  // `[data-theme="vintage"]` above.
+  // at 340px in the "printed" face layout; smaller (12px) in "embossed"
+  // above.
   --theme-incredicard-field-font-size: clamp(0.625rem, 4.12cqw, 0.875rem);
   flex: 0 0 auto;
   width: 4.5em;

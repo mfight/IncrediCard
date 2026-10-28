@@ -9,6 +9,7 @@ import {
   type IncrediCardMotionAccess,
 } from ".";
 import { ForceReducedMotion } from "./reducedMotion";
+import { INCREDICARD_THEMES } from "./themes";
 import themedStyles from "./IncrediCard.stories.module.scss";
 
 // `reducedMotion` is a STORY arg, not a component prop -- it forces the
@@ -50,7 +51,8 @@ const meta = {
     },
     theme: {
       control: "select",
-      options: ["modern", "vintage"],
+      // Every theme themes.ts declares, so a new one appears here too.
+      options: Object.keys(INCREDICARD_THEMES),
     },
     chipReflection: {
       control: "boolean",
@@ -327,7 +329,7 @@ export const StackedSideBySide: Story = {
 // theme="vintage": OCR-A (the name) and OCR-B (the number, expiration,
 // and CVC) on an aged-ivory card face, with an embossed text-shadow
 // treatment standing in for a real card's raised plastic; see the
-// `IncrediCardTheme` header comment in IncrediCard.tsx. A filled value
+// "vintage" theme in themes.ts. A filled value
 // shows the effect on real digits and letters rather than placeholder
 // text.
 export const VintageStacked: Story = {
