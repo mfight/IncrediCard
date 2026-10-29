@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
-import { expect, waitFor, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 // Imported from the index, not the component module: the index is where
 // the compound namespace is composed, and it has to be.
 import {
@@ -806,4 +806,35 @@ export const ZoomFitStacked: Story = {
     </div>
   ),
   play: ({ canvasElement }) => expectZoomFits(canvasElement),
+};
+
+// `onCompletionChange` reports on mount, and again each time "every field
+// passes its format check" flips: here one CVC digit short, then complete,
+// then short again.
+export const CompletionChange: Story = {
+  tags: ["!dev"],
+  args: {
+    id: "story-completion-change",
+    layout: "stacked",
+    onCompletionChange: fn(),
+    defaultValue: {
+      cardholderName: "Alex Rivera",
+      cardNumber: "4242424242424242",
+      expirationMonth: "12",
+      expirationYear: "49",
+      cvc: "12",
+    },
+  },
+  play: async ({ args, canvasElement }) => {
+    const onCompletionChange = args.onCompletionChange as ReturnType<typeof fn>;
+    await waitFor(() => expect(onCompletionChange).toHaveBeenLastCalledWith(false));
+
+    const cvc = within(canvasElement).getByLabelText("Security code");
+    await userEvent.type(cvc, "3");
+    await waitFor(() => expect(onCompletionChange).toHaveBeenLastCalledWith(true));
+
+    await userEvent.type(cvc, "{Backspace}");
+    await waitFor(() => expect(onCompletionChange).toHaveBeenLastCalledWith(false));
+    expect(onCompletionChange).toHaveBeenCalledTimes(3);
+  },
 };
