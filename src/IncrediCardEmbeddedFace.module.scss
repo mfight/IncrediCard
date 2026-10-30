@@ -59,12 +59,18 @@
 // fields' fonts and shadow come from the theme, through `.nameField` and
 // `.printField` in IncrediCard.module.scss.
 .faceWrapper[data-face-layout="embossed"] {
+  // Set smaller past 16 digits; see the same layout's `[data-long-number]`
+  // rule in IncrediCardFace.module.scss for the measurements.
+  &[data-long-number] {
+    --incredicard-number-fit: 0.84;
+  }
+
   .numberSlot {
     // See IncrediCardFace.module.scss's identical `.number` override for
     // the reasoning, including why this caps out around 17px: at 21px
     // the number measures 344.6px against a 293px content box in the
     // real OCR-B face, and would clip.
-    --theme-incredicard-field-font-size: clamp(0.75rem, 5.23cqw, 1.125rem);
+    --theme-incredicard-field-font-size: calc(clamp(0.75rem, 5.23cqw, 1.125rem) * var(--incredicard-number-fit, 1));
 
     // On the input itself, not the slot: neither `text-align` nor the
     // tracking override reaches a replaced form control by inheritance

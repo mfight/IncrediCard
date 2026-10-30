@@ -10,9 +10,11 @@ import { IncrediCardFace } from "./IncrediCardFace";
 import { IncrediCardEmbeddedFace } from "./IncrediCardEmbeddedFace";
 import { applyMask } from "./maskEngine";
 import {
+  cardNumberCapacity,
+  cardNumberPattern,
   detectCardNetwork,
   getCardNetworkInfo,
-  luhnCheck,
+  isCardNumberComplete,
 } from "./cardNetworks";
 import { getAcceptanceMarkSrc } from "./acceptanceMarks";
 import { prefersReducedMotion } from "./reducedMotion";
@@ -545,26 +547,31 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         ? labels.cardholderNameError
         : undefined;
 
-    // Length is checked against the *detected* network's expected length,
-    // falling back to a generic 16 when nothing was safely detected. That's
-    // an imperfect assumption for a real but undetected network, but a
-    // reasonable one for basic format feedback, which is all this
-    // component claims to provide.
-    const numberValid =
-      committedValue.cardNumber.length === networkInfo.numberLength &&
-      luhnCheck(committedValue.cardNumber);
+    // Any of the *detected* network's lengths counts, falling back to a
+    // generic 16 when nothing was safely detected (see cardNetworks.ts).
+    // A network with several lengths can therefore be valid before the
+    // card is finished: a 19-digit Visa whose first 16 digits happen to
+    // pass the checksum reads as complete at 16. Nothing moves focus on
+    // completion, so typing simply carries on to 19.
+    const numberValid = isCardNumberComplete(networkInfo, committedValue.cardNumber);
+    // Grouped for the length the number is heading for, so it regroups as
+    // it grows (see `cardNumberPattern`).
+    const numberPattern = cardNumberPattern(networkInfo, committedValue.cardNumber.length);
+    // Past 16 digits the grouped number can outgrow the card face's number
+    // row; the "embossed" layout sets it smaller (see `data-long-number`).
+    const longNumber = committedValue.cardNumber.length > 16;
     const numberError =
       touched.cardNumber && !numberValid ? labels.cardNumberError : undefined;
 
     // Sticky, not a plain `numberValid` read. The initial state shows only
     // the card number field; once it's valid (a complete, correct number
-    // for the detected network, or the generic 16-digit assumption when
-    // none was detected), the rest of the card reveals and *stays*
-    // revealed even if the number is edited back to something invalid
-    // afterward (fixing a typo, say). Collapsing the whole form the
-    // instant a digit is deleted would be far more jarring than leaving an
-    // already-typed name, expiration and CVC in place while the number is
-    // corrected.
+    // for the detected network at any of its lengths, or the generic
+    // 16-digit assumption when none was detected), the rest of the card
+    // reveals and *stays* revealed even if the number is edited back to
+    // something invalid afterward (fixing a typo, say). Collapsing the
+    // whole form the instant a digit is deleted would be far more jarring
+    // than leaving an already-typed name, expiration and CVC in place
+    // while the number is corrected.
     //
     // State adjusted during render, not a ref mutated during render. Under
     // concurrent rendering, a render React discards or replays would still
@@ -633,8 +640,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
 
     const expirationDigits = `${committedValue.expirationMonth}${committedValue.expirationYear}`;
     const numberPlaceholder = applyMask(
-      "•".repeat(networkInfo.numberLength),
-      networkInfo.numberPattern,
+      "•".repeat(networkInfo.numberLengths[0]),
+      cardNumberPattern(networkInfo, 0),
     );
     const isOverlay = layout === "overlay";
     const themeDefinition = getIncrediCardTheme(theme);
@@ -918,10 +925,17 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         errorText={numberError}
         hideErrorText
         autoComplete="cc-number"
-        pattern={networkInfo.numberPattern}
+        pattern={numberPattern}
         characterClass="numeric"
         value={committedValue.cardNumber}
-        onChange={(digits) => commit({ cardNumber: digits ?? "" })}
+        // Trimmed to the detected network's capacity: digits pasted before
+        // the prefix identified a 16-digit network would otherwise outrun
+        // what its field shows.
+        onChange={(digits) => {
+          const next = digits ?? "";
+          const capacity = cardNumberCapacity(getCardNetworkInfo(detectCardNetwork(next)));
+          commit({ cardNumber: next.slice(0, capacity) });
+        }}
         onFocus={() => setFlipped(false)}
         onBlur={() => markTouched("cardNumber")}
         ref={numberInputRef}
@@ -1068,6 +1082,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             acceptanceMarkSrc={acceptanceMarkSrc}
             nameField={isRevealed ? nameField : null}
             numberField={numberField}
+            longNumber={longNumber}
             expirationField={isRevealed ? expirationField : null}
             cvcField={isRevealed ? cvcField : null}
             cvcOnFront={isAmex}
@@ -1100,7 +1115,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                     : labels.cardholderNamePlaceholder
                 }
                 cardNumberDigits={committedValue.cardNumber}
-                numberPattern={networkInfo.numberPattern}
+                numberPattern={numberPattern}
+                longNumber={longNumber}
                 numberPlaceholder={numberPlaceholder}
                 expirationDisplay={applyMask(expirationDigits, "XX/XX")}
                 expirationPlaceholder={labels.expirationPlaceholder}

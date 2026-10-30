@@ -131,7 +131,7 @@ Under `prefers-reduced-motion` the loop is skipped entirely rather than merely u
 
 ### Composing a Custom Layout
 
-**IncrediCard.Field** (plain text) and **IncrediCard.MaskedField** (adds a caret-preserving `'X'`-template mask, e.g. `"XXX XXX"`) carry no state or validation of their own. When you compose them directly, you own that yourself, exactly the way `<IncrediCard>` owns it for the fields it builds internally. Use them for a field `<IncrediCard>` has no built-in equivalent for (a billing email, say), styled consistently with the rest of a custom card-shaped form.
+**IncrediCard.Field** (plain text) and **IncrediCard.MaskedField** (adds a caret-preserving `'X'`-template mask, e.g. `"XXX XXX"`) carry no state or validation of their own. **IncrediCard.MaskedField**'s `pattern` may change while the field has focus (a grouping that depends on what's been typed, the way the card number's does); the text regroups at once, with the caret after the same characters. When you compose them directly, you own that yourself, exactly the way `<IncrediCard>` owns it for the fields it builds internally. Use them for a field `<IncrediCard>` has no built-in equivalent for (a billing email, say), styled consistently with the rest of a custom card-shaped form.
 
 <Source
   language="tsx"
@@ -169,7 +169,24 @@ Not in its own field (masked like a password), and not on the card face either (
 
 ### Card-Network Detection Is Deliberately Minimal
 
-Only a handful of settled prefix ranges (Visa/Mastercard/Amex/Discover/Diners Club/JCB/Maestro/UnionPay) drive number grouping and security-code length; anything else reads as neutral, never a guess. The card face carries no plain-text network name: the acceptance mark (below) already names the network, and a second statement of the same fact would be redundant. The acceptance mark is the only network branding this card shows.
+Only a handful of settled prefix ranges (Visa/Mastercard/Amex/Discover/Diners Club/JCB/Maestro/UnionPay) drive number grouping, number length and security-code length; anything else reads as neutral, never a guess. Detection reads only the prefix, so once it names a network, more digits never change its mind, and a number typed, pasted, autofilled or deleted back gets the same answer at each prefix.
+
+Each network accepts every length it issues numbers at, and a number is complete at any of them (if it also passes the Luhn checksum):
+
+| Network | Lengths | Grouping |
+| --- | --- | --- |
+| Visa | 16, 19 | in fours |
+| Mastercard | 16 | in fours |
+| American Express | 15 | 4-6-5 |
+| Discover, JCB | 16 to 19 | in fours |
+| Diners Club | 14, 16, 19 | 4-6-4 at 14, otherwise in fours |
+| UnionPay | 14 to 19 | in fours |
+| Maestro | 12 to 19 | in fours |
+| Not yet detected | 16 | in fours |
+
+The number groups for the length it's heading for, so a 16-digit Visa reads "4242 4242 4242 4242" and regroups only when a 17th digit makes it a 19-digit one. A network with several lengths can be complete before the card is finished: a 19-digit number whose first 16 digits happen to pass the checksum completes the card at 16, revealing the rest of the form. Nothing moves focus when that happens, so typing simply carries on. In the `"vintage"` theme, a number longer than 16 digits is set smaller on the card so it still fits; `"modern"`'s fits at full size. A number pasted before its network is known keeps every digit until its prefix identifies it, then is trimmed to that network's longest length.
+
+The card face carries no plain-text network name: the acceptance mark (below) already names the network, and a second statement of the same fact would be redundant. The acceptance mark is the only network branding this card shows.
 
 ### The Card's Bottom-Right Acceptance Mark
 
@@ -199,7 +216,7 @@ The decorative `"stacked"` card face and the real-field `"overlay"` card positio
 
 ### Progressive Reveal: Only the Number Shows Until It's Valid
 
-Name, expiration, and security code all stay hidden (in both layouts, including the decorative "stacked" card's mirror) until the card number is complete, valid (passes Luhn, correct length), and long enough to know which network's layout applies. Once revealed, the reveal is sticky: editing the number back to something incomplete afterward (fixing a typo) doesn't hide the rest of the form again, or discard whatever's already been typed into it.
+Name, expiration, and security code all stay hidden (in both layouts, including the decorative "stacked" card's mirror) until the card number is complete, valid (passes Luhn, one of its network's lengths), and long enough to know which network's layout applies. Once revealed, the reveal is sticky: editing the number back to something incomplete afterward (fixing a typo) doesn't hide the rest of the form again, or discard whatever's already been typed into it.
 
 Which layout appears depends on the detected network: every network except Amex uses the standard layout (number, then expiration on its own row, then name (see "Expiration Sits Between the Number and the Name" below), with a 3-digit security code on the back, reached by the flip control). **Amex is the one exception**: its security code is 4 digits and prints on the front (top-right, directly above the number), and this card never offers a flip control in that case, since there's nothing on the back to show. The flip control itself stays hidden until the card is revealed (there's nothing to flip to before then either).
 

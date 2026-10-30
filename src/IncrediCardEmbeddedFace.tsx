@@ -127,6 +127,10 @@ export type IncrediCardEmbeddedFaceProps = {
    * field with nothing in it. */
   nameField?: React.ReactNode;
   numberField: React.ReactNode;
+  /** More than 16 digits. Rendered as `data-long-number`, which a face
+   * layout whose number row can't hold 19 digits ("embossed") uses to
+   * set the number smaller. */
+  longNumber?: boolean;
   expirationField?: React.ReactNode;
   cvcField?: React.ReactNode;
   /** Amex's security code prints on the FRONT (top-right, above the
@@ -177,6 +181,7 @@ export function IncrediCardEmbeddedFace({
   acceptanceMarkSrc,
   nameField,
   numberField,
+  longNumber = false,
   expirationField,
   cvcField,
   cvcOnFront,
@@ -243,6 +248,7 @@ export function IncrediCardEmbeddedFace({
       )}
       data-flipped={flipped || undefined}
       data-face-layout={faceLayout}
+      data-long-number={longNumber || undefined}
       data-zoomed={scale && cardZoomed ? "" : undefined}
       onClick={onCardClick ? handleFaceClick : undefined}
       ref={mergeRefs(chipLightRef, tiltRef, zoomFitRef)}

@@ -6,9 +6,9 @@
 // guessing (detection must remain conservative). No brand marks, logos
 // or brand colors come from this module; network artwork lives
 // separately, in acceptanceMarks.ts. This module only provides the plain
-// network name plus the mechanical facts detection safely implies: how
-// the number groups visually, how long its CVC is, and how long the
-// number itself is.
+// network name plus the mechanical facts detection safely implies: which
+// lengths the number can have, how it groups at each, and how long its
+// CVC is.
 export type CardNetwork =
   | "visa"
   | "mastercard"
@@ -22,14 +22,16 @@ export type CardNetwork =
 
 export type CardNetworkInfo = {
   network: CardNetwork;
-  /** IncrediCardMaskedField-compatible template; see maskEngine.ts.
-   * Amex's 4-6-5 grouping is a genuine exception to every other
-   * supported network's 4-4-4-4 grouping, not a simplification: an Amex
-   * number formatted 4-4-4-3 would misgroup it. */
-  numberPattern: string;
-  /** How many digits `numberPattern` holds (its 'X' count): 15 for Amex,
-   * 16 for every other supported network. */
-  numberLength: number;
+  /** Every length a number on this network is issued at, shortest
+   * first. A number is complete at any of them (if it also passes
+   * `luhnCheck`), so a network issuing 16- and 19-digit cards accepts
+   * either. These are the lengths the networks publish, not a promise
+   * that every issuer uses all of them. */
+  numberLengths: readonly number[];
+  /** Digit groups for the lengths that don't group in fours. Amex's
+   * 4-6-5 and 14-digit Diners Club's 4-6-4 are how those cards are
+   * printed; formatting either in fours would misgroup it. */
+  numberGroups?: Readonly<Record<number, readonly number[]>>;
   /** Amex's CVC ("CID") is printed on the *front* of the card and is 4
    * digits; every other network here prints a 3-digit CVC on the back. */
   cvcLength: number;
@@ -37,65 +39,46 @@ export type CardNetworkInfo = {
   displayName: string;
 };
 
-const NEUTRAL_NUMBER_PATTERN = "XXXX XXXX XXXX XXXX";
-const AMEX_NUMBER_PATTERN = "XXXX XXXXXX XXXXX";
+// The longest number any network here issues.
+export const MAX_CARD_NUMBER_LENGTH = 19;
 
 const NETWORK_INFO: Record<CardNetwork, CardNetworkInfo> = {
-  visa: { network: "visa", numberPattern: NEUTRAL_NUMBER_PATTERN, numberLength: 16, cvcLength: 3, displayName: "Visa" },
-  mastercard: {
-    network: "mastercard",
-    numberPattern: NEUTRAL_NUMBER_PATTERN,
-    numberLength: 16,
-    cvcLength: 3,
-    displayName: "Mastercard",
-  },
+  // Visa also had 13-digit cards, long since retired.
+  visa: { network: "visa", numberLengths: [16, 19], cvcLength: 3, displayName: "Visa" },
+  mastercard: { network: "mastercard", numberLengths: [16], cvcLength: 3, displayName: "Mastercard" },
   amex: {
     network: "amex",
-    numberPattern: AMEX_NUMBER_PATTERN,
-    numberLength: 15,
+    numberLengths: [15],
+    numberGroups: { 15: [4, 6, 5] },
     cvcLength: 4,
     displayName: "American Express",
   },
-  discover: {
-    network: "discover",
-    numberPattern: NEUTRAL_NUMBER_PATTERN,
-    numberLength: 16,
-    cvcLength: 3,
-    displayName: "Discover",
-  },
+  discover: { network: "discover", numberLengths: [16, 17, 18, 19], cvcLength: 3, displayName: "Discover" },
   dinersclub: {
     network: "dinersclub",
-    numberPattern: NEUTRAL_NUMBER_PATTERN,
-    numberLength: 16,
+    numberLengths: [14, 16, 19],
+    numberGroups: { 14: [4, 6, 4] },
     cvcLength: 3,
     displayName: "Diners Club",
   },
-  jcb: { network: "jcb", numberPattern: NEUTRAL_NUMBER_PATTERN, numberLength: 16, cvcLength: 3, displayName: "JCB" },
-  // Real Maestro and UnionPay cards can run 12-19 digits, not a fixed 16.
-  // Treating them as 16 is the same deliberate "generic 16"
-  // simplification the "unknown" fallback (and every supported network
-  // except Amex) makes.
+  jcb: { network: "jcb", numberLengths: [16, 17, 18, 19], cvcLength: 3, displayName: "JCB" },
   maestro: {
     network: "maestro",
-    numberPattern: NEUTRAL_NUMBER_PATTERN,
-    numberLength: 16,
+    numberLengths: [12, 13, 14, 15, 16, 17, 18, 19],
     cvcLength: 3,
     displayName: "Maestro",
   },
   unionpay: {
     network: "unionpay",
-    numberPattern: NEUTRAL_NUMBER_PATTERN,
-    numberLength: 16,
+    numberLengths: [14, 15, 16, 17, 18, 19],
     cvcLength: 3,
     displayName: "UnionPay",
   },
-  unknown: {
-    network: "unknown",
-    numberPattern: NEUTRAL_NUMBER_PATTERN,
-    numberLength: 16,
-    cvcLength: 3,
-    displayName: "",
-  },
+  // Nothing detected yet, or a prefix this module doesn't recognize: a
+  // generic 16. That's an imperfect assumption for a real but undetected
+  // network, and a reasonable one for format feedback, which is all this
+  // component claims to provide.
+  unknown: { network: "unknown", numberLengths: [16], cvcLength: 3, displayName: "" },
 };
 
 // Tested against `digits` as typed so far, not a complete number: each
@@ -138,6 +121,53 @@ export function detectCardNetwork(digits: string): CardNetwork {
 
 export function getCardNetworkInfo(network: CardNetwork): CardNetworkInfo {
   return NETWORK_INFO[network];
+}
+
+/** How many digits a number on this network can hold. Nothing is
+ * detected until a few digits are in, so "unknown" holds the most any
+ * network does: a pasted 19-digit number keeps every digit until its
+ * prefix identifies it. */
+export function cardNumberCapacity(info: CardNetworkInfo): number {
+  return info.network === "unknown"
+    ? MAX_CARD_NUMBER_LENGTH
+    : info.numberLengths[info.numberLengths.length - 1];
+}
+
+/** The length a number with `digitCount` digits so far is heading for:
+ * the shortest of the network's lengths it hasn't passed. Past every one
+ * of them, the digits typed, up to the network's capacity. */
+export function cardNumberTargetLength(info: CardNetworkInfo, digitCount: number): number {
+  return (
+    info.numberLengths.find((length) => length >= digitCount) ??
+    Math.min(digitCount, cardNumberCapacity(info))
+  );
+}
+
+/** Whether `digits` is a complete, well-formed number on this network:
+ * one of its lengths, and passing the checksum. Format only. */
+export function isCardNumberComplete(info: CardNetworkInfo, digits: string): boolean {
+  return info.numberLengths.includes(digits.length) && luhnCheck(digits);
+}
+
+/**
+ * The IncrediCardMaskedField template for a number with `digitCount`
+ * digits so far (see maskEngine.ts). It groups for the length the number
+ * is heading for, so a 16-digit Visa reads "4242 4242 4242 4242" and
+ * regroups only once a 17th digit makes it a 19-digit one. Ungrouped
+ * placeholders pad it out to the network's capacity, so the field still
+ * takes the next digit, and a complete number has no trailing space.
+ */
+export function cardNumberPattern(info: CardNetworkInfo, digitCount: number): string {
+  const target = cardNumberTargetLength(info, digitCount);
+  const groups = info.numberGroups?.[target] ?? groupsOfFour(target);
+  const grouped = groups.map((size) => "X".repeat(size)).join(" ");
+  return grouped + "X".repeat(Math.max(0, cardNumberCapacity(info) - target));
+}
+
+function groupsOfFour(length: number): number[] {
+  const groups: number[] = [];
+  for (let left = length; left > 0; left -= 4) groups.push(Math.min(4, left));
+  return groups;
 }
 
 // Standard mod-10 checksum. Operates on already digit-filtered input

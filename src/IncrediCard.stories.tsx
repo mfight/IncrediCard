@@ -137,20 +137,13 @@ export const StackedFilled: Story = {
 // a shared "Network:" prefix rather than sorting by export name.
 //
 // Every number below detects as the network it claims (per
-// `detectCardNetwork`), passes `luhnCheck`, AND matches that network's
-// declared `numberLength`, which is what the card requires before it
-// will reveal.
+// `detectCardNetwork`), passes `luhnCheck`, AND has one of that network's
+// lengths, which is what the card requires before it will reveal.
 //
-// The length check rules out the commonly quoted Diners Club test number
-// (30569309025904): it is 14 digits, but cardNetworks.ts declares Diners
-// Club as 16, so it would never validate and the story would sit
-// permanently unrevealed. 3600000000000008 is a 16-digit number under the
-// settled `36` Diners prefix with a computed Luhn check digit.
-//
-// Amex is the one with visible structural differences to demonstrate:
-// 4-6-5 number grouping (vs. every other network's 4-4-4-4), a 4-digit
-// CVC, and that CVC printed on the FRONT of the card rather than the
-// back. The rest share the neutral shape, so what they demonstrate is
+// Amex is the one with the most structural differences to demonstrate:
+// 4-6-5 number grouping, a 4-digit CVC, and that CVC printed on the FRONT
+// of the card rather than the back. Diners Club's 14-digit number groups
+// 4-6-4. The rest share the neutral shape, so what they demonstrate is
 // detection itself, and their acceptance mark.
 
 export const NetworkAmex: Story = {
@@ -173,7 +166,7 @@ export const NetworkDinersClub: Story = {
     id: "story-dinersclub",
     defaultValue: {
       cardholderName: "Alex Rivera",
-      cardNumber: "3600000000000008",
+      cardNumber: "30569309025904",
       expirationMonth: "12",
       expirationYear: "29",
       cvc: "123",
@@ -836,5 +829,109 @@ export const CompletionChange: Story = {
     await userEvent.type(cvc, "{Backspace}");
     await waitFor(() => expect(onCompletionChange).toHaveBeenLastCalledWith(false));
     expect(onCompletionChange).toHaveBeenCalledTimes(3);
+  },
+};
+
+// Number lengths other than 16, typed digit by digit at the component's
+// narrowest supported width (17.4375rem), where the number row has the
+// least room. The grouping follows the length the number is heading for,
+// and regroups the moment a 17th digit makes it a 19-digit one; it must do
+// so while the field is still focused, not on blur. A 19-digit number
+// must also fit the card's number row in both themes.
+async function expectLongNumber(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  const input = canvas.getByLabelText("Card number") as HTMLInputElement;
+  await userEvent.type(input, "4242424242424242");
+  expect(input.value).toBe("4242 4242 4242 4242");
+  await userEvent.type(input, "4");
+  expect(input.value).toBe("4242 4242 4242 4242 4");
+  await userEvent.type(input, "24");
+  expect(input.value).toBe("4242 4242 4242 4242 424");
+  expect(input).toHaveFocus();
+
+  await document.fonts.ready;
+  const wrapper = canvasElement.querySelector("[data-face-layout]")!;
+  expect(wrapper).toHaveAttribute("data-long-number");
+  if (wrapper.contains(input)) {
+    // "overlay": the input itself is the number row.
+    expect(input.scrollWidth).toBeLessThanOrEqual(input.clientWidth);
+  } else {
+    // "stacked": the face mirrors the number into a span; its text must
+    // stay inside the span's own box, which the face bounds.
+    const row = [...wrapper.querySelectorAll("span, div")].find(
+      (el) => el.textContent === "4242 4242 4242 4242 424" && el.children.length === 0,
+    )!;
+    const range = document.createRange();
+    range.selectNodeContents(row);
+    const text = range.getBoundingClientRect();
+    const box = row.getBoundingClientRect();
+    expect(text.left).toBeGreaterThanOrEqual(box.left - 0.5);
+    expect(text.right).toBeLessThanOrEqual(box.right + 0.5);
+  }
+}
+
+const narrowest = (args: IncrediCardStoryArgs) => (
+  <div style={{ width: "17.4375rem" }}>
+    <IncrediCard {...cardProps(args)} />
+  </div>
+);
+
+export const LongNumberOverlay: Story = {
+  tags: ["!dev"],
+  args: { id: "story-long-number-overlay" },
+  render: narrowest,
+  play: ({ canvasElement }) => expectLongNumber(canvasElement),
+};
+
+export const LongNumberOverlayVintage: Story = {
+  tags: ["!dev"],
+  args: { id: "story-long-number-overlay-vintage", theme: "vintage" },
+  render: narrowest,
+  play: ({ canvasElement }) => expectLongNumber(canvasElement),
+};
+
+export const LongNumberStacked: Story = {
+  tags: ["!dev"],
+  args: { id: "story-long-number-stacked", layout: "stacked" },
+  render: narrowest,
+  play: ({ canvasElement }) => expectLongNumber(canvasElement),
+};
+
+export const LongNumberStackedVintage: Story = {
+  tags: ["!dev"],
+  args: { id: "story-long-number-stacked-vintage", layout: "stacked", theme: "vintage" },
+  render: narrowest,
+  play: ({ canvasElement }) => expectLongNumber(canvasElement),
+};
+
+// A 14-digit Diners Club number groups 4-6-4 and completes the card at 14,
+// revealing the rest of the form.
+export const ShortNumber: Story = {
+  tags: ["!dev"],
+  args: { id: "story-short-number", layout: "stacked" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.queryByLabelText("Security code")).toBeNull();
+    const input = canvas.getByLabelText("Card number") as HTMLInputElement;
+    await userEvent.type(input, "30569309025904");
+    expect(input.value).toBe("3056 930902 5904");
+    await waitFor(() => expect(canvas.getByLabelText("Security code")).toBeInTheDocument());
+  },
+};
+
+// Pasted before anything is detected, a number keeps all its digits until
+// its prefix names a network, then is trimmed to that network's longest:
+// 16 digits starting 37 become a 15-digit Amex, in the field and on the
+// card alike.
+export const PastedOverlongNumber: Story = {
+  tags: ["!dev"],
+  args: { id: "story-pasted-overlong", layout: "stacked", onChange: fn() },
+  play: async ({ args, canvasElement }) => {
+    const input = within(canvasElement).getByLabelText("Card number") as HTMLInputElement;
+    await userEvent.click(input);
+    await userEvent.paste("3782822463100051");
+    await waitFor(() => expect(input.value).toBe("3782 822463 10005"));
+    const onChange = args.onChange as ReturnType<typeof fn>;
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ cardNumber: "378282246310005" }));
   },
 };

@@ -87,6 +87,10 @@ export type IncrediCardFaceProps = {
    * grouping can never drift from the real number field's. */
   cardNumberDigits: string;
   numberPattern: string;
+  /** More than 16 digits. Rendered as `data-long-number`, which a face
+   * layout whose number row can't hold 19 digits ("embossed") uses to
+   * set the number smaller. */
+  longNumber?: boolean;
   numberPlaceholder: string;
   expirationDisplay: string;
   expirationPlaceholder: string;
@@ -150,6 +154,7 @@ export function IncrediCardFace({
   cardholderNameDisplay,
   cardNumberDigits,
   numberPattern,
+  longNumber = false,
   numberPlaceholder,
   expirationDisplay,
   expirationPlaceholder,
@@ -209,6 +214,7 @@ export function IncrediCardFace({
       aria-hidden="true"
       data-flipped={flipped || undefined}
       data-face-layout={faceLayout}
+      data-long-number={longNumber || undefined}
       ref={mergeRefs(chipLightRef, tiltRef)}
       onClick={onCardClick}
     >

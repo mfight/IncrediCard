@@ -30,7 +30,8 @@ type IncrediCardMaskedFieldOwnProps = {
    * literal punctuation inserted live as characters are typed (e.g.
    * "XXXX XXXX XXXX XXXX" for a card number, "XX/XX" for an
    * expiration). The character limit is derived from the pattern
-   * itself. */
+   * itself. It may change while the field has focus; the text regroups
+   * at once, with the caret after the same characters. */
   pattern: string;
   characterClass?: MaskCharacterClass;
   /** Canonical value is always the normalized digits, never the masked
@@ -83,6 +84,29 @@ export const IncrediCardMaskedField = forwardRef<HTMLInputElement, IncrediCardMa
       inputRef.current.setSelectionRange(pendingCaretRef.current, pendingCaretRef.current);
       pendingCaretRef.current = null;
     }, [draft]);
+
+    // A pattern that changes mid-edit regroups the draft right away, with
+    // the caret after the same characters, rather than on blur. A card
+    // number's grouping depends on how long it is and which network its
+    // prefix belongs to, so the very keystroke that makes it a 19-digit
+    // number, or an Amex, changes the pattern. That keystroke was formatted
+    // with the old one. Declared after the caret effect above, so the
+    // selection it reads is the one that effect just placed.
+    useLayoutEffect(() => {
+      const input = inputRef.current;
+      if (!isFocused || !input) return;
+      const formatted = applyMask(committedValue ?? "", pattern);
+      if (formatted === input.value) return;
+      const caretChars = countAllowedCharsBeforeCaret(
+        input.value,
+        input.selectionStart ?? input.value.length,
+        isAllowed,
+      );
+      pendingCaretRef.current = positionAfterNthAllowedChar(formatted, caretChars, isAllowed);
+      setDraft(formatted);
+      // Only a new pattern starts this; the rest is read as it stands.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pattern]);
 
     function commit(next: string | null) {
       if (!isControlled) setUncontrolledValue(next);

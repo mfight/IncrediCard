@@ -309,9 +309,9 @@
   // 20px at the 340px reference width, and no larger: at this
   // component's smallest supported width (see the `min-width` in
   // IncrediCard.module.scss), the longest number this component groups,
-  // a 16-digit "4242 4242 4242 4242", measures wider than the face's
+  // a 19-digit "4242 4242 4242 4242 424", measures wider than the face's
   // available inner width at a larger size and clips its last few
-  // digits. In `cqw`, relative to the nearest size container
+  // digits (268px at 20px, against 247px). In `cqw`, relative to the nearest size container
   // (`.faceWrapper` above), so it scales with the card's actual rendered
   // width. `clamp()`'s upper bound keeps 20px a true ceiling at any
   // width: 20/340 = ~5.88%.
@@ -470,6 +470,16 @@
 // supplies the fonts and the raised-character shadow; this block only
 // arranges the text.
 .faceWrapper[data-face-layout="embossed"] {
+  // A number past 16 digits (19 grouped "XXXX XXXX XXXX XXXX XXX") is
+  // wider than the content box at this layout's size: 290px against 247px
+  // at the component's 279px minimum, 353px against 308px at 340px. 0.84
+  // fits both with a few pixels to spare, and since the size is `cqw`
+  // throughout, the ratio holds at every width. "printed" needs no such
+  // step: the same 19 digits in Figtree measure 268px against 308px.
+  &[data-long-number] {
+    --incredicard-number-fit: 0.84;
+  }
+
   // Embossed characters sit further apart than printed ones.
   .name,
   .number,
@@ -497,7 +507,7 @@
   // so a canvas measurement can say a size fits when the real element
   // still overflows.
   .number {
-    font-size: clamp(0.75rem, 5.23cqw, 1.125rem);
+    font-size: calc(clamp(0.75rem, 5.23cqw, 1.125rem) * var(--incredicard-number-fit, 1));
     // No extra tracking, overriding the 0.06em above. That spacing suits
     // the shorter expiration and CVC; across a 19-character number it
     // adds close to 19px of width on its own, which is most of what
