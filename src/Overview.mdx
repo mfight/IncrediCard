@@ -5,7 +5,7 @@ import * as IncrediCardStories from "./IncrediCard.stories";
 
 # IncrediCard
 
-**IncrediCard** is a credit-card entry form with a synchronized, dimensional visual card that mirrors what's typed in real time: cardholder name, number, and expiration on the front; the security code on the back (except Amex; see Progressive Reveal), revealed by an explicit flip control sitting half on, half off the card's top-right corner (a nod to the original Skeuocard's bubble-shaped flip control). It covers the common case (typing, pasting, autofill, basic format validation), with network-aware number grouping and acceptance marks, and optional material effects (a holographic foil, a light-catching chip, a 3D tilt). Processor-hosted fields are not supported; see Design Rationale for how the component is structured to allow them.
+**IncrediCard** is a credit-card entry form with a synchronized, dimensional visual card that mirrors what's typed in real time: cardholder name, number, and expiration on the front; the security code on the back (except Amex; see Progressive Reveal), revealed by an explicit flip control sitting half on, half off the card's top-right corner (a nod to the original Skeuocard's bubble-shaped flip control). It covers the common case (typing, pasting, autofill, basic format validation), with network-aware number grouping, the detected network shown on the card (your acceptance mark, or the network's name), and optional material effects (a holographic foil, a light-catching chip, a 3D tilt). Processor-hosted fields are not supported; see Design Rationale for how the component is structured to allow them.
 
 Ships in two layouts (the `layout` prop): **`"overlay"`** (default) embeds the real fields directly into the card itself, positioned where a physical card's embossed text sits. There's no separate mirror in this mode, since the fields themselves are the card's visible content. **`"stacked"`** instead renders a purely decorative card above a normal, fully labeled field list.
 
@@ -186,15 +186,32 @@ Each network accepts every length it issues numbers at, and a number is complete
 
 The number groups for the length it's heading for, so a 16-digit Visa reads "4242 4242 4242 4242" and regroups only when a 17th digit makes it a 19-digit one. A network with several lengths can be complete before the card is finished: a 19-digit number whose first 16 digits happen to pass the checksum completes the card at 16, revealing the rest of the form. Nothing moves focus when that happens, so typing simply carries on. In the `"vintage"` theme, a number longer than 16 digits is set smaller on the card so it still fits; `"modern"`'s fits at full size. A number pasted before its network is known keeps every digit until its prefix identifies it, then is trimmed to that network's longest length.
 
-The card face carries no plain-text network name: the acceptance mark (below) already names the network, and a second statement of the same fact would be redundant. The acceptance mark is the only network branding this card shows.
+The card names the detected network in one place only: its bottom-right corner (below).
 
-### The Card's Bottom-Right Acceptance Mark
+### The Card's Bottom-Right Corner: Your Acceptance Mark, or the Network's Name
 
-The card's only network branding: a first-party acceptance-mark badge for the currently detected network, always rendered (no prop, no opt-in) in the card's bottom-right corner once a network is confidently known, for each of the 8 networks this component detects. The assets ship with the component (`src/assets/images/`), sized and positioned to match a physical card's acceptance-mark placement. The position comes from a 325×204 reference card (the mark at 241,138, sized 70×56, i.e. inset 14px from the right edge and 10px up from the bottom), converted to `cqw`-relative CSS so it scales with the card's responsive size rather than staying fixed at one width. It fades in over 200ms when a network is first detected, and fades back out the same way if the number is cleared, rather than appearing and vanishing instantly.
+Once a network is confidently detected, the card's bottom-right corner shows it, where a physical card carries its acceptance mark. **IncrediCard** ships no acceptance marks. They are trademarks of their networks, and each network publishes its own artwork and rules for using it, so the marks are yours to supply, through `acceptanceMarks`: an image per network, as a URL or a static image import. Get them from each network's brand or acceptance-mark resources.
 
-Each of these 8 assets is already a self-contained badge (several have their own opaque, rounded background baked in, which is how official acceptance marks are meant to be used), so this component only sizes and positions it, never re-styles or re-colors it.
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`import visaMark from "./marks/visa.svg";
+import mastercardMark from "./marks/mastercard.svg";
 
-The mark is a plain `<img>`, not a CSS `background-image`, because of how bundlers inline small assets. Under Vite's default 4KB inlining threshold, several of these files (Visa, Discover, JCB) resolve to a raw, non-base64 `data:` URI that keeps the source SVG's single quotes unescaped. Assigning that string to `element.style.backgroundImage` (the mechanism React uses for a `style` object) silently fails: the browser's CSS `url()` tokenizer can't parse the embedded quotes, and the property setter no-ops rather than throwing. `src` has no such parsing step, so an `<img>` works with any asset shape.
+<IncrediCard
+  id="payment"
+  acceptanceMarks={{ visa: visaMark, mastercard: mastercardMark }}
+/>`}
+/>
+
+Any network you leave out, or all of them if you pass nothing, shows the network's name as text in the same corner instead, set in the theme's name lettering (see the Network: Without a Mark story). The keys are `amex`, `dinersclub`, `discover`, `jcb`, `maestro`, `mastercard`, `unionpay` and `visa`, typed as `IncrediCardNetwork`.
+
+The marks in this demo are recreations drawn for it, in the repository's `demo/acceptance-marks/` folder and not in the npm package. Copying them into your own app is your choice to make, and the trademarks are still their networks'.
+
+The corner's position comes from a 325×204 reference card (the mark at 241,138, sized 70×56, i.e. inset 14px from the right edge and 10px up from the bottom), converted to `cqw`-relative CSS so it scales with the card's responsive size rather than staying fixed at one width. A mark of any other proportions fits whole inside that 70×56 box, centered; this component only sizes and positions it, never crops, re-styles or re-colors it. The mark or name fades in over 200ms when a network is first detected, and fades back out the same way if the number is cleared, rather than appearing and vanishing instantly.
+
+The mark is a plain `<img>`, not a CSS `background-image`, because of how bundlers inline small assets. Under Vite's default 4KB inlining threshold, a small SVG resolves to a raw, non-base64 `data:` URI that keeps the source's single quotes unescaped. Assigning that string to `element.style.backgroundImage` (the mechanism React uses for a `style` object) silently fails: the browser's CSS `url()` tokenizer can't parse the embedded quotes, and the property setter no-ops rather than throwing. `src` has no such parsing step, so an `<img>` works with any asset shape.
 
 ### Nothing Here Enforces a Complete, Charge-Ready Card
 
@@ -304,6 +321,7 @@ CSS has no way to actually emboss arbitrary, live-typed text: a genuine bevel ne
 
 - **Do pair IncrediCard with your payment processor's validation.** Run your processor's client-side tokenization and validation as well. **IncrediCard** checks format only, never whether a card is real or chargeable.
 - **Do set `processing` while your submission is in flight.** Turn it on during your own submission, so the fields lock and the card face shows that it's waiting.
+- **Do use each network's official acceptance mark.** Pass the networks' own artwork through `acceptanceMarks`, under their usage rules, rather than a redrawn copy.
 - **Don't persist, log or send raw card values.** Use the `cardNumber` and `cvc` values from `onChange` only as far as your active submission needs them.
 - **Don't rely on the detected card network beyond display.** Treat it as a best-effort guess from the number's prefix, not a validated fact about the card.
 - **Don't assume every user reaches the revealed fields the same way.** Expect a pasted, complete number to reveal every field in one step, just like typing it digit by digit. There's no separate step to confirm the network.

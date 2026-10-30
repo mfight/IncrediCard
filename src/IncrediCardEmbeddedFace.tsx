@@ -9,6 +9,7 @@ import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
 import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
+import type { IncrediCardNetworkMark } from "./acceptanceMarks";
 import type { IncrediCardFaceLayout } from "./themes";
 import styles from "./IncrediCardEmbeddedFace.module.scss";
 
@@ -114,10 +115,11 @@ export type IncrediCardEmbeddedFaceProps = {
    * card signaling "busy" through movement alone says nothing in a still
    * frame either. */
   processingLabel: string;
-  /** The bundled acceptance-mark badge; see the identical prop on
-   * IncrediCardFace.tsx (same asset, same bottom-right corner placement;
-   * see `.acceptanceMark` in IncrediCardEmbeddedFace.module.scss). */
-  acceptanceMarkSrc?: string;
+  /** The detected network's acceptance mark, or its name; see the
+   * identical prop on IncrediCardFace.tsx (same bottom-right corner
+   * placement; see `.acceptanceMark` in
+   * IncrediCardEmbeddedFace.module.scss). */
+  networkMark?: IncrediCardNetworkMark;
   /** Already the real, controlled field (a `IncrediCardField` or
    * `IncrediCardMaskedField`, styled to sit on the card by
    * IncrediCard.tsx's themed wrapper). This component only positions
@@ -178,7 +180,7 @@ export function IncrediCardEmbeddedFace({
   onCardClick,
   processing,
   processingLabel,
-  acceptanceMarkSrc,
+  networkMark,
   nameField,
   numberField,
   longNumber = false,
@@ -197,18 +199,21 @@ export function IncrediCardEmbeddedFace({
   // reveal latch, so clearing the card number genuinely takes it away
   // again, and it should fade out like everything else rather than
   // vanish. CSS cannot animate an element that is being removed from the
-  // DOM, so the mark has to outlive its own `src`: this keeps the last
-  // artwork it was ever given, and the element stays mounted from then
-  // on, hidden by a class rather than unmounted (see
-  // `.acceptanceMarkHidden` and reveal-motion.scss).
+  // DOM, so the mark has to outlive its own network: this keeps the last
+  // mark it was ever given, and the element stays mounted from then on,
+  // hidden by a class rather than unmounted (see `.acceptanceMarkHidden`
+  // and reveal-motion.scss).
   //
   // Adjusted during render rather than in an effect, which is what
   // `react-hooks/set-state-in-effect` wants. Safe here because this only
-  // ever moves forward to a new non-empty value, so there is no reset
-  // transition for a render to miss.
-  const [latchedMarkSrc, setLatchedMarkSrc] = useState(acceptanceMarkSrc);
-  if (acceptanceMarkSrc && acceptanceMarkSrc !== latchedMarkSrc) {
-    setLatchedMarkSrc(acceptanceMarkSrc);
+  // ever moves forward to a new mark, so there is no reset transition for
+  // a render to miss.
+  const [latchedMark, setLatchedMark] = useState(networkMark);
+  if (
+    networkMark &&
+    (networkMark.src !== latchedMark?.src || networkMark.name !== latchedMark?.name)
+  ) {
+    setLatchedMark(networkMark);
   }
 
   // `.faceWrapper` itself (the whole card, not just the chip's tiny box)
@@ -282,7 +287,7 @@ export function IncrediCardEmbeddedFace({
               <IncrediCardChip reflection={chipReflection} />
             </span>
             {/* The top-right corner is intentionally empty: the
-                acceptance mark in the bottom-right corner already
+                mark or name in the bottom-right corner already
                 identifies the network. The chip is all this row
                 carries. */}
           </div>
@@ -354,7 +359,7 @@ export function IncrediCardEmbeddedFace({
               aria-hidden="true"
             />
           )}
-          {latchedMarkSrc ? (
+          {latchedMark?.src ? (
             // Plain `<img src>`, not `background-image`; see the
             // identical comment in IncrediCardFace.tsx for why (the
             // browser's CSS `url()` tokenizer chokes on the literal,
@@ -371,13 +376,25 @@ export function IncrediCardEmbeddedFace({
             <img
               className={classNames(
                 styles.acceptanceMark,
-                // Kept mounted with its last artwork so it can fade
-                // out; see the latch above.
-                !acceptanceMarkSrc && styles.acceptanceMarkHidden,
+                // Kept mounted with its last mark so it can fade out; see
+                // the latch above.
+                !networkMark && styles.acceptanceMarkHidden,
               )}
-              src={latchedMarkSrc}
+              src={latchedMark.src}
               alt=""
             />
+          ) : latchedMark ? (
+            // Decorative, like the image above, which has an empty `alt`.
+            <span
+              className={classNames(
+                styles.acceptanceMark,
+                styles.networkName,
+                !networkMark && styles.acceptanceMarkHidden,
+              )}
+              aria-hidden="true"
+            >
+              {latchedMark.name}
+            </span>
           ) : null}
         </div>
         <div ref={backRef} className={classNames(styles.face, styles.back)}>

@@ -438,7 +438,7 @@
 // The card's bottom-right acceptance-mark badge; see the identical
 // `.acceptanceMark` in IncrediCardFace.module.scss for the full
 // reasoning (same design-file-derived `cqw` conversion, same
-// edge-relative anchoring, same self-contained-badge asset).
+// edge-relative anchoring, same never-restyled app artwork).
 .acceptanceMark {
   @include reveal-motion.incredicard-reveal-fade-in-out;
 
@@ -450,6 +450,22 @@
   width: 21.54cqw;
   aspect-ratio: 70 / 56;
   object-fit: contain;
+}
+
+// The network's name in the mark's place; see the identical
+// `.networkName` in IncrediCardFace.module.scss for the sizing.
+.networkName {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: end;
+  font-size: clamp(0.5rem, 2.85cqw, 0.75rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-family: var(--incredicard-name-font);
+  text-shadow: var(--incredicard-face-emboss);
 }
 
 .cvcSlot {
@@ -523,7 +539,7 @@
 }
 
 // Applied while no network is detected--see reveal-motion.scss. The mark
-// stays mounted (each face latches the last artwork it was given) purely
+// stays mounted (each face latches the last mark it was given) purely
 // so this can fade it out; unmounting it would make a fade impossible.
 .acceptanceMarkHidden {
   @include reveal-motion.incredicard-reveal-hidden;

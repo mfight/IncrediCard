@@ -4,8 +4,8 @@
 // different network are covered; anything else, including every edge
 // case a full BIN/IIN database would resolve, stays "unknown" rather than
 // guessing (detection must remain conservative). No brand marks, logos
-// or brand colors come from this module; network artwork lives
-// separately, in acceptanceMarks.ts. This module only provides the plain
+// or brand colors come from this module; the app supplies any marks
+// (see acceptanceMarks.ts). This module only provides the plain
 // network name plus the mechanical facts detection safely implies: which
 // lengths the number can have, how it groups at each, and how long its
 // CVC is.
@@ -35,7 +35,8 @@ export type CardNetworkInfo = {
   /** Amex's CVC ("CID") is printed on the *front* of the card and is 4
    * digits; every other network here prints a 3-digit CVC on the back. */
   cvcLength: number;
-  /** Plain text only, no brand mark; see this file's header comment. */
+  /** Plain text only, no brand mark; see this file's header comment.
+   * The card shows it where the app supplied no mark for the network. */
   displayName: string;
 };
 

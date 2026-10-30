@@ -9,8 +9,13 @@
 //      own exports and renders it to HTML.
 //   4. A production build of the app, served and opened in Chromium: no
 //      console errors, every request succeeds, the stylesheet and its fonts
-//      load, the card artwork loads as a file, and typing a Visa number
-//      shows the Visa acceptance mark, loaded as a file too.
+//      load, and the card artwork loads as a file. Typing a Visa number
+//      into a card given no acceptance marks names the network in text;
+//      into a card given the app's own Visa mark, it shows that mark,
+//      loaded as a file too.
+//
+// Before installing, it checks the tarball itself carries no acceptance
+// marks: those are the app's to supply.
 //
 // Usage: npm run test:consumer   (KEEP=1 keeps the temporary app)
 
@@ -36,6 +41,11 @@ try {
   console.log("Packing...");
   const tarball = run("npm", ["pack", "--silent", "--pack-destination", app], ROOT).trim().split("\n").pop();
   const tarballPath = join(app, tarball.split("/").pop());
+  const packed = run("tar", ["-tzf", tarballPath], app).trim().split("\n");
+  const marks = packed.filter(
+    (file) => /\.(svg|png|jpe?g|webp|gif|avif)$/i.test(file) && /acceptance|amex|diners|discover|jcb|maestro|mastercard|union-?pay|visa/i.test(file),
+  );
+  check(marks.length === 0, `the package ships no acceptance marks${marks.length ? `: ${marks.join(", ")}` : ""}`);
 
   writeFileSync(
     join(app, "package.json"),
@@ -65,13 +75,26 @@ console.log(JSON.stringify({ html, label: DEFAULT_INCREDICARD_LABELS.cardNumberL
     join(app, "index.html"),
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>IncrediCard consumer</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>`,
   );
+  // The app's own mark: a stand-in drawn here, not anyone's artwork.
+  writeFileSync(
+    join(app, "src/visa-mark.svg"),
+    `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="56" viewBox="0 0 70 56"><rect width="70" height="56" rx="6" fill="#fff"/></svg>\n`,
+  );
   writeFileSync(
     join(app, "src/main.tsx"),
     `import "incredicard/styles.css";
 import { createRoot } from "react-dom/client";
-import { IncrediCard } from "incredicard";
+import { IncrediCard, type IncrediCardAcceptanceMarks } from "incredicard";
+import visaMark from "./visa-mark.svg";
 
-createRoot(document.getElementById("root")!).render(<IncrediCard id="payment-card" />);
+const marks: IncrediCardAcceptanceMarks = { visa: visaMark };
+
+createRoot(document.getElementById("root")!).render(
+  <>
+    <IncrediCard id="plain-card" />
+    <IncrediCard id="marked-card" acceptanceMarks={marks} />
+  </>,
+);
 `,
   );
   // Vite inlines an asset under 4KB as a data: URI by default, which is
@@ -103,8 +126,10 @@ createRoot(document.getElementById("root")!).render(<IncrediCard id="payment-car
     }
     await page.evaluate(() => document.fonts.ready);
 
-    // A Visa test number, typed the way a user would.
-    await page.locator('input[autocomplete="cc-number"]').fill("4242424242424242");
+    // A Visa test number, typed the way a user would, into both cards.
+    for (const card of ["#plain-card", "#marked-card"]) {
+      await page.locator(`${card} input[autocomplete="cc-number"]`).fill("4242424242424242");
+    }
     await page.waitForLoadState("networkidle");
 
     const facts = await page.evaluate(async () => {
@@ -113,8 +138,12 @@ createRoot(document.getElementById("root")!).render(<IncrediCard id="payment-car
         .map((element) => getComputedStyle(element).backgroundImage)
         .find((value) => value && value.includes("url("));
       const artworkUrl = artwork?.match(/url\("?([^")]+)"?\)/)?.[1] ?? null;
-      const mark = [...document.querySelectorAll("img")].find((image) => image.src.includes("visa"));
+      const plain = document.querySelector("#plain-card");
+      const mark = document.querySelector("#marked-card")?.querySelector('img[src*="visa"]');
       return {
+        plainImages: plain?.querySelectorAll("img").length ?? -1,
+        plainName: [...(plain?.querySelectorAll("span") ?? [])].some((span) => span.textContent === "Visa"),
+        markedName: [...(document.querySelector("#marked-card")?.querySelectorAll("span") ?? [])].some((span) => span.textContent === "Visa"),
         fontLoaded: [...document.fonts].some((font) => font.family.includes("IncrediCard Figtree") && font.status === "loaded"),
         inputFont: getComputedStyle(document.querySelector("input")).fontFamily,
         artworkUrl,
@@ -130,7 +159,8 @@ createRoot(document.getElementById("root")!).render(<IncrediCard id="payment-car
     check(facts.fontLoaded, "styles.css loads the component's own Figtree");
     check(facts.inputFont.includes("IncrediCard Figtree"), `the fields use it (${facts.inputFont})`);
     check(Boolean(facts.artworkUrl) && !facts.artworkUrl.startsWith("data:") && facts.artworkStatus === 200, `the card artwork loads as a file (${facts.artworkUrl}, ${facts.artworkStatus})`);
-    check(facts.markLoaded && !facts.markUrl.startsWith("data:") && facts.markStatus === 200, `a Visa number shows the Visa mark, loaded as a file (${facts.markUrl}, ${facts.markStatus})`);
+    check(facts.plainName && facts.plainImages === 0, `with no marks given, a Visa number names the network in text (${facts.plainImages} images)`);
+    check(facts.markLoaded && !facts.markUrl.startsWith("data:") && facts.markStatus === 200 && !facts.markedName, `with the app's own Visa mark, a Visa number shows it, loaded as a file (${facts.markUrl}, ${facts.markStatus})`);
   } finally {
     server.kill();
   }

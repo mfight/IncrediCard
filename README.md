@@ -10,7 +10,7 @@ A credit-card entry form for React with a dimensional card that mirrors what's t
 
 - **Real fields:** name, number, expiration and security code are ordinary inputs with labels, `autocomplete` values and error messages. Typing, pasting and browser autofill all work.
 - **Two layouts:** `overlay` puts the fields on the card itself; `stacked` puts a decorative card above a normal field list.
-- **Network detection:** Visa, Mastercard, American Express, Discover, Diners Club, JCB, Maestro and UnionPay, with each network's grouping, length and security-code rules, and its acceptance mark.
+- **Network detection:** Visa, Mastercard, American Express, Discover, Diners Club, JCB, Maestro and UnionPay, with each network's grouping, length and security-code rules. The card shows the detected network with the acceptance mark you supply, or its name.
 - **Two themes:** `modern`, and `vintage`, an embossed plastic card set in OCR-A and OCR-B.
 - **Optional effects:** chip reflection, a holographic foil, tilt toward the pointer (or the device, where motion access is granted), and zoom on focus.
 - **Reduced motion:** every effect respects `prefers-reduced-motion`. The state stays the same; only the movement goes.
@@ -52,6 +52,19 @@ export function PaymentForm() {
 
 `onCompletionChange` reports that the form is complete as far as IncrediCard can tell. It doesn't mean the card is real or can be charged; only your payment processor can tell you that.
 
+### Acceptance marks
+
+IncrediCard ships no card-network acceptance marks: they're trademarks of their networks, and each network publishes its own artwork and rules for using it. Get the marks from each network's brand resources and pass them in, as URLs or static image imports:
+
+```tsx
+import visaMark from "./marks/visa.svg";
+import mastercardMark from "./marks/mastercard.svg";
+
+<IncrediCard id="payment-card" acceptanceMarks={{ visa: visaMark, mastercard: mastercardMark }} />;
+```
+
+A detected network with no mark shows its name as text in the same corner. The marks in the demo are recreations drawn for it, kept in this repository's `demo/acceptance-marks/` and not in the package; copying them into your app is your choice, and the trademarks remain their networks'.
+
 The [demo's Overview page](https://incredicard.markfight.com/) documents every prop, the layouts and themes, composing your own layout from `IncrediCard.Field` and `IncrediCard.MaskedField`, accessibility, and how the card treats sensitive data.
 
 ## Developing
@@ -84,5 +97,5 @@ IncrediCard is licensed under the [Apache License 2.0](LICENSE). Copyright 2026 
 Some bundled material keeps its own terms, listed in [NOTICE](NOTICE):
 
 - **Fonts:** Figtree and OCR-B under the SIL Open Font License 1.1, and OCR-A as its author describes in its readme. The license files are in `src/assets/fonts/`, and in `dist/licenses/` in the published package.
-- **Card-network acceptance marks:** trademarks of their respective owners, shown only to identify a card's network. The Apache license grants no rights to them.
+- **The demo's card-network acceptance marks** (`demo/acceptance-marks/`, in this repository only, not in the package): recreations of trademarks of their respective owners, shown only to identify a card's network. The Apache license grants no rights to them.
 - **Ribbon-line artwork** (`src/assets/images/incredicard-front-holo*.svg`): adapted from a licensed stock illustration, and not covered by the Apache license.

@@ -53,8 +53,8 @@ $incredicard-reveal-easing: cubic-bezier(0, 0, 0.2, 1);
 //   * An animation cannot run on an element being removed from the DOM,
 //     and cannot be reversed by a class change either.
 //
-// So the element stays mounted once it has ever had artwork (each face
-// latches the last non-empty src; see their comments) and hiding is
+// So the element stays mounted once it has ever had a mark (each face
+// latches the last one it was given; see their comments) and hiding is
 // a plain opacity transition, while the very first appearance is the
 // animation.
 //

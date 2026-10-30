@@ -8,6 +8,7 @@ import {
   requestIncrediCardMotionAccess,
   type IncrediCardMotionAccess,
 } from ".";
+import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { ForceReducedMotion } from "./reducedMotion";
 import { INCREDICARD_THEMES } from "./themes";
 import themedStyles from "./IncrediCard.stories.module.scss";
@@ -41,10 +42,18 @@ const meta = {
   title: "IncrediCard",
   component: IncrediCard,
   render: (args) => <IncrediCard {...cardProps(args)} />,
+  // Every story shows the demo's acceptance marks, which the package
+  // doesn't ship (see demo/acceptanceMarks.ts), passed in the way an app
+  // passes its own.
+  args: { acceptanceMarks: demoAcceptanceMarks },
   parameters: {
     layout: "centered",
   },
   argTypes: {
+    // Image URLs, not something to edit in a control.
+    acceptanceMarks: {
+      control: false,
+    },
     fieldSize: {
       control: "select",
       options: ["sm", "md", "lg", "xl"],
@@ -94,7 +103,7 @@ type Story = StoryObj<IncrediCardStoryArgs>;
 // the card itself (IncrediCardEmbeddedFace), positioned where a physical
 // card's embossed text sits, instead of a separate decorative card above
 // a normal field list. No `layout` arg here on purpose: this story shows
-// what a plain `<IncrediCard id="..." />` renders.
+// what a plain `<IncrediCard id="..." />` renders, with the demo's marks.
 //
 // An empty card: only the number field exists until a valid number
 // reveals the rest, and it already sits in the position it will keep
@@ -144,7 +153,8 @@ export const StackedFilled: Story = {
 // 4-6-5 number grouping, a 4-digit CVC, and that CVC printed on the FRONT
 // of the card rather than the back. Diners Club's 14-digit number groups
 // 4-6-4. The rest share the neutral shape, so what they demonstrate is
-// detection itself, and their acceptance mark.
+// detection itself, and their acceptance mark. The last, "without a mark",
+// shows what an app that supplies no marks gets.
 
 export const NetworkAmex: Story = {
   name: "Network: AMEX",
@@ -254,6 +264,24 @@ export const NetworkVisa: Story = {
       expirationMonth: "12",
       expirationYear: "29",
       cvc: "123",
+    },
+  },
+};
+
+// An app that supplies no acceptance marks: the corner names the network
+// in text instead. American Express, the longest name, wraps onto two
+// lines.
+export const NetworkWithoutMark: Story = {
+  name: "Network: Without a Mark",
+  args: {
+    id: "story-without-mark",
+    acceptanceMarks: {},
+    defaultValue: {
+      cardholderName: "Alex Rivera",
+      cardNumber: "378282246310005",
+      expirationMonth: "12",
+      expirationYear: "29",
+      cvc: "1234",
     },
   },
 };
@@ -933,5 +961,103 @@ export const PastedOverlongNumber: Story = {
     await waitFor(() => expect(input.value).toBe("3782 822463 10005"));
     const onChange = args.onChange as ReturnType<typeof fn>;
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ cardNumber: "378282246310005" }));
+  },
+};
+
+// The corner follows the detected network: the app's mark where it
+// supplied one (here, only Visa's), the network's name where it didn't,
+// and nothing, faded out, once the number no longer names a network.
+async function expectNetworkMarks(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  const input = canvas.getByLabelText("Card number");
+  const visaMark = () =>
+    [...canvasElement.querySelectorAll("img")].find((img) => img.getAttribute("src") === demoAcceptanceMarks.visa);
+
+  await userEvent.type(input, "4242");
+  await waitFor(() => expect(visaMark()).toBeDefined());
+  await waitFor(() => expect(visaMark()).toHaveStyle({ opacity: "1" }));
+  expect(canvas.queryByText("Visa")).toBeNull();
+
+  await userEvent.clear(input);
+  await waitFor(() => expect(visaMark()).toHaveStyle({ opacity: "0" }));
+
+  await userEvent.type(input, "5555");
+  const name = await canvas.findByText("Mastercard");
+  expect(visaMark()).toBeUndefined();
+  await waitFor(() => expect(name).toHaveStyle({ opacity: "1" }));
+
+  await userEvent.clear(input);
+  await waitFor(() => expect(name).toHaveStyle({ opacity: "0" }));
+}
+
+export const NetworkMarksOverlay: Story = {
+  tags: ["!dev"],
+  args: { id: "story-network-marks-overlay", acceptanceMarks: { visa: demoAcceptanceMarks.visa } },
+  play: ({ canvasElement }) => expectNetworkMarks(canvasElement),
+};
+
+export const NetworkMarksStacked: Story = {
+  tags: ["!dev"],
+  args: { id: "story-network-marks-stacked", layout: "stacked", acceptanceMarks: { visa: demoAcceptanceMarks.visa } },
+  play: ({ canvasElement }) => expectNetworkMarks(canvasElement),
+};
+
+// Every network's name fits the mark's box, in both themes and both
+// layouts, at the component's narrowest supported width: no word wider
+// than the box, and no more lines than fit its height.
+const NETWORK_NUMBERS = [
+  "378282246310005",
+  "30569309025904",
+  "6011111111111117",
+  "3530111333300000",
+  "6700000000000000",
+  "5555555555554444",
+  "6200000000000005",
+  "4242424242424242",
+];
+
+export const NetworkNamesFit: Story = {
+  tags: ["!dev"],
+  args: { id: "story-network-names-fit", acceptanceMarks: {} },
+  render: (args) => (
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 17.4375rem)" }}>
+      {(["modern", "vintage"] as const).flatMap((theme) =>
+        (["overlay", "stacked"] as const).flatMap((layout) =>
+          NETWORK_NUMBERS.map((cardNumber) => (
+            <IncrediCard
+              key={`${theme}-${layout}-${cardNumber}`}
+              {...cardProps(args)}
+              id={`${args.id}-${theme}-${layout}-${cardNumber}`}
+              theme={theme}
+              layout={layout}
+              defaultValue={{ cardholderName: "", cardNumber, expirationMonth: "", expirationYear: "", cvc: "" }}
+            />
+          )),
+        ),
+      )}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await document.fonts.ready;
+    const names = ["American Express", "Diners Club", "Discover", "JCB", "Maestro", "Mastercard", "UnionPay", "Visa"];
+    const overflowing: string[] = [];
+    for (const name of names) {
+      const elements = within(canvasElement).getAllByText(name);
+      expect(elements).toHaveLength(4);
+      for (const element of elements) {
+        // The text's own box, not scrollWidth: the name sits against the
+        // box's end edge, so a word too wide overflows the START edge,
+        // which scrollWidth doesn't count.
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const text = range.getBoundingClientRect();
+        const box = element.getBoundingClientRect();
+        if (text.left < box.left - 0.5 || text.right > box.right + 0.5 || text.top < box.top - 0.5) {
+          const card = element.closest("fieldset")!.id;
+          overflowing.push(`${name} in ${card}: text ${text.width.toFixed(1)}x${text.height.toFixed(1)}, box ${box.width.toFixed(1)}x${box.height.toFixed(1)}`);
+        }
+      }
+    }
+    expect(overflowing).toEqual([]);
   },
 };

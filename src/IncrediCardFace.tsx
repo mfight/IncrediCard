@@ -7,6 +7,7 @@ import {
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
+import type { IncrediCardNetworkMark } from "./acceptanceMarks";
 import type { IncrediCardFaceLayout } from "./themes";
 import styles from "./IncrediCardFace.module.scss";
 
@@ -71,12 +72,12 @@ export type IncrediCardFaceProps = {
    * needed (unlike the identical prop on IncrediCardEmbeddedFace). Wired
    * straight to `.faceWrapper`'s `onClick`. */
   onCardClick?: () => void;
-  /** The bundled acceptance-mark badge for the currently detected
-   * network (see acceptanceMarks.ts's header comment); `undefined` until
-   * one is confidently detected. Anchored to the card's bottom-right
+  /** The detected network's acceptance mark, or its name where the app
+   * supplied no mark (see acceptanceMarks.ts); `undefined` until a
+   * network is confidently detected. Anchored to the card's bottom-right
    * corner (see `.acceptanceMark` in IncrediCardFace.module.scss), and
    * the only network branding this card shows. */
-  acceptanceMarkSrc?: string;
+  networkMark?: IncrediCardNetworkMark;
   /** Already resolved to whatever should actually render: the live
    * value (uppercased) once non-empty, this face's placeholder copy
    * otherwise. IncrediCard owns that resolution; this component only
@@ -150,7 +151,7 @@ export function IncrediCardFace({
   tilt = false,
   cardZoomed = false,
   onCardClick,
-  acceptanceMarkSrc,
+  networkMark,
   cardholderNameDisplay,
   cardNumberDigits,
   numberPattern,
@@ -189,18 +190,21 @@ export function IncrediCardFace({
   // reveal latch, so clearing the card number genuinely takes it away
   // again, and it should fade out like everything else rather than
   // vanish. CSS cannot animate an element that is being removed from the
-  // DOM, so the mark has to outlive its own `src`: this keeps the last
-  // artwork it was ever given, and the element stays mounted from then
-  // on, hidden by a class rather than unmounted (see
-  // `.acceptanceMarkHidden` and reveal-motion.scss).
+  // DOM, so the mark has to outlive its own network: this keeps the last
+  // mark it was ever given, and the element stays mounted from then on,
+  // hidden by a class rather than unmounted (see `.acceptanceMarkHidden`
+  // and reveal-motion.scss).
   //
   // Adjusted during render rather than in an effect, which is what
   // `react-hooks/set-state-in-effect` wants. Safe here because this only
-  // ever moves forward to a new non-empty value, so there is no reset
-  // transition for a render to miss.
-  const [latchedMarkSrc, setLatchedMarkSrc] = useState(acceptanceMarkSrc);
-  if (acceptanceMarkSrc && acceptanceMarkSrc !== latchedMarkSrc) {
-    setLatchedMarkSrc(acceptanceMarkSrc);
+  // ever moves forward to a new mark, so there is no reset transition for
+  // a render to miss.
+  const [latchedMark, setLatchedMark] = useState(networkMark);
+  if (
+    networkMark &&
+    (networkMark.src !== latchedMark?.src || networkMark.name !== latchedMark?.name)
+  ) {
+    setLatchedMark(networkMark);
   }
 
   const tiltRef = useIncrediCardTilt(tilt, cardZoomed);
@@ -247,7 +251,7 @@ export function IncrediCardFace({
               <IncrediCardChip reflection={chipReflection} />
             </span>
             {/* The top-right corner is intentionally empty: the
-                acceptance mark in the bottom-right corner already
+                mark or name in the bottom-right corner already
                 identifies the network. The chip is all this row
                 carries. */}
           </div>
@@ -336,30 +340,39 @@ export function IncrediCardFace({
               &nbsp;
             </span>
           )}
-          {latchedMarkSrc ? (
+          {latchedMark?.src ? (
             // Plain `<img src>`, not a `background-image`. Vite inlines
-            // assets under its 4KB threshold (several of these
-            // acceptance marks) as raw, non-base64
-            // `data:image/svg+xml,...` URIs that keep the source SVG's
-            // literal single quotes (`width='70'`, etc.) unescaped.
-            // Assigning that string to `element.style.backgroundImage`
-            // (the mechanism React uses for a `style` object) then
-            // silently fails: the browser's CSS `url()` tokenizer chokes
-            // on the embedded quotes and the property setter no-ops
-            // rather than throwing, so the image never renders and
-            // nothing is logged. `src` has no such parsing step.
-            // next/image would pull a Next.js dependency into this
-            // otherwise framework-portable component.
+            // an app's small images (under its 4KB threshold) as raw,
+            // non-base64 `data:image/svg+xml,...` URIs that keep the
+            // source SVG's literal single quotes (`width='70'`, etc.)
+            // unescaped. Assigning that string to
+            // `element.style.backgroundImage` (the mechanism React uses
+            // for a `style` object) then silently fails: the browser's
+            // CSS `url()` tokenizer chokes on the embedded quotes and the
+            // property setter no-ops rather than throwing, so the image
+            // never renders and nothing is logged. `src` has no such
+            // parsing step. next/image would pull a Next.js dependency
+            // into this otherwise framework-portable component.
             <img
               className={classNames(
                 styles.acceptanceMark,
-                // Kept mounted with its last artwork so it can fade
-                // out; see the latch above.
-                !acceptanceMarkSrc && styles.acceptanceMarkHidden,
+                // Kept mounted with its last mark so it can fade out; see
+                // the latch above.
+                !networkMark && styles.acceptanceMarkHidden,
               )}
-              src={latchedMarkSrc}
+              src={latchedMark.src}
               alt=""
             />
+          ) : latchedMark ? (
+            <span
+              className={classNames(
+                styles.acceptanceMark,
+                styles.networkName,
+                !networkMark && styles.acceptanceMarkHidden,
+              )}
+            >
+              {latchedMark.name}
+            </span>
           ) : null}
         </div>
         <div className={classNames(styles.face, styles.back)}>

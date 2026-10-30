@@ -371,11 +371,10 @@
   white-space: nowrap;
 }
 
-// The card's bottom-right acceptance-mark badge (see the
-// `acceptanceMarkSrc` prop in IncrediCardFace.tsx and acceptanceMarks.ts).
-// Each supplied SVG is already a self-contained badge with its own
-// opaque background, not a bare mark meant to sit directly on the card,
-// so this only ever sizes and places it, never re-styles it.
+// The card's bottom-right acceptance-mark badge (see the `networkMark`
+// prop in IncrediCardFace.tsx and acceptanceMarks.ts). An app's mark is
+// the network's own artwork, which its rules say not to alter, so this
+// only ever sizes and places it, never re-styles it.
 //
 // `position: absolute`, not a flex sibling of `.name`/`.expiration`
 // above: the design file places it at fixed coordinates (241,138, sized
@@ -383,10 +382,9 @@
 // flow. The values are that file's ratios converted to `cqw`
 // (`.faceWrapper`'s query-container unit): 70/325 = ~21.54cqw wide.
 //
-// Height isn't set at all: `aspect-ratio` derives it from the badge's
-// real 70:56 proportions once `width` is set, exactly matching the
-// source asset instead of a second, independently rounded value that
-// could drift from it.
+// Height isn't set at all: `aspect-ratio` derives it from the design's
+// 70:56 badge once `width` is set, instead of a second, independently
+// rounded value that could drift from it.
 .acceptanceMark {
   @include reveal-motion.incredicard-reveal-fade-in-out;
 
@@ -408,11 +406,31 @@
   inset-inline-end: 4.31cqw;
   width: 21.54cqw;
   aspect-ratio: 70 / 56;
-  // `contain`, not `cover`: every supplied asset already shares this
-  // same 70:56 box (JCB's 71:56 is close enough for `contain` to make no
-  // visible difference), so this is only a safety net against a future
-  // asset with a genuinely different intrinsic ratio.
+  // `contain`, not `cover`: an app's mark can have any proportions, and
+  // cropping a network's mark would alter it. It fits whole inside the
+  // 70:56 box instead, centered.
   object-fit: contain;
+}
+
+// The detected network's name, in the mark's place, when the app supplied
+// no mark for it. Set in the same box as the mark, against its lower
+// right corner, in the theme's name lettering. The size fits the widest
+// single word in the box: "MASTERCARD" in vintage's OCR-A measures 62px
+// against a 60px box at 3cqw on the narrowest card, 59px at 2.85cqw.
+// Every size here is `cqw`, so the fit holds at every width.
+// "AMERICAN EXPRESS" wraps onto two lines.
+.networkName {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  text-align: end;
+  font-size: clamp(0.5rem, 2.85cqw, 0.75rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-family: var(--incredicard-name-font);
+  text-shadow: var(--incredicard-face-emboss);
 }
 
 .magstripe {
@@ -535,7 +553,7 @@
 }
 
 // Applied while no network is detected--see reveal-motion.scss. The mark
-// stays mounted (each face latches the last artwork it was given) purely
+// stays mounted (each face latches the last mark it was given) purely
 // so this can fade it out; unmounting it would make a fade impossible.
 .acceptanceMarkHidden {
   @include reveal-motion.incredicard-reveal-hidden;

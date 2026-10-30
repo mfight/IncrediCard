@@ -38,7 +38,11 @@ export type {
 export type { IncrediCardFieldProps, IncrediCardFieldSize } from "./IncrediCardField";
 export type { IncrediCardMaskedFieldProps } from "./IncrediCardMaskedField";
 export type { MaskCharacterClass } from "./maskEngine";
-// `CardNetwork` is deliberately NOT exported: no public API takes or
-// returns a network. It stays internal (cardNetworks.ts,
-// acceptanceMarks.ts), alongside detectCardNetwork/getCardNetworkInfo/
-// luhnCheck.
+// The `acceptanceMarks` prop's types, keyed by network. Detection itself
+// (detectCardNetwork/getCardNetworkInfo/luhnCheck in cardNetworks.ts)
+// stays internal.
+export type {
+  IncrediCardNetwork,
+  IncrediCardAcceptanceMark,
+  IncrediCardAcceptanceMarks,
+} from "./acceptanceMarks";

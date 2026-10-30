@@ -16,7 +16,10 @@ import {
   getCardNetworkInfo,
   isCardNumberComplete,
 } from "./cardNetworks";
-import { getAcceptanceMarkSrc } from "./acceptanceMarks";
+import {
+  getNetworkMark,
+  type IncrediCardAcceptanceMarks,
+} from "./acceptanceMarks";
 import { prefersReducedMotion } from "./reducedMotion";
 import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
 import {
@@ -207,6 +210,13 @@ type IncrediCardOwnProps = {
    * and, in "stacked", clear of the field being typed into. It skips the
    * zoom when less than 110% fits (IncrediCardZoomFit.ts). */
   scale?: boolean;
+  /** Your acceptance-mark artwork, per network, shown in the card's
+   * bottom-right corner once the number's prefix identifies its network.
+   * Each is a URL or a static image import. None ship with this
+   * component: the marks are the networks' trademarks, and each network
+   * publishes its own artwork and rules for using it. A detected network
+   * with no mark here shows its name as text in the same corner. */
+  acceptanceMarks?: IncrediCardAcceptanceMarks;
   fieldSize?: IncrediCardFieldSize;
   disabled?: boolean;
   readOnly?: boolean;
@@ -300,8 +310,8 @@ function mergeRefs<T>(
 // Network detection (cardNetworks.ts) is deliberately minimal and safe
 // (a handful of settled IIN prefixes, neutral otherwise). Full
 // BIN-accurate detection is out of scope. The only network branding is
-// the bundled acceptance mark (acceptanceMarks.ts); the card shows no
-// plain-text network name.
+// the acceptance mark the app supplies (`acceptanceMarks`), or the
+// network's name as text where it supplies none (acceptanceMarks.ts).
 //
 // Progressive reveal: only the card number field shows initially. Name,
 // expiration, and security code stay hidden (in both layouts, and in the
@@ -322,6 +332,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       holographic = false,
       tilt = false,
       scale = false,
+      acceptanceMarks,
       fieldSize = "md",
       disabled = false,
       readOnly = false,
@@ -529,12 +540,12 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // number) and is 4 digits, not 3. The card never flips in that case,
     // since there's nothing on the back to reveal.
     const isAmex = network === "amex";
-    // The bundled acceptance-mark badge for the card face's bottom-right
-    // corner (see acceptanceMarks.ts's header comment). `undefined` until
-    // a network is confidently detected. Deliberately not gated on
-    // `isRevealed`: the mark appears as soon as the prefix identifies the
-    // network, before the number is complete.
-    const acceptanceMarkSrc = getAcceptanceMarkSrc(network);
+    // What the card face's bottom-right corner shows: the app's mark for
+    // the detected network, or the network's name where it supplied none
+    // (see acceptanceMarks.ts). `undefined` until a network is confidently
+    // detected. Deliberately not gated on `isRevealed`: it appears as soon
+    // as the prefix identifies the network, before the number is complete.
+    const networkMark = getNetworkMark(network, networkInfo.displayName, acceptanceMarks);
 
     // "Partial" (still typing, not yet complete) is deliberately never
     // flagged invalid; only a field the user has left (`touched`) with a
@@ -1079,7 +1090,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             onCardClick={scale ? handleCardClick : undefined}
             processing={processing}
             processingLabel={labels.processingLabel}
-            acceptanceMarkSrc={acceptanceMarkSrc}
+            networkMark={networkMark}
             nameField={isRevealed ? nameField : null}
             numberField={numberField}
             longNumber={longNumber}
@@ -1108,7 +1119,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 onCardClick={scale ? handleCardClick : undefined}
                 revealed={isRevealed}
                 cvcOnFront={isAmex}
-                acceptanceMarkSrc={acceptanceMarkSrc}
+                networkMark={networkMark}
                 cardholderNameDisplay={
                   committedValue.cardholderName
                     ? committedValue.cardholderName.toUpperCase()

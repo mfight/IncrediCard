@@ -24,7 +24,8 @@ Fonts (src/assets/fonts/; dist/licenses/ in the published package)
     By John Sauter, distributed by its author as a free font. See
     OCR-A-ReadMe.txt.
 
-Card-network acceptance marks (src/assets/images/acceptance-*.svg)
+The demo's card-network acceptance marks (demo/acceptance-marks/; in the
+source repository only, not in the published package)
 
   These depict the marks of American Express, Diners Club, Discover, JCB,
   Maestro, Mastercard, UnionPay and Visa, which are trademarks of their
