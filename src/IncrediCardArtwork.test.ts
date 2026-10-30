@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { COMPOSITION, readCommitted, renderRibbons } from "../scripts/ribbons.mjs";
 
 // These four files are not independent artwork: they are views of ONE
 // set of ribbon vectors, and the hologram only works because of that.
@@ -14,12 +15,18 @@ import { describe, expect, it } from "vitest";
 //   incredicard-front-holo-b.svg  ribbon 2 alone, used as a mask
 //
 // The glare layers are clipped to the -a/-b masks and must light up lines
-// the face has already printed. If any one of these files is re-exported
-// from a design tool on its own, that can stop being true, and INVISIBLY
-// at first: a sub-pixel smear that only looks wrong once someone zooms
-// the card. Two separate exports of one vector can disagree in the last
-// decimal place, which is exactly the kind of thing a person can't
-// reliably re-check by eye on every export.
+// the face has already printed. If any one of these files is written on
+// its own, that can stop being true, and INVISIBLY at first: a sub-pixel
+// smear that only looks wrong once someone zooms the card. Two separate
+// exports of one vector can disagree in the last decimal place, which is
+// exactly the kind of thing a person can't reliably re-check by eye.
+//
+// The three ribbon files are drawn by scripts/ribbons.mjs, which writes
+// them together from the same path strings (`npm run artwork:ribbons`).
+// The first test below holds the committed files to that output, so a
+// hand edit to one file, or an edited composition that was never
+// regenerated, fails here rather than shipping. The rest still check the
+// relationship directly, which is what the hologram depends on.
 //
 // The face carries no copy of the ribbons (how faint they print is a CSS
 // property instead), so the printed lines and the lit lines come from one
@@ -32,9 +39,9 @@ import { describe, expect, it } from "vitest";
 // guard on the ASSETS, not on any rendering, which is why it can run in
 // plain Node with no DOM.
 //
-// If this fails after a re-export, the fix is to re-export the files
-// together from the same source frames (or split the masks out of the
-// merged foil file programmatically), not to relax the assertion.
+// If this fails, the fix is to regenerate the ribbon files together (or,
+// for the face, re-export it without the ribbons), not to relax the
+// assertion.
 const read = (name: string) =>
   readFileSync(
     fileURLToPath(new URL(`./assets/images/${name}`, import.meta.url)),
@@ -55,6 +62,10 @@ const pathData = (svg: string) =>
   [...svg.matchAll(/\sd="([^"]+)"/g)].map((m) => m[1]);
 
 describe("IncrediCard card-face artwork", () => {
+  it("commits exactly what the ribbon generator draws", () => {
+    expect(readCommitted()).toEqual(renderRibbons(COMPOSITION));
+  });
+
   it.each(ALL)("%s shares one coordinate system", (name) => {
     expect(read(name)).toContain('viewBox="0 0 325 204"');
   });

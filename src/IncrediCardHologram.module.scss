@@ -2,7 +2,7 @@
 // reduced-motion mixin.
 //
 // A restrained holographic material effect: a mix-blend-mode'd, gently
-// hue-shifting foil pattern (`.holo`, the exported artwork) plus four
+// hue-shifting foil pattern (`.holo`, the ribbon artwork) plus four
 // cursor-reactive gradients (two per ribbon shape in that artwork,
 // tracking the pointer in opposite directions; see the block above
 // `.glareRadial`). They sit between the card's printed background and
@@ -289,20 +289,20 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
 // and change with cursor position, the way light moves across a real
 // holographic foil; the svg artwork itself never translates underneath a
 // fixed viewport. They are
-// split across the artwork's two ribbon groups: `.glareRadial` covers
-// the ribbons starting at the upper left and running down (gradA's 8
-// paths), and `.glareLinear`, a similar linear gradient that moves
-// slightly offset from the cursor, covers the second set (gradB's 16
-// paths). Their texture layers use darkened versions of the artwork's
+// split across the artwork's two ribbons: `.glareRadial` covers the band
+// that crosses the lower half of the card and twists between the number
+// and the name (the `-a` mask), and `.glareLinear`, a similar linear
+// gradient that moves slightly offset from the cursor, covers the fan
+// sweeping up from the bottom-right corner (the `-b` mask). Their
+// texture layers use darkened versions of the artwork's
 // own seven hues, in the same order, so they read as the same material
 // catching the light differently rather than a second, mismatched
 // effect layered on top.
 //
 // Each of those is doubled into a PAIR: two separate, opposite
 // gradients over each ribbon path. So there are four layers below, not
-// two: `.glareRadial`/`.glareRadialReverse` sharing the upper-left
-// ribbon's mask, `.glareLinear`/`.glareLinearReverse` sharing the lower
-// band's. A mask image can be referenced by any number of elements, so a
+// two: `.glareRadial`/`.glareRadialReverse` sharing the band's mask,
+// `.glareLinear`/`.glareLinearReverse` sharing the fan's. A mask image can be referenced by any number of elements, so a
 // pair costs one extra span and no extra artwork.
 //
 // What "opposite" means here is specifically the MOVING highlight, not
@@ -793,9 +793,9 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
 //
 // Weaker than its partner for the same stacking reason
 // `.glareRadialReverse` above is weaker than its own (0.46 against 0.79,
-// the same ~0.58 ratio), and weaker again than that layer--this pair
-// sits on the lower woven band, which is denser than the upper ribbon,
-// so the same opacity puts noticeably more lit area on screen.
+// the same ~0.58 ratio), and weaker again than that layer: a value
+// tuned by eye against the ribbons, so revisit it alongside any change
+// to the artwork's composition.
 .glareLinearReverse {
   position: absolute;
   inset: 0;

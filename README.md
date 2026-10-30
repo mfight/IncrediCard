@@ -98,4 +98,3 @@ Some bundled material keeps its own terms, listed in [NOTICE](NOTICE):
 
 - **Fonts:** Figtree and OCR-B under the SIL Open Font License 1.1, and OCR-A as its author describes in its readme. The license files are in `src/assets/fonts/`, and in `dist/licenses/` in the published package.
 - **The demo's card-network acceptance marks** (`demo/acceptance-marks/`, in this repository only, not in the package): recreations of trademarks of their respective owners, shown only to identify a card's network. The Apache license grants no rights to them.
-- **Ribbon-line artwork** (`src/assets/images/incredicard-front-holo*.svg`): adapted from a licensed stock illustration, and not covered by the Apache license.
