@@ -11,7 +11,7 @@ A credit-card entry form for React with a dimensional card that mirrors what's t
 - **Real fields:** name, number, expiration and security code are ordinary inputs with labels, `autocomplete` values and error messages. Typing, pasting and browser autofill all work.
 - **Two layouts:** `overlay` puts the fields on the card itself; `stacked` puts a decorative card above a normal field list.
 - **Network detection:** Visa, Mastercard, American Express, Discover, Diners Club, JCB, Maestro and UnionPay, with each network's grouping, length and security-code rules. The card shows the detected network with the acceptance mark you supply, or its name.
-- **Three themes:** `modern`; `vintage`, an embossed plastic card set in OCR-A and OCR-B; and `atlas`, `modern` printed with an engraved globe instead of ribbons.
+- **Four themes:** `modern`; `vintage`, an embossed plastic card set in OCR-A and OCR-B; `atlas`, `modern` printed with an engraved globe instead of ribbons; and `glass`, smoked glass that frosts the page behind it, and bends it at the rim in Chromium browsers.
 - **Optional effects:** chip reflection, a holographic foil, tilt toward the pointer (or the device, where motion access is granted), and zoom on focus.
 - **Reduced motion:** every effect respects `prefers-reduced-motion`. The state stays the same; only the movement goes.
 - **Self-contained:** the component ships its own styles, fonts and English strings, and depends on nothing but React. Every string can be replaced through `labels`.

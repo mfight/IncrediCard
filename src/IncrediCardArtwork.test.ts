@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
+import { inflateSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { LENS, LENS_FILE, lensPixels, renderLens } from "../scripts/glassLens.mjs";
 import { FILES as GLOBE_FILES, renderGlobe } from "../scripts/globe.mjs";
 import { readCommitted } from "../scripts/lineArt.mjs";
 import { COMPOSITION, FILES as RIBBON_FILES, renderRibbons } from "../scripts/ribbons.mjs";
@@ -98,6 +100,35 @@ describe("IncrediCard card-face artwork", () => {
   // one set that tracks the foil and one that does not.
   it("keeps the face free of its own copy of the lines", () => {
     expect(elements(read(FACE)).filter((e) => e.startsWith("<path"))).toEqual([]);
+  });
+
+  describe("the glass lens", () => {
+    /** A PNG's raw scanlines. Compared rather than its bytes, which depend
+     * on the zlib that compressed it. */
+    const scanlines = (png: Buffer) => {
+      const parts: Buffer[] = [];
+      for (let at = 8; at < png.length; at += png.readUInt32BE(at) + 12) {
+        if (png.toString("latin1", at + 4, at + 8) === "IDAT") parts.push(png.subarray(at + 8, at + 8 + png.readUInt32BE(at)));
+      }
+      return inflateSync(Buffer.concat(parts));
+    };
+
+    it("commits exactly what its generator draws", () => {
+      expect(scanlines(readFileSync(LENS_FILE)).equals(scanlines(renderLens()))).toBe(true);
+    });
+
+    // The whole point of a lens rather than noise: the backdrop behind the
+    // printed text doesn't move.
+    it("leaves the middle of the card alone and bends inward at the edge", () => {
+      const rows = lensPixels();
+      const pixel = (column: number, row: number) => [...rows[row].subarray(column * 3, column * 3 + 2)];
+      const middleRow = Math.floor(LENS.height / 2);
+      expect(pixel(Math.floor(LENS.width / 2), middleRow)).toEqual([128, 128]);
+      expect(pixel(0, middleRow)[0]).toBeGreaterThan(200);
+      expect(pixel(LENS.width - 1, middleRow)[0]).toBeLessThan(55);
+      expect(pixel(Math.floor(LENS.width / 2), 0)[1]).toBeGreaterThan(200);
+      expect(pixel(Math.floor(LENS.width / 2), LENS.height - 1)[1]).toBeLessThan(55);
+    });
   });
 
   describe.each(Object.entries(PIECES))("the %s line art", (_name, { files, render }) => {

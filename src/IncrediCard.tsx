@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   IncrediCardField,
   type IncrediCardFieldSize,
@@ -8,6 +8,7 @@ import {
 import { IncrediCardMaskedField } from "./IncrediCardMaskedField";
 import { IncrediCardFace } from "./IncrediCardFace";
 import { IncrediCardEmbeddedFace } from "./IncrediCardEmbeddedFace";
+import { IncrediCardRefraction } from "./IncrediCardRefraction";
 import { applyMask } from "./maskEngine";
 import {
   cardNumberCapacity,
@@ -656,6 +657,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     );
     const isOverlay = layout === "overlay";
     const themeDefinition = getIncrediCardTheme(theme);
+    const refractionFilterId = useId();
     // Fits the "stacked" zoom to the viewport; "overlay" fits its own in
     // IncrediCardEmbeddedFace. See IncrediCardZoomFit.ts.
     const zoomFitRef = useIncrediCardZoomFit<HTMLDivElement>(
@@ -1060,7 +1062,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         data-theme={theme}
         // The theme's values, as the custom properties every stylesheet
         // reads (see themes.ts). Your own `style` still applies on top.
-        style={{ ...incredicardThemeStyle(themeDefinition), ...rest.style }}
+        style={{ ...incredicardThemeStyle(themeDefinition, refractionFilterId), ...rest.style }}
         // "stacked" layout only. The `.incredicard[data-zoomed]
         // .faceContainer` rule in IncrediCard.module.scss reads this
         // directly, already fully resolved (`scale` enabled AND currently
@@ -1077,6 +1079,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         onPointerDown={handlePointerDown}
       >
         <legend className={styles.visuallyHidden}>{labels.legend}</legend>
+        {themeDefinition.face.refraction ? <IncrediCardRefraction id={refractionFilterId} /> : null}
         {isOverlay ? (
           <IncrediCardEmbeddedFace
             flipped={flipped}
@@ -1084,6 +1087,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             faceLayout={themeDefinition.faceLayout}
             chipReflection={chipReflection}
             holographic={holographic}
+            gloss={themeDefinition.face.specular > 0}
             tilt={tilt}
             cardZoomed={cardZoomed}
             scale={scale}
@@ -1114,6 +1118,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 faceLayout={themeDefinition.faceLayout}
                 chipReflection={chipReflection}
                 holographic={holographic}
+                gloss={themeDefinition.face.specular > 0}
                 tilt={tilt}
                 cardZoomed={cardZoomed}
                 onCardClick={scale ? handleCardClick : undefined}

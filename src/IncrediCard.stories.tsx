@@ -427,6 +427,79 @@ export const AtlasStacked: Story = {
   },
 };
 
+// theme="glass": the page behind the card shows through, so these stories
+// give it a page worth seeing, with hard edges for the frost and refraction
+// to act on. Move the pointer across the card for the highlight. Refraction
+// shows in Chromium; Safari gets the same glass without it.
+const onGlassBackdrop: Decorator = (Story) => (
+  <div className={themedStyles.glassBackdrop}>
+    <Story />
+  </div>
+);
+
+const GLASS_VALUE = {
+  cardholderName: "Alex Rivera",
+  cardNumber: "4242424242424242",
+  expirationMonth: "12",
+  expirationYear: "29",
+  cvc: "123",
+};
+
+export const GlassOverlay: Story = {
+  name: "Glass: Overlay",
+  decorators: [onGlassBackdrop],
+  args: { id: "story-glass-overlay", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+};
+
+export const GlassStacked: Story = {
+  name: "Glass: Stacked",
+  decorators: [onGlassBackdrop],
+  args: { id: "story-glass", theme: "glass", layout: "stacked", defaultValue: GLASS_VALUE },
+};
+
+// The hardest page for it: blur does nothing to plain white, so everything
+// here rests on the theme's tint and darkening. An empty card, for the
+// placeholder, which is the faintest text it has.
+export const GlassOnWhite: Story = {
+  name: "Glass: On a White Page",
+  args: { id: "story-glass-white", theme: "glass", layout: "overlay" },
+};
+
+// The glass's wiring: both faces have the backdrop, Chromium keeps the
+// refraction ahead of it, the filter it refers to exists in the document,
+// and the other themes have none of this.
+export const GlassBackdropWiring: Story = {
+  tags: ["!dev"],
+  decorators: [onGlassBackdrop],
+  args: { id: "story-glass-wiring", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+  play: async ({ canvasElement }) => {
+    const faces = [...canvasElement.querySelectorAll('[class*="face"]')].filter(
+      (element) => getComputedStyle(element).backdropFilter !== "none",
+    );
+    await expect(faces).toHaveLength(2);
+    for (const face of faces) {
+      const { backdropFilter } = getComputedStyle(face);
+      await expect(backdropFilter).toContain("blur");
+      const id = backdropFilter.match(/url\("?#([^")]+)"?\)/)?.[1];
+      await expect(id).toBeTruthy();
+      await expect(canvasElement.ownerDocument.getElementById(id!)?.tagName.toLowerCase()).toBe("filter");
+      await expect(face.querySelector('[class*="rim"]')).not.toBeNull();
+    }
+  },
+};
+
+export const NoBackdropOnOpaqueThemes: Story = {
+  tags: ["!dev"],
+  args: { id: "story-no-backdrop", theme: "modern", layout: "overlay" },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector("feDisplacementMap")).toBeNull();
+    await expect(canvasElement.querySelector('[class*="rim"]')).toBeNull();
+    for (const element of canvasElement.querySelectorAll('[class*="face"]')) {
+      await expect(getComputedStyle(element).backdropFilter).toBe("none");
+    }
+  },
+};
+
 // Everything this component animates, with reduced motion forced ON --
 // the state a user gets from the OS-level "reduce motion" setting,
 // without needing to change that setting to see it.

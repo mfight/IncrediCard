@@ -22,7 +22,7 @@ import { INCREDICARD_LINE_ART, type IncrediCardLineArt } from "./lineArt";
 //   number, tighter type sizes, wider tracking).
 //
 // A theme can only set values the stylesheets already read. Something
-// that needs a property they don't read yet (a backdrop filter, say)
+// that needs a property they don't read yet (a mask over the face, say)
 // starts with adding that read, with a default that leaves the existing
 // themes unchanged.
 //
@@ -60,6 +60,9 @@ const KNOBS = {
   shadow: "face-shadow",
   invalidColor: "face-invalid-color",
   linesOpacity: "face-lines-opacity",
+  backdrop: "face-backdrop",
+  specular: "face-specular",
+  placeholder: "face-placeholder",
   restingSaturation: "holo-resting-saturation",
   glareStrength: "holo-glare-strength",
   colorRadius: "holo-color-radius",
@@ -83,6 +86,17 @@ export type IncrediCardThemeDefinition = {
     /** How strongly the line art is printed before any light hits it.
      * 0 for a face with no printed lines. */
     linesOpacity: number;
+    /** A `backdrop-filter` for what shows through a translucent
+     * `background`. "none" for an opaque face. */
+    backdrop: string;
+    /** Whether the backdrop also refracts, where the browser can. See
+     * `--incredicard-face-backdrop-refracted` in the faces' stylesheets. */
+    refraction: boolean;
+    /** How strong a highlight follows the light across the surface. Above
+     * 0, the face also gets a lit rim (IncrediCardGloss); 0 for no gloss. */
+    specular: number;
+    /** The number field's placeholder, on an overlay card. */
+    placeholder: string;
   };
   hologram: {
     blend: IncrediCardHologramBlend;
@@ -126,6 +140,10 @@ export const INCREDICARD_THEMES = {
       invalidColor: "#dc2626",
       // Faint: the glare layers are tuned to compensate.
       linesOpacity: 0.08,
+      backdrop: "none",
+      refraction: false,
+      specular: 0,
+      placeholder: "rgb(255 255 255 / 60%)",
     },
     hologram: {
       blend: "color-dodge",
@@ -166,6 +184,10 @@ export const INCREDICARD_THEMES = {
       // app that wants the lines can have them. The hologram still lights
       // the ribbons.
       linesOpacity: 0,
+      backdrop: "none",
+      refraction: false,
+      specular: 0,
+      placeholder: "rgb(255 255 255 / 60%)",
     },
     hologram: {
       // `color-dodge`'s mirror: darkens rather than brightens, which is
@@ -202,6 +224,49 @@ export const INCREDICARD_THEMES = {
       shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%)",
       invalidColor: "#dc2626",
       linesOpacity: 0.08,
+      backdrop: "none",
+      refraction: false,
+      specular: 0,
+      placeholder: "rgb(255 255 255 / 60%)",
+    },
+    hologram: {
+      blend: "color-dodge",
+      opacity: 0.22,
+      restingSaturation: 0.35,
+      glareStrength: 1,
+      colorRadius: "72%",
+    },
+    type: {
+      nameFont: null,
+      printFont: null,
+      faceEmboss: null,
+      fieldEmboss: null,
+    },
+    fixed: [],
+  },
+
+  // "modern"'s type on smoked glass: the page behind the card shows through,
+  // frosted and, where the browser can, bent at the rim (IncrediCardRefraction),
+  // with a lit edge and a highlight that follows the light (IncrediCardGloss). Smoked rather than clear because the text
+  // and an app's acceptance marks are white, and the card can sit on any
+  // page. Blur alone guarantees nothing: on a white page it stays white. So
+  // the backdrop is darkened as well as tinted, far enough that the text and
+  // placeholder keep AA contrast over pure white (themes.test.ts checks it).
+  glass: {
+    faceLayout: "printed",
+    lineArt: "ribbons",
+    face: {
+      radius: "0.75rem",
+      background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(17 24 39 / 45%)",
+      color: "#ffffff",
+      // The inset is a soft inner glow, as light gathers in the glass's edge.
+      shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%), inset 0 0 1.25rem rgb(255 255 255 / 10%)",
+      invalidColor: "#fca5a5",
+      linesOpacity: 0.14,
+      backdrop: "blur(0.3125rem) saturate(1.5) brightness(0.6)",
+      refraction: true,
+      specular: 0.5,
+      placeholder: "rgb(255 255 255 / 90%)",
     },
     hologram: {
       blend: "color-dodge",
@@ -235,8 +300,11 @@ export function getIncrediCardTheme(name: string | undefined): IncrediCardThemeD
  * overridable knob is written as `var(--theme-incredicard-*, value)`, so
  * an override set on any ancestor (or on the root through `className`)
  * still wins, unless the theme pins it.
+ *
+ * `refractionFilterId` is the id of the card's own refraction filter, for
+ * a theme with `refraction` (see IncrediCardRefraction.tsx).
  */
-export function incredicardThemeStyle(theme: IncrediCardThemeDefinition): CSSProperties {
+export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refractionFilterId?: string): CSSProperties {
   const knobs: Record<IncrediCardThemeKnob, string | number> = {
     ...theme.face,
     restingSaturation: theme.hologram.restingSaturation,
@@ -255,6 +323,9 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition): CSSPro
   // are not an override point.
   style["--incredicard-holo-blend-mode"] = theme.hologram.blend;
   style["--incredicard-holo-opacity"] = String(theme.hologram.opacity);
+  if (theme.face.refraction && refractionFilterId) {
+    style["--incredicard-face-backdrop-refracted"] = `url(#${refractionFilterId}) var(--incredicard-face-backdrop)`;
+  }
   const lineArt = INCREDICARD_LINE_ART[theme.lineArt];
   style["--incredicard-lines"] = `url("${lineArt.foil}")`;
   style["--incredicard-lines-mask-a"] = `url("${lineArt.maskA}")`;

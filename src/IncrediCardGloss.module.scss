@@ -1,0 +1,57 @@
+.gloss,
+.specular,
+.rim,
+.rimLight {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--incredicard-face-radius);
+  pointer-events: none;
+}
+
+.specular {
+  background: radial-gradient(
+    circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+    rgb(255 255 255 / 60%),
+    rgb(255 255 255 / 0%) 55%
+  );
+  opacity: calc(var(--incredicard-chip-light-active, 0) * var(--incredicard-face-specular));
+  transition: opacity 200ms ease-out;
+}
+
+// Both rims are a full gradient cut down to a thin ring: the mask keeps the
+// whole box, minus its content box, leaving only the padding. A border
+// couldn't do this, since a gradient border-image ignores the radius, and the
+// usual padding-box trick paints the gradient under the whole translucent
+// face.
+.rim,
+.rimLight {
+  padding: 0.0625rem;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.rim {
+  background: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 60%),
+    rgb(255 255 255 / 15%) 35%,
+    rgb(255 255 255 / 6%) 60%,
+    rgb(255 255 255 / 28%)
+  );
+}
+
+.rimLight {
+  background: radial-gradient(
+    circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
+    rgb(255 255 255 / 95%),
+    rgb(255 255 255 / 0%) 45%
+  );
+  opacity: var(--incredicard-chip-light-active, 0);
+  transition: opacity 200ms ease-out;
+}

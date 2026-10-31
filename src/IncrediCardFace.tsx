@@ -4,6 +4,7 @@ import {
   IncrediCardChip,
   useIncrediCardChipLight,
 } from "./IncrediCardChip";
+import { IncrediCardGloss } from "./IncrediCardGloss";
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
@@ -48,6 +49,9 @@ export type IncrediCardFaceProps = {
   /** Default true. Forwarded straight to `IncrediCardChip`'s
    * `reflection` prop. */
   chipReflection?: boolean;
+  /** Default false. Renders `IncrediCardGloss` on both faces, for a theme
+   * with a glass surface. */
+  gloss?: boolean;
   /** Default false. An optional enhancement that renders
    * `IncrediCardHologram` on the front face's background only, behind
    * the real content. See that component's header comment. */
@@ -148,6 +152,7 @@ export function IncrediCardFace({
   faceLayout = "printed",
   chipReflection = true,
   holographic = false,
+  gloss = false,
   tilt = false,
   cardZoomed = false,
   onCardClick,
@@ -374,6 +379,7 @@ export function IncrediCardFace({
               {latchedMark.name}
             </span>
           ) : null}
+          {gloss ? <IncrediCardGloss /> : null}
         </div>
         <div className={classNames(styles.face, styles.back)}>
           {processing ? <IncrediCardSpinner /> : null}
@@ -390,6 +396,7 @@ export function IncrediCardFace({
               </span>
             </div>
           ) : null}
+          {gloss ? <IncrediCardGloss /> : null}
         </div>
       </div>
     </div>

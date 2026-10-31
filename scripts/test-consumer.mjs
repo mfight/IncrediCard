@@ -94,6 +94,7 @@ createRoot(document.getElementById("root")!).render(
     <IncrediCard id="plain-card" />
     <IncrediCard id="marked-card" acceptanceMarks={marks} />
     <IncrediCard id="atlas-card" theme="atlas" holographic />
+    <IncrediCard id="glass-card" theme="glass" />
   </>,
 );
 `,
@@ -149,6 +150,16 @@ createRoot(document.getElementById("root")!).render(
           mask: url(elements.map((e) => getComputedStyle(e).maskImage).find((v) => v.includes("incredicard-lines-"))),
         };
       };
+      const glassFace = [...(document.querySelector("#glass-card")?.querySelectorAll("*") ?? [])].find(
+        (element) => getComputedStyle(element).backdropFilter !== "none",
+      );
+      // The base rule alone, as a browser outside the `@supports` block
+      // reads it: the standard property has to survive minifying, since
+      // Firefox has no other. Same-origin here, so the rules are readable.
+      const baseRules = [...document.styleSheets]
+        .flatMap((sheet) => [...sheet.cssRules])
+        .filter((rule) => rule.selectorText && rule.style?.getPropertyValue("backdrop-filter"));
+      const lensHref = document.querySelector("#glass-card feImage")?.getAttribute("href") ?? "";
       const ribbons = lineArt("#plain-card");
       const globe = lineArt("#atlas-card");
       const plain = document.querySelector("#plain-card");
@@ -164,6 +175,9 @@ createRoot(document.getElementById("root")!).render(
         markUrl: mark?.src ?? null,
         markStatus: await status(mark?.src),
         markLoaded: Boolean(mark?.complete && mark.naturalWidth > 0),
+        glassFilter: glassFace ? getComputedStyle(glassFace).backdropFilter : null,
+        lensInlined: lensHref.startsWith("data:image/png"),
+        glassBaseRules: baseRules.length,
         ribbons: { ...ribbons, status: await status(ribbons.printed) },
         globe: { ...globe, status: await status(globe.printed), maskStatus: await status(globe.mask) },
       };
@@ -179,6 +193,10 @@ createRoot(document.getElementById("root")!).render(
       /incredicard-lines-globe-[^/]*\.svg$/.test(facts.globe.printed ?? "") && facts.globe.status === 200 && /incredicard-lines-globe-a-[^/]*\.svg$/.test(facts.globe.mask ?? "") && facts.globe.maskStatus === 200,
       `theme="atlas" prints the globe and masks its glare with it, both loaded as files (${facts.globe.printed}, ${facts.globe.status}; ${facts.globe.mask}, ${facts.globe.maskStatus})`,
     );
+    // This Chromium run has to get both. An app's minifier is what can lose
+    // either one, which is why this is checked on a real, minified build.
+    check(facts.glassFilter?.includes("url(") && facts.glassFilter.includes("blur") && facts.lensInlined, `theme="glass" frosts and refracts the backdrop, with its lens map inlined (${facts.glassFilter}, inlined: ${facts.lensInlined})`);
+    check(facts.glassBaseRules === 2, `both faces' base rules keep the standard backdrop-filter after minifying, for Firefox (${facts.glassBaseRules})`);
     check(facts.plainName && facts.plainImages === 0, `with no marks given, a Visa number names the network in text (${facts.plainImages} images)`);
     check(facts.markLoaded && !facts.markUrl.startsWith("data:") && facts.markStatus === 200 && !facts.markedName, `with the app's own Visa mark, a Visa number shows it, loaded as a file (${facts.markUrl}, ${facts.markStatus})`);
   } finally {

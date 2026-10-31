@@ -5,6 +5,7 @@ import {
   IncrediCardChip,
   useIncrediCardChipLight,
 } from "./IncrediCardChip";
+import { IncrediCardGloss } from "./IncrediCardGloss";
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
 import { useIncrediCardTilt } from "./IncrediCardTilt";
@@ -87,6 +88,9 @@ export type IncrediCardEmbeddedFaceProps = {
   chipReflection?: boolean;
   /** Default false. See the identical prop on IncrediCardFace.tsx;
    * renders on the front face's background only. */
+  /** Default false. Renders `IncrediCardGloss` on both faces, for a theme
+   * with a glass surface. */
+  gloss?: boolean;
   holographic?: boolean;
   /** Default false. See the identical prop on IncrediCardFace.tsx. */
   tilt?: boolean;
@@ -174,6 +178,7 @@ export function IncrediCardEmbeddedFace({
   faceLayout = "printed",
   chipReflection = true,
   holographic = false,
+  gloss = false,
   tilt = false,
   cardZoomed = false,
   scale = false,
@@ -396,6 +401,7 @@ export function IncrediCardEmbeddedFace({
               {latchedMark.name}
             </span>
           ) : null}
+          {gloss ? <IncrediCardGloss /> : null}
         </div>
         <div ref={backRef} className={classNames(styles.face, styles.back)}>
           {processing ? <IncrediCardSpinner /> : null}
@@ -405,6 +411,7 @@ export function IncrediCardEmbeddedFace({
               <div className={styles.cvcSlot}>{cvcField}</div>
             </div>
           ) : null}
+          {gloss ? <IncrediCardGloss /> : null}
         </div>
       </div>
       {onFlip ? (

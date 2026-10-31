@@ -158,6 +158,29 @@
   padding: 1rem;
   border-radius: var(--incredicard-face-radius);
   background: var(--incredicard-face-background);
+  // What shows through a translucent background (the "glass" theme). "none"
+  // for an opaque face. It has to be on this element: a layer inside it
+  // could only see the card's own content, not the page.
+  //
+  // The standard property last: a minifier treats the pair as one property
+  // and keeps the last, and Firefox reads only the standard one.
+  -webkit-backdrop-filter: var(--incredicard-face-backdrop);
+  backdrop-filter: var(--incredicard-face-backdrop);
+
+  // Refraction is an SVG filter reference, which only Chromium renders.
+  // Safari doesn't just skip it: any `url()` in the list discards the whole
+  // filter, blur included, and `@supports` on the filter itself can't tell,
+  // since Safari accepts the syntax. So every browser starts from the plain
+  // backdrop above, and this opts in only where a Chromium-only property
+  // exists, which fails safe: anything it doesn't match keeps its frost.
+  //
+  // It has to be a separate block. Two declarations relying on source order
+  // (a prefixed one for Safari to read last) work until an app's CSS
+  // minifier treats them as one property and drops one.
+  @supports (-webkit-app-region: none) {
+    backdrop-filter: var(--incredicard-face-backdrop-refracted, var(--incredicard-face-backdrop));
+  }
+
   box-shadow: var(--incredicard-face-shadow);
   // Clips IncrediCardHologram to this element's rounded corners. Without
   // this, its absolutely positioned, edge-to-edge svg would poke past
