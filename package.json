@@ -44,7 +44,7 @@
     "test": "vitest run",
     "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "test:consumer": "node scripts/test-consumer.mjs",
-    "artwork:ribbons": "node scripts/generate-ribbons.mjs",
+    "artwork:line-art": "node scripts/generate-line-art.mjs",
     "storybook": "storybook dev -p ${PORT:-6006}",
     "build-storybook": "storybook build",
     "prepack": "npm run build"

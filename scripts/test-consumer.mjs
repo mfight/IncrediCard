@@ -93,6 +93,7 @@ createRoot(document.getElementById("root")!).render(
   <>
     <IncrediCard id="plain-card" />
     <IncrediCard id="marked-card" acceptanceMarks={marks} />
+    <IncrediCard id="atlas-card" theme="atlas" holographic />
   </>,
 );
 `,
@@ -138,6 +139,18 @@ createRoot(document.getElementById("root")!).render(
         .map((element) => getComputedStyle(element).backgroundImage)
         .find((value) => value && value.includes("url("));
       const artworkUrl = artwork?.match(/url\("?([^")]+)"?\)/)?.[1] ?? null;
+      // The line art a card prints (its face's ::before) and the first
+      // glare mask its hologram uses, as URLs.
+      const lineArt = (card) => {
+        const elements = [...(document.querySelector(card)?.querySelectorAll("*") ?? [])];
+        const url = (value) => value?.match(/url\("?([^")]+)"?\)/)?.[1] ?? null;
+        return {
+          printed: url(elements.map((e) => getComputedStyle(e, "::before").backgroundImage).find((v) => v.includes("incredicard-lines-"))),
+          mask: url(elements.map((e) => getComputedStyle(e).maskImage).find((v) => v.includes("incredicard-lines-"))),
+        };
+      };
+      const ribbons = lineArt("#plain-card");
+      const globe = lineArt("#atlas-card");
       const plain = document.querySelector("#plain-card");
       const mark = document.querySelector("#marked-card")?.querySelector('img[src*="visa"]');
       return {
@@ -151,6 +164,8 @@ createRoot(document.getElementById("root")!).render(
         markUrl: mark?.src ?? null,
         markStatus: await status(mark?.src),
         markLoaded: Boolean(mark?.complete && mark.naturalWidth > 0),
+        ribbons: { ...ribbons, status: await status(ribbons.printed) },
+        globe: { ...globe, status: await status(globe.printed), maskStatus: await status(globe.mask) },
       };
     });
     await browser.close();
@@ -159,6 +174,11 @@ createRoot(document.getElementById("root")!).render(
     check(facts.fontLoaded, "styles.css loads the component's own Figtree");
     check(facts.inputFont.includes("IncrediCard Figtree"), `the fields use it (${facts.inputFont})`);
     check(Boolean(facts.artworkUrl) && !facts.artworkUrl.startsWith("data:") && facts.artworkStatus === 200, `the card artwork loads as a file (${facts.artworkUrl}, ${facts.artworkStatus})`);
+    check(/incredicard-lines-ribbons-[^/]*\.svg$/.test(facts.ribbons.printed ?? "") && facts.ribbons.status === 200, `the default theme prints the ribbons, loaded as a file (${facts.ribbons.printed}, ${facts.ribbons.status})`);
+    check(
+      /incredicard-lines-globe-[^/]*\.svg$/.test(facts.globe.printed ?? "") && facts.globe.status === 200 && /incredicard-lines-globe-a-[^/]*\.svg$/.test(facts.globe.mask ?? "") && facts.globe.maskStatus === 200,
+      `theme="atlas" prints the globe and masks its glare with it, both loaded as files (${facts.globe.printed}, ${facts.globe.status}; ${facts.globe.mask}, ${facts.globe.maskStatus})`,
+    );
     check(facts.plainName && facts.plainImages === 0, `with no marks given, a Visa number names the network in text (${facts.plainImages} images)`);
     check(facts.markLoaded && !facts.markUrl.startsWith("data:") && facts.markStatus === 200 && !facts.markedName, `with the app's own Visa mark, a Visa number shows it, loaded as a file (${facts.markUrl}, ${facts.markStatus})`);
   } finally {

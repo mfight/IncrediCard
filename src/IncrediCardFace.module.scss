@@ -13,7 +13,7 @@
 
 .faceWrapper {
   // The theme's values -- `--incredicard-face-*` (radius, background,
-  // color, shadow, ribbon print strength) and `--incredicard-holo-*` --
+  // color, shadow, line-art print strength) and `--incredicard-holo-*` --
   // are not declared here. They are inherited from the component's root,
   // which writes them from the theme object in themes.ts, so this face
   // looks the same for every theme and the theme decides everything that
@@ -178,7 +178,7 @@
   // element against its BACKDROP -- and the backdrop is defined by the
   // nearest ancestor that forms a stacking context. Without one here,
   // which ancestor wins is left to each engine to infer. Desktop Safari
-  // resolves it such that the foil's ribbon lines paint over the card
+  // resolves it such that the foil's lines paint over the card
   // number instead of under it, visible only while hovering, which is
   // when the glare layers switch on and there is a blend to perform.
   // Chrome resolves it the intended way.
@@ -193,7 +193,7 @@
   // `z-index` on the content is not needed once the group is bounded.
   isolation: isolate;
 
-  // The ribbon lines printed on the card, as their own layer rather than
+  // The line art printed on the card, as its own layer rather than
   // baked into the background image. See `--incredicard-face-lines-
   // opacity` above for why, and for the knob.
   //
@@ -220,7 +220,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url("./assets/images/incredicard-front-holo.svg");
+    background-image: var(--incredicard-lines);
     background-repeat: no-repeat;
     // The same stretch every other layer uses; see `.holo` in
     // IncrediCardHologram.module.scss for the pairing with the file's

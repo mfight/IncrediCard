@@ -1,12 +1,8 @@
 // The card face's ribbon-line artwork, drawn from numbers.
 //
-// Three files come out of one drawing: the full artwork
-// (`incredicard-front-holo.svg`, both ribbons in color) and one mask per
-// ribbon (`-a`, `-b`). The hologram depends on the masks lining up
-// exactly with the lines the full artwork prints, so all three are
-// written from the same path strings rather than exported separately
-// (see IncrediCardArtwork.test.ts, which also checks the committed files
-// against this generator's output).
+// Three files come out of one drawing, as for every piece of line art
+// (see lineArt.mjs): the foil (`incredicard-lines-ribbons.svg`, both
+// ribbons in color) and one mask per ribbon (`-a`, `-b`).
 //
 // A ribbon is a fan of fine lines blended between two boundary curves,
 // each a cubic Bezier in the artwork's 325x204 viewBox. Line i of n is the
@@ -20,20 +16,9 @@
 // vary: across the fan (`width`, from the first line to the last) and
 // along each line (`taper`, the fraction of full width at its ends).
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fmt, gradient, lineArtFiles, svg } from "./lineArt.mjs";
 
-export const IMAGES_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "assets", "images");
-
-export const FILES = {
-  foil: "incredicard-front-holo.svg",
-  maskA: "incredicard-front-holo-a.svg",
-  maskB: "incredicard-front-holo-b.svg",
-};
-
-const WIDTH = 325;
-const HEIGHT = 204;
+export const FILES = lineArtFiles("ribbons");
 
 // Each line is split into this many Bezier pieces before its edges are
 // offset. Offsetting a cubic by moving its control points is an
@@ -41,13 +26,6 @@ const HEIGHT = 204;
 // widths (about a third of a unit to just over one) six pieces keep the
 // edges within a few thousandths of a unit of the true offset.
 const PIECES = 6;
-
-// Coordinates are written to two decimals: a hundredth of a viewBox unit
-// is under a tenth of a pixel on a full-width card.
-const fmt = (n) => {
-  const s = (Math.round(n * 100) / 100).toFixed(2).replace(/\.?0+$/, "");
-  return s === "-0" ? "0" : s;
-};
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const lerpPoint = (p, q, t) => [lerp(p[0], q[0], t), lerp(p[1], q[1], t)];
@@ -150,28 +128,6 @@ export function ribbonPath({ from, to, startVia, lines, spacing = 1, width, tape
   return d;
 }
 
-// The foil's colors run across each ribbon's own span, so both read as
-// the same iridescent film. Lightness stays high throughout: the face
-// prints these desaturated and very faint, and the hologram blends them
-// with color-dodge, which only brightens.
-const STOPS = [
-  [0, "#F98BE4"],
-  [0.18, "#FFC9AE"],
-  [0.36, "#F1F7B8"],
-  [0.54, "#9FF5C8"],
-  [0.72, "#72E6FA"],
-  [0.87, "#7A8CF7"],
-  [1, "#D9A2FB"],
-];
-
-function gradient(id, [x1, x2]) {
-  const stops = STOPS.map(([offset, color]) => `<stop offset="${offset}" stop-color="${color}"/>`).join("\n");
-  return `<linearGradient id="${id}" x1="${x1}" y1="0" x2="${x2}" y2="0" gradientUnits="userSpaceOnUse">\n${stops}\n</linearGradient>`;
-}
-
-const svg = (body) =>
-  `<svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">\n${body}\n</svg>\n`;
-
 /** The three files' contents, keyed as in FILES. */
 export function renderRibbons(composition) {
   const a = ribbonPath(composition.a);
@@ -219,13 +175,3 @@ export const COMPOSITION = {
     gradient: [0, 300],
   },
 };
-
-/** The committed files' contents, keyed as in FILES. */
-export function readCommitted() {
-  return Object.fromEntries(Object.entries(FILES).map(([key, name]) => [key, readFileSync(join(IMAGES_DIR, name), "utf8")]));
-}
-
-export function writeRibbons(composition = COMPOSITION, dir = IMAGES_DIR) {
-  const files = renderRibbons(composition);
-  for (const [key, name] of Object.entries(FILES)) writeFileSync(join(dir, name), files[key]);
-}

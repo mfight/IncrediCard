@@ -7,6 +7,7 @@ import {
   incredicardThemeStyle,
   type IncrediCardThemeDefinition,
 } from "./themes";
+import { INCREDICARD_LINE_ART } from "./lineArt";
 
 // Whether the themes LOOK right isn't provable here; that was checked by
 // comparing screenshots of every story before and after themes became
@@ -44,6 +45,13 @@ describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme)
     expect(style["--incredicard-holo-falloff-color"]).toBe(
       `var(--theme-incredicard-holo-falloff-color, ${INCREDICARD_HOLOGRAM_BLENDS[theme.hologram.blend].falloffColor})`,
     );
+  });
+
+  it("writes its line art's three files, for the stylesheets that draw it", () => {
+    const art = INCREDICARD_LINE_ART[theme.lineArt];
+    expect(style["--incredicard-lines"]).toBe(`url("${art.foil}")`);
+    expect(style["--incredicard-lines-mask-a"]).toBe(`url("${art.maskA}")`);
+    expect(style["--incredicard-lines-mask-b"]).toBe(`url("${art.maskB}")`);
   });
 
   it("writes only the type values it has", () => {

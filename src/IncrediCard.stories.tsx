@@ -388,6 +388,45 @@ export const VintageOverlay: Story = {
   },
 };
 
+// theme="atlas": "modern"'s card and type, printed with an engraved globe
+// instead of ribbons (see the "atlas" theme in themes.ts and its art in
+// lineArt.ts). Holographic, since the foil is what the line art is for:
+// move the pointer across the card to light the land and the sphere's
+// rings separately.
+export const AtlasOverlay: Story = {
+  name: "Atlas: Overlay",
+  args: {
+    id: "story-atlas-overlay",
+    theme: "atlas",
+    layout: "overlay",
+    holographic: true,
+    defaultValue: {
+      cardholderName: "Alex Rivera",
+      cardNumber: "4242424242424242",
+      expirationMonth: "12",
+      expirationYear: "29",
+      cvc: "123",
+    },
+  },
+};
+
+export const AtlasStacked: Story = {
+  name: "Atlas: Stacked",
+  args: {
+    id: "story-atlas",
+    theme: "atlas",
+    layout: "stacked",
+    holographic: true,
+    defaultValue: {
+      cardholderName: "Alex Rivera",
+      cardNumber: "4242424242424242",
+      expirationMonth: "12",
+      expirationYear: "29",
+      cvc: "123",
+    },
+  },
+};
+
 // Everything this component animates, with reduced motion forced ON --
 // the state a user gets from the OS-level "reduce motion" setting,
 // without needing to change that setting to see it.

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import frontBlackArtwork from "./assets/images/incredicard-front-black.svg";
+import { INCREDICARD_LINE_ART, type IncrediCardLineArt } from "./lineArt";
 
 // IncrediCard's themes. Each one is a single object below, and adding a
 // theme means adding one more: its key becomes a valid `theme` prop, and
@@ -8,7 +9,8 @@ import frontBlackArtwork from "./assets/images/incredicard-front-black.svg";
 //
 // A theme supplies two kinds of thing:
 //
-// - VALUES: colors, artwork, fonts, the hologram's tuning. The component
+// - VALUES: colors, artwork (including which line art the face prints,
+//   from lineArt.ts), fonts, the hologram's tuning. The component
 //   writes them onto its root as `--incredicard-*` custom properties (see
 //   `incredicardThemeStyle` below), and the stylesheets only ever read
 //   those properties. No stylesheet mentions a theme by name.
@@ -68,6 +70,8 @@ export type IncrediCardThemeKnob = keyof typeof KNOBS;
 
 export type IncrediCardThemeDefinition = {
   faceLayout: IncrediCardFaceLayout;
+  /** The line art the face prints and the hologram lights. */
+  lineArt: IncrediCardLineArt;
   face: {
     /** Tied to the artwork's own corner radius (its `rx`). */
     radius: string;
@@ -76,8 +80,8 @@ export type IncrediCardThemeDefinition = {
     color: string;
     shadow: string;
     invalidColor: string;
-    /** How strongly the ribbon lines are printed before any light hits
-     * them. 0 for a face with no ribbons. */
+    /** How strongly the line art is printed before any light hits it.
+     * 0 for a face with no printed lines. */
     linesOpacity: number;
   };
   hologram: {
@@ -108,10 +112,11 @@ export const INCREDICARD_THEMES = {
   // The Figtree-set, dark-material card, with the ribbon foil.
   modern: {
     faceLayout: "printed",
+    lineArt: "ribbons",
     face: {
       radius: "0.75rem",
-      // Exported artwork: the card's material and nothing else. The ribbon
-      // lines are a separate layer (`.face::before`), so the printed lines
+      // Exported artwork: the card's material and nothing else. The line
+      // art is a separate layer (`.face::before`), so the printed lines
       // and the lit foil are the same file. The artwork's `rx="12"`
       // matches `radius`; a materially different radius needs a
       // re-export, not just a new value.
@@ -150,14 +155,16 @@ export const INCREDICARD_THEMES = {
   // once this theme uses them.
   vintage: {
     faceLayout: "embossed",
+    lineArt: "ribbons",
     face: {
       radius: "0.75rem",
       background: "linear-gradient(160deg, #f1e7d0 0%, #dbc999 55%, #c3aa73 100%)",
       color: "#43331d",
       shadow: "0 0.5rem 1.25rem rgb(0 0 0 / 20%), inset 0 0.0625rem 0 rgb(255 255 255 / 40%)",
       invalidColor: "#dc2626",
-      // No ribbon artwork on a plain ivory face; still overridable, so an
-      // app that wants the lines can have them.
+      // No printed lines on a plain ivory face; still overridable, so an
+      // app that wants the lines can have them. The hologram still lights
+      // the ribbons.
       linesOpacity: 0,
     },
     hologram: {
@@ -178,6 +185,36 @@ export const INCREDICARD_THEMES = {
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%), 0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%)",
       fieldEmboss:
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 90%), 0.0625rem 0.0625rem 0.0625rem rgb(0 0 0 / 25%)",
+    },
+    fixed: [],
+  },
+
+  // "modern"'s dark card and type, printed with an engraved globe instead
+  // of ribbons: North America on the card's right side, the sphere's
+  // limb and graticule to its left.
+  atlas: {
+    faceLayout: "printed",
+    lineArt: "globe",
+    face: {
+      radius: "0.75rem",
+      background: `url("${frontBlackArtwork}") 0 0 / 100% 100% no-repeat`,
+      color: "#ffffff",
+      shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%)",
+      invalidColor: "#dc2626",
+      linesOpacity: 0.08,
+    },
+    hologram: {
+      blend: "color-dodge",
+      opacity: 0.22,
+      restingSaturation: 0.35,
+      glareStrength: 1,
+      colorRadius: "72%",
+    },
+    type: {
+      nameFont: null,
+      printFont: null,
+      faceEmboss: null,
+      fieldEmboss: null,
     },
     fixed: [],
   },
@@ -218,6 +255,10 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition): CSSPro
   // are not an override point.
   style["--incredicard-holo-blend-mode"] = theme.hologram.blend;
   style["--incredicard-holo-opacity"] = String(theme.hologram.opacity);
+  const lineArt = INCREDICARD_LINE_ART[theme.lineArt];
+  style["--incredicard-lines"] = `url("${lineArt.foil}")`;
+  style["--incredicard-lines-mask-a"] = `url("${lineArt.maskA}")`;
+  style["--incredicard-lines-mask-b"] = `url("${lineArt.maskB}")`;
   // Left unset when null, so the rules that read them fall back to
   // inheriting, exactly as if they had never been declared.
   const type = {
