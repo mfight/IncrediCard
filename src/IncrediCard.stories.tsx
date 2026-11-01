@@ -483,7 +483,14 @@ export const GlassBackdropWiring: Story = {
       const id = backdropFilter.match(/url\("?#([^")]+)"?\)/)?.[1];
       await expect(id).toBeTruthy();
       await expect(canvasElement.ownerDocument.getElementById(id!)?.tagName.toLowerCase()).toBe("filter");
-      await expect(face.querySelector('[class*="rim"]')).not.toBeNull();
+      const rim = face.querySelector<HTMLElement>('[class*="rim"]');
+      await expect(rim).not.toBeNull();
+      // The resting rim gives way while the light is tracking, so the sheen
+      // moves rather than adding to fixed highlights.
+      await expect(getComputedStyle(rim!).opacity).toBe("1");
+      (face as HTMLElement).style.setProperty("--incredicard-chip-light-active", "1");
+      await waitFor(() => expect(getComputedStyle(rim!).opacity).toBe("0.25"));
+      (face as HTMLElement).style.removeProperty("--incredicard-chip-light-active");
     }
   },
 };

@@ -17,10 +17,12 @@ import styles from "./IncrediCardGloss.module.scss";
 // All of it stays slight, because the refraction is what makes the glass look
 // thick (IncrediCardRefraction). Painting the thickness on instead reads as a
 // frame around the card. The glow and rim each have a stretch that brightens
-// nearest the light. Those stretches and the surface highlight read the light
-// the chip and hologram read (see IncrediCardChip.tsx), including its on/off
-// flag, so with no pointer or sensor, or under reduced motion, only the still
-// glow and rim remain.
+// nearest the light, and their resting brightness fades while it does, so
+// the sheen appears to move around the edge rather than add to it. Those
+// stretches and the surface highlight read the light the chip and hologram
+// read (see IncrediCardChip.tsx), including its on/off flag, so with no
+// pointer or sensor, or under reduced motion, only the still glow and rim
+// remain.
 export function IncrediCardGloss() {
   return (
     <span className={styles.gloss} aria-hidden="true">

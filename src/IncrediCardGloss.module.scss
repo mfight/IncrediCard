@@ -59,6 +59,11 @@
     rgb(255 255 255 / 34%) 82%,
     rgb(255 255 255 / 75%)
   );
+  // The resting light gives way while a real one is tracking, or the fixed
+  // corners would stay bright beside the sheen that moves. A trace remains,
+  // so the edge doesn't vanish away from the light.
+  opacity: calc(1 - var(--incredicard-chip-light-active, 0) * 0.75);
+  transition: opacity 200ms ease-out;
 }
 
 .rimLight {
