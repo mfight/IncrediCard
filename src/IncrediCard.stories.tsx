@@ -465,6 +465,56 @@ export const GlassOnWhite: Story = {
   args: { id: "story-glass-white", theme: "glass", layout: "overlay" },
 };
 
+// Told what's behind it, so browsers that can't bend the live page bend a copy
+// at the rim. Chromium looks the same as Glass: Overlay; open this in Safari to
+// see the difference.
+const KNOWN_BACKDROP =
+  "repeating-linear-gradient(115deg, rgb(255 255 255 / 85%) 0 0.5rem, rgb(255 255 255 / 0%) 0.5rem 2.5rem), linear-gradient(120deg, #f97316, #ec4899 45%, #6366f1 75%, #06b6d4)";
+
+function OnKnownBackdrop(args: IncrediCardStoryArgs) {
+  const page = useRef<HTMLDivElement>(null);
+  return (
+    <div ref={page} data-testid="known-backdrop" style={{ padding: "3rem", background: KNOWN_BACKDROP }}>
+      <IncrediCard {...cardProps(args)} glassBackdrop={{ element: page, background: KNOWN_BACKDROP }} />
+    </div>
+  );
+}
+
+export const GlassKnownBackdrop: Story = {
+  name: "Glass: With a Known Backdrop",
+  render: (args) => <OnKnownBackdrop {...args} />,
+  args: { id: "story-glass-known", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+};
+
+// The copy's wiring, on both faces: lined up with the app's element, hidden
+// in Chromium, which bends the live page, and carrying the card's own filter.
+export const GlassBackdropCopyWiring: Story = {
+  tags: ["!dev"],
+  render: (args) => <OnKnownBackdrop {...args} />,
+  args: { id: "story-glass-copy", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement).getByTestId("known-backdrop").getBoundingClientRect();
+    const images = [...canvasElement.querySelectorAll<HTMLElement>('[class*="_image_"]')];
+    await expect(images).toHaveLength(2);
+    for (const image of images) {
+      await expect(parseFloat(image.style.width)).toBeCloseTo(page.width, 1);
+      await expect(parseFloat(image.style.height)).toBeCloseTo(page.height, 1);
+      await expect(getComputedStyle(image.parentElement!).filter).toContain("url(");
+      await expect(getComputedStyle(image.parentElement!.parentElement!).display).toBe("none");
+    }
+  },
+};
+
+// A theme that doesn't refract has no use for a copy.
+export const NoBackdropCopyOnOpaqueThemes: Story = {
+  tags: ["!dev"],
+  render: (args) => <OnKnownBackdrop {...args} />,
+  args: { id: "story-modern-copy", theme: "modern", layout: "overlay", defaultValue: GLASS_VALUE },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[class*="_image_"]')).toBeNull();
+  },
+};
+
 // The glass's wiring: both faces have the backdrop, Chromium keeps the
 // refraction ahead of it, the filter it refers to exists in the document,
 // and the other themes have none of this.

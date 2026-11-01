@@ -4,6 +4,7 @@ import {
   IncrediCardChip,
   useIncrediCardChipLight,
 } from "./IncrediCardChip";
+import { IncrediCardBackdropCopy, type IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
 import { IncrediCardGloss } from "./IncrediCardGloss";
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
@@ -49,6 +50,9 @@ export type IncrediCardFaceProps = {
   /** Default true. Forwarded straight to `IncrediCardChip`'s
    * `reflection` prop. */
   chipReflection?: boolean;
+  /** What's behind the card, on a refracting theme, for browsers that can't
+   * bend the live page. See IncrediCardBackdropCopy. */
+  glassBackdrop?: IncrediCardGlassBackdrop;
   /** Default false. Renders `IncrediCardGloss` on both faces, for a theme
    * with a glass surface. */
   gloss?: boolean;
@@ -153,6 +157,7 @@ export function IncrediCardFace({
   chipReflection = true,
   holographic = false,
   gloss = false,
+  glassBackdrop,
   tilt = false,
   cardZoomed = false,
   onCardClick,
@@ -236,6 +241,7 @@ export function IncrediCardFace({
         style={{ "--incredicard-flip-angle": `${flipAngleDeg}deg` } as React.CSSProperties}
       >
         <div className={classNames(styles.face, styles.front)}>
+          {glassBackdrop ? <IncrediCardBackdropCopy backdrop={glassBackdrop} /> : null}
           {processing ? <IncrediCardSpinner /> : null}
           {/* Front only, unlike the spinner, which is on both. Two
               reasons, and the first is NOT that the back is mirrored --
@@ -382,6 +388,7 @@ export function IncrediCardFace({
           {gloss ? <IncrediCardGloss /> : null}
         </div>
         <div className={classNames(styles.face, styles.back)}>
+          {glassBackdrop ? <IncrediCardBackdropCopy backdrop={glassBackdrop} /> : null}
           {processing ? <IncrediCardSpinner /> : null}
           <div className={styles.magstripe} />
           {showCvcOnBack ? (

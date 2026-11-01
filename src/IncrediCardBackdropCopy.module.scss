@@ -1,0 +1,44 @@
+// Under everything else on the face, including its printed lines, but above
+// the face's own background: `.face` is the stacking context.
+.backdropCopy {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  // A band around the edge, fading out just past where the lens stops bending.
+  -webkit-mask:
+    linear-gradient(90deg, #000, transparent 1rem, transparent calc(100% - 1rem), #000),
+    linear-gradient(#000, transparent 1rem, transparent calc(100% - 1rem), #000);
+  mask:
+    linear-gradient(90deg, #000, transparent 1rem, transparent calc(100% - 1rem), #000),
+    linear-gradient(#000, transparent 1rem, transparent calc(100% - 1rem), #000);
+
+  // Chromium bends the live page instead (the same check as the faces'
+  // `backdrop-filter` rules).
+  @supports (-webkit-app-region: none) {
+    display: none;
+  }
+}
+
+// Card-sized, so the filter's region is the card, as the lens map expects,
+// whatever the size of the image inside it. The same treatment the live page
+// gets from the theme's backdrop.
+.bent {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  filter: var(--incredicard-refraction-filter) var(--incredicard-face-backdrop);
+}
+
+.image {
+  position: absolute;
+}
+
+// The copy covers the face's own background, so it needs that tint again.
+.tint {
+  position: absolute;
+  inset: 0;
+  background: var(--incredicard-face-background);
+}

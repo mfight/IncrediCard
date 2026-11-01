@@ -325,6 +325,7 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
   style["--incredicard-holo-blend-mode"] = theme.hologram.blend;
   style["--incredicard-holo-opacity"] = String(theme.hologram.opacity);
   if (theme.face.refraction && refractionFilterId) {
+    style["--incredicard-refraction-filter"] = `url(#${refractionFilterId})`;
     style["--incredicard-face-backdrop-refracted"] = `url(#${refractionFilterId}) var(--incredicard-face-backdrop)`;
   }
   const lineArt = INCREDICARD_LINE_ART[theme.lineArt];

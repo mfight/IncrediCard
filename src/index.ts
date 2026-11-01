@@ -23,6 +23,7 @@ export { DEFAULT_INCREDICARD_LABELS } from "./IncrediCard";
 // IncrediCardOrientation.ts.
 export { requestIncrediCardMotionAccess } from "./IncrediCardOrientation";
 export type { IncrediCardMotionAccess } from "./IncrediCardOrientation";
+export type { IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
 export type {
   IncrediCardProps,
   IncrediCardValue,

@@ -95,6 +95,7 @@ createRoot(document.getElementById("root")!).render(
     <IncrediCard id="marked-card" acceptanceMarks={marks} />
     <IncrediCard id="atlas-card" theme="atlas" holographic />
     <IncrediCard id="glass-card" theme="glass" />
+    <IncrediCard id="copy-card" theme="glass" glassBackdrop={{ element: { current: document.body }, background: "linear-gradient(#123, #456)" }} />
   </>,
 );
 `,
@@ -159,6 +160,11 @@ createRoot(document.getElementById("root")!).render(
       const baseRules = [...document.styleSheets]
         .flatMap((sheet) => [...sheet.cssRules])
         .filter((rule) => rule.selectorText && rule.style?.getPropertyValue("backdrop-filter"));
+      // Its rules matter only outside Chromium, so nothing visible here would
+      // show a minifier dropping them. Read them from the computed styles.
+      const copyImage = [...(document.querySelector("#copy-card")?.querySelectorAll("span") ?? [])].find((span) => span.style.background);
+      const copyBent = copyImage?.parentElement;
+      const copy = copyBent?.parentElement;
       const lensHref = document.querySelector("#glass-card feImage")?.getAttribute("href") ?? "";
       const ribbons = lineArt("#plain-card");
       const globe = lineArt("#atlas-card");
@@ -178,6 +184,11 @@ createRoot(document.getElementById("root")!).render(
         glassFilter: glassFace ? getComputedStyle(glassFace).backdropFilter : null,
         lensInlined: lensHref.startsWith("data:image/png"),
         glassBaseRules: baseRules.length,
+        copy: copy && {
+          display: getComputedStyle(copy).display,
+          mask: getComputedStyle(copy).maskImage,
+          filter: getComputedStyle(copyBent).filter,
+        },
         ribbons: { ...ribbons, status: await status(ribbons.printed) },
         globe: { ...globe, status: await status(globe.printed), maskStatus: await status(globe.mask) },
       };
@@ -197,6 +208,7 @@ createRoot(document.getElementById("root")!).render(
     // either one, which is why this is checked on a real, minified build.
     check(facts.glassFilter?.includes("url(") && facts.glassFilter.includes("blur") && facts.lensInlined, `theme="glass" frosts and refracts the backdrop, with its lens map inlined (${facts.glassFilter}, inlined: ${facts.lensInlined})`);
     check(facts.glassBaseRules === 2, `both faces' base rules keep the standard backdrop-filter after minifying, for Firefox (${facts.glassBaseRules})`);
+    check(facts.copy?.display === "none" && facts.copy.mask.includes("gradient") && facts.copy.filter.includes("url(") && facts.copy.filter.includes("blur"), `glassBackdrop's copy stays out of Chromium, with its mask and filter intact after minifying (${JSON.stringify(facts.copy)})`);
     check(facts.plainName && facts.plainImages === 0, `with no marks given, a Visa number names the network in text (${facts.plainImages} images)`);
     check(facts.markLoaded && !facts.markUrl.startsWith("data:") && facts.markStatus === 200 && !facts.markedName, `with the app's own Visa mark, a Visa number shows it, loaded as a file (${facts.markUrl}, ${facts.markStatus})`);
   } finally {

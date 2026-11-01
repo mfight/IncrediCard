@@ -5,6 +5,7 @@ import {
   IncrediCardChip,
   useIncrediCardChipLight,
 } from "./IncrediCardChip";
+import { IncrediCardBackdropCopy, type IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
 import { IncrediCardGloss } from "./IncrediCardGloss";
 import { IncrediCardHologram } from "./IncrediCardHologram";
 import { IncrediCardSpinner } from "./IncrediCardSpinner";
@@ -88,6 +89,9 @@ export type IncrediCardEmbeddedFaceProps = {
   chipReflection?: boolean;
   /** Default false. See the identical prop on IncrediCardFace.tsx;
    * renders on the front face's background only. */
+  /** What's behind the card, on a refracting theme, for browsers that can't
+   * bend the live page. See IncrediCardBackdropCopy. */
+  glassBackdrop?: IncrediCardGlassBackdrop;
   /** Default false. Renders `IncrediCardGloss` on both faces, for a theme
    * with a glass surface. */
   gloss?: boolean;
@@ -179,6 +183,7 @@ export function IncrediCardEmbeddedFace({
   chipReflection = true,
   holographic = false,
   gloss = false,
+  glassBackdrop,
   tilt = false,
   cardZoomed = false,
   scale = false,
@@ -272,6 +277,7 @@ export function IncrediCardEmbeddedFace({
         style={{ "--incredicard-flip-angle": `${flipAngleDeg}deg` } as React.CSSProperties}
       >
         <div ref={frontRef} className={classNames(styles.face, styles.front)}>
+          {glassBackdrop ? <IncrediCardBackdropCopy backdrop={glassBackdrop} /> : null}
           {processing ? <IncrediCardSpinner /> : null}
           {/* Front only, unlike the spinner, which is on both. Two
               reasons, and the first is NOT that the back is mirrored --
@@ -404,6 +410,7 @@ export function IncrediCardEmbeddedFace({
           {gloss ? <IncrediCardGloss /> : null}
         </div>
         <div ref={backRef} className={classNames(styles.face, styles.back)}>
+          {glassBackdrop ? <IncrediCardBackdropCopy backdrop={glassBackdrop} /> : null}
           {processing ? <IncrediCardSpinner /> : null}
           <div className={styles.magstripe} aria-hidden="true" />
           {revealed && !cvcOnFront ? (

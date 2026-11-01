@@ -8,6 +8,7 @@ import {
 import { IncrediCardMaskedField } from "./IncrediCardMaskedField";
 import { IncrediCardFace } from "./IncrediCardFace";
 import { IncrediCardEmbeddedFace } from "./IncrediCardEmbeddedFace";
+import type { IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
 import { IncrediCardRefraction } from "./IncrediCardRefraction";
 import { applyMask } from "./maskEngine";
 import {
@@ -194,6 +195,11 @@ type IncrediCardOwnProps = {
    * the card's front background, behind the real content. See
    * `IncrediCardHologram`'s header comment. */
   holographic?: boolean;
+  /** What's behind the card, for the "glass" theme. Chromium bends the live
+   * page at the card's edge; other browsers can only bend a copy, so this says
+   * what to copy: the element behind the card and its CSS `background`.
+   * Without it they show the same glass with a flat edge. */
+  glassBackdrop?: IncrediCardGlassBackdrop;
   /** Default false. An optional 3D tilt that follows the pointer,
    * composed with the flip so neither ever snaps or resets the other. See
    * the header comment of `useIncrediCardTilt` (IncrediCardTilt.ts). */
@@ -331,6 +337,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       theme = "modern",
       chipReflection = true,
       holographic = false,
+      glassBackdrop,
       tilt = false,
       scale = false,
       acceptanceMarks,
@@ -1088,6 +1095,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             chipReflection={chipReflection}
             holographic={holographic}
             gloss={themeDefinition.face.specular > 0}
+            glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
             tilt={tilt}
             cardZoomed={cardZoomed}
             scale={scale}
@@ -1119,6 +1127,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 chipReflection={chipReflection}
                 holographic={holographic}
                 gloss={themeDefinition.face.specular > 0}
+                glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
                 tilt={tilt}
                 cardZoomed={cardZoomed}
                 onCardClick={scale ? handleCardClick : undefined}
