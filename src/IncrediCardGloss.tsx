@@ -10,28 +10,26 @@ import styles from "./IncrediCardGloss.module.scss";
 // under it. From the surface out to the edge:
 //
 // - a soft highlight on the surface, following the light;
-// - a facet: a thin, soft line where the flat surface meets the bevel, dark
-//   toward the light and pale away from it, as a real ridge would be;
-// - a bevel: a wide band around the edge, lit toward the top left and shaded
-//   toward the bottom right, so the glass rounds off rather than stops;
-// - a faint hairline at the very edge.
+// - a faint glow just inside the edge;
+// - a thin rim at the very edge, brightest at the corners, where a rounded
+//   edge catches the most light.
 //
-// Together they make the edge read as thickness: the lower edge of the slab
-// itself is the theme's shadow. All of this is there whether or not anything
-// is tracking. The bevel and hairline also have a stretch that brightens
-// nearest the light. Those stretches and the surface highlight read the light the chip and hologram read (see
-// IncrediCardChip.tsx), including its on/off flag, so with no pointer or
-// sensor, or under reduced motion, only the still edge remains.
+// All of it stays slight, because the refraction is what makes the glass look
+// thick (IncrediCardRefraction). Painting the thickness on instead reads as a
+// frame around the card. The glow and rim each have a stretch that brightens
+// nearest the light. Those stretches and the surface highlight read the light
+// the chip and hologram read (see IncrediCardChip.tsx), including its on/off
+// flag, so with no pointer or sensor, or under reduced motion, only the still
+// glow and rim remain.
 export function IncrediCardGloss() {
   return (
     <span className={styles.gloss} aria-hidden="true">
       <span className={styles.specular} />
-      <span className={styles.facet} />
-      <span className={styles.bevel}>
+      <span className={styles.glow}>
         <span className={styles.rim} />
         <span className={styles.rimLight} />
       </span>
-      <span className={styles.hairline}>
+      <span className={styles.edge}>
         <span className={styles.rim} />
         <span className={styles.rimLight} />
       </span>

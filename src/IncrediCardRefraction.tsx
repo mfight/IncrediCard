@@ -22,7 +22,7 @@ export function IncrediCardRefraction({ id }: { id: string }) {
     <svg className={styles.refraction} aria-hidden="true">
       <filter id={id} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
         <feImage href={lensMap} preserveAspectRatio="none" result="lens" />
-        <feDisplacementMap in="SourceGraphic" in2="lens" scale={50} xChannelSelector="R" yChannelSelector="G" />
+        <feDisplacementMap in="SourceGraphic" in2="lens" scale={90} xChannelSelector="R" yChannelSelector="G" />
       </filter>
     </svg>
   );
