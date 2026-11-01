@@ -16,7 +16,7 @@ import styles from "./IncrediCard.module.scss";
 // `width="100%"` would resolve against the viewport instead.
 //
 // `scale` is the most a pixel moves, in CSS pixels. Browsers that can't
-// render this (Safari) never read it, and show the plain frosted backdrop.
+// render this (Safari) never read it, and show the plain softened backdrop.
 export function IncrediCardRefraction({ id }: { id: string }) {
   return (
     <svg className={styles.refraction} aria-hidden="true">

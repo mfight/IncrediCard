@@ -10,20 +10,23 @@ import styles from "./IncrediCardGloss.module.scss";
 // under it. From the surface out to the edge:
 //
 // - a soft highlight on the surface, following the light;
-// - a bevel: a wide, feathered band around the edge, so the glass seems to
-//   round off there rather than stop;
-// - a crisp hairline at the very edge.
+// - a facet: a thin, soft line where the flat surface meets the bevel, dark
+//   toward the light and pale away from it, as a real ridge would be;
+// - a bevel: a wide band around the edge, lit toward the top left and shaded
+//   toward the bottom right, so the glass rounds off rather than stops;
+// - a faint hairline at the very edge.
 //
-// The bevel and hairline are each brightest toward the top left, the edge
-// catching ambient light, whether or not anything is tracking. Each also
-// has a stretch that brightens nearest the light. Those stretches and the
-// surface highlight read the light the chip and hologram read (see
+// Together they make the edge read as thickness: the lower edge of the slab
+// itself is the theme's shadow. All of this is there whether or not anything
+// is tracking. The bevel and hairline also have a stretch that brightens
+// nearest the light. Those stretches and the surface highlight read the light the chip and hologram read (see
 // IncrediCardChip.tsx), including its on/off flag, so with no pointer or
-// sensor, or under reduced motion, only the still bevel and hairline remain.
+// sensor, or under reduced motion, only the still edge remains.
 export function IncrediCardGloss() {
   return (
     <span className={styles.gloss} aria-hidden="true">
       <span className={styles.specular} />
+      <span className={styles.facet} />
       <span className={styles.bevel}>
         <span className={styles.rim} />
         <span className={styles.rimLight} />

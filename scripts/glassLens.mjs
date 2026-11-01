@@ -25,9 +25,10 @@ const CARD = { width: 325, height: 204, radius: 12 };
 export const LENS = {
   width: 96,
   height: 60,
-  // How far in from the edge the bend reaches, in artwork units. Short of
-  // the printed number, which starts about 30 units in.
-  band: 26,
+  // How far in from the edge the bend reaches, in artwork units: about the
+  // width of the bevel (IncrediCardGloss), which is where thick glass bends
+  // what's behind it. Well short of the printed number, about 30 units in.
+  band: 14,
 };
 
 /** Distance inside a rounded rectangle centered on the origin, and the unit

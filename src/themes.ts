@@ -246,8 +246,9 @@ export const INCREDICARD_THEMES = {
   },
 
   // "modern"'s type on smoked glass, with a hint of blue-teal: the page behind the card shows through,
-  // frosted and, where the browser can, bent at the rim (IncrediCardRefraction),
-  // with a lit edge and a highlight that follows the light (IncrediCardGloss). Smoked rather than clear because the text
+  // softened and, where the browser can, bent in the bevel
+  // (IncrediCardRefraction), with a shaped edge and a highlight that follows
+  // the light (IncrediCardGloss). Smoked rather than clear because the text
   // and an app's acceptance marks are white, and the card can sit on any
   // page. Blur alone guarantees nothing: on a white page it stays white. So
   // the backdrop is darkened as well as tinted, far enough that the text and
@@ -259,11 +260,14 @@ export const INCREDICARD_THEMES = {
       radius: "0.75rem",
       background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(8 40 56 / 45%)",
       color: "#ffffff",
-      // The inset is a soft inner glow, as light gathers in the glass's edge.
-      shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%), inset 0 0 1.25rem rgb(255 255 255 / 10%)",
+      // The stacked offsets are the slab's lower edge, the side of the glass
+      // seen from slightly above. Then its cast shadow, and a soft inner glow,
+      // as light gathers in the glass's edge.
+      shadow:
+        "0 0.0625rem 0 rgb(214 232 240 / 55%), 0 0.125rem 0 rgb(150 176 190 / 50%), 0 0.1875rem 0 rgb(84 108 122 / 50%), 0 0.75rem 1.5rem rgb(0 0 0 / 35%), inset 0 0 1.25rem rgb(255 255 255 / 10%)",
       invalidColor: "#fca5a5",
       linesOpacity: 0.14,
-      backdrop: "blur(0.3125rem) saturate(1.5) brightness(0.6)",
+      backdrop: "blur(0.15625rem) saturate(1.5) brightness(0.6)",
       refraction: true,
       specular: 0.5,
       placeholder: "rgb(255 255 255 / 90%)",
