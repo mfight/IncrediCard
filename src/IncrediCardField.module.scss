@@ -101,6 +101,24 @@
   &::placeholder {
     color: var(--theme-incredicard-field-placeholder-color, #9ca3af);
   }
+
+  // A password field only ever shows the browser's mask, never its
+  // characters, so it has no use for a web font, and WebKit can draw that mask
+  // as empty boxes when the field has a value at first layout in one (a
+  // pre-filled card, not one being typed into). System fonts avoid that.
+  &[type="password"] {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+}
+
+// A field's height comes from its font, so the masked field would otherwise
+// sit shorter than its neighbors in a taller one (OCR-B). This invisible,
+// zero-width digit in the field's own font holds the height it would have had.
+.container:has(.input[type="password"])::before {
+  content: "0";
+  width: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 
 .description {

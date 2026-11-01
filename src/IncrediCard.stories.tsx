@@ -507,6 +507,34 @@ export const NoBackdropOnOpaqueThemes: Story = {
   },
 };
 
+// A pre-filled security code in a web font can show empty boxes instead of
+// its mask in WebKit, which this suite doesn't run in, so this holds the rule
+// that avoids it: the masked field uses system fonts, in every theme.
+export const MaskedFieldUsesSystemFonts: Story = {
+  tags: ["!dev"],
+  render: (args) => (
+    <>
+      {Object.keys(INCREDICARD_THEMES).map((theme) => (
+        <IncrediCard
+          {...cardProps(args)}
+          key={theme}
+          id={`story-mask-${theme}`}
+          theme={theme as keyof typeof INCREDICARD_THEMES}
+        />
+      ))}
+    </>
+  ),
+  args: { layout: "overlay", defaultValue: GLASS_VALUE },
+  play: async ({ canvasElement }) => {
+    const fields = [...canvasElement.querySelectorAll<HTMLInputElement>('input[type="password"]')];
+    await expect(fields).toHaveLength(Object.keys(INCREDICARD_THEMES).length);
+    for (const field of fields) {
+      await expect(field.value).toBe("123");
+      await expect(getComputedStyle(field).fontFamily).not.toContain("IncrediCard");
+    }
+  },
+};
+
 // Everything this component animates, with reduced motion forced ON --
 // the state a user gets from the OS-level "reduce motion" setting,
 // without needing to change that setting to see it.
