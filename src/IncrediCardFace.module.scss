@@ -454,6 +454,10 @@
   text-transform: uppercase;
   font-family: var(--incredicard-name-font);
   text-shadow: var(--incredicard-face-emboss);
+  // Keeps each letter's true width. Chromium on Linux otherwise rounds it to
+  // a whole pixel, which adds 2.8px across "MASTERCARD" in OCR-A at this size
+  // and runs it out of the box.
+  text-rendering: geometricPrecision;
 }
 
 .magstripe {

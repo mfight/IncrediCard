@@ -489,6 +489,7 @@
   text-transform: uppercase;
   font-family: var(--incredicard-name-font);
   text-shadow: var(--incredicard-face-emboss);
+  text-rendering: geometricPrecision;
 }
 
 .cvcSlot {
