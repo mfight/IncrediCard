@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   INCREDICARD_ORIENTATION_PITCH_RANGE_DEG,
   INCREDICARD_ORIENTATION_RANGE_DEG,
   offsetFromOrientation,
+  requestIncrediCardMotionAccess,
   smoothOffset,
   subscribeToDeviceOrientation,
   type IncrediCardOrientationSample,
@@ -57,6 +58,44 @@ function normalize(offset: { x: number; y: number } | null) {
   if (!offset) return offset;
   return { x: offset.x + 0, y: offset.y + 0 };
 }
+
+describe("requestIncrediCardMotionAccess", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("is unsupported where there is no window", async () => {
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("unsupported");
+  });
+
+  // iOS over http://, which also hides the API: the case that used to read
+  // as "unsupported" and send people looking for a missing sensor.
+  it("is unavailable on an insecure origin that hides the API", async () => {
+    vi.stubGlobal("window", { isSecureContext: false });
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("unavailable");
+  });
+
+  it("is unavailable on an insecure origin that keeps the API, and doesn't prompt", async () => {
+    const requestPermission = vi.fn(() => Promise.resolve("granted"));
+    vi.stubGlobal("window", {
+      isSecureContext: false,
+      ondeviceorientation: null,
+      DeviceOrientationEvent: { requestPermission },
+    });
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("unavailable");
+    expect(requestPermission).not.toHaveBeenCalled();
+  });
+
+  it("is unsupported on a secure origin without the API", async () => {
+    vi.stubGlobal("window", { isSecureContext: true });
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("unsupported");
+  });
+
+  it("is granted on a secure origin that doesn't gate the sensor", async () => {
+    vi.stubGlobal("window", { isSecureContext: true, ondeviceorientation: null });
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("granted");
+  });
+});
 
 describe("offsetFromOrientation", () => {
   it("reads the neutral posture as dead center, whatever angle it is", () => {

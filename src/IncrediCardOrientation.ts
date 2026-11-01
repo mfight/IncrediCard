@@ -327,9 +327,12 @@ export function requestIncrediCardMotionAccess(): Promise<IncrediCardMotionAcces
   // the synchronous-call requirement above is the single easiest thing
   // to break here while editing, and a plain promise-returning function
   // makes any `await` that creeps in ahead of the call visible.
-  if (typeof window === "undefined" || !("ondeviceorientation" in window)) {
-    return Promise.resolve("unsupported");
-  }
+  if (typeof window === "undefined") return Promise.resolve("unsupported");
+  // Ahead of the sensor check, because iOS hides the API altogether on an
+  // insecure origin, and "this device has no sensor" would send someone
+  // testing over http:// looking for the wrong problem.
+  if (!window.isSecureContext) return Promise.resolve("unavailable");
+  if (!("ondeviceorientation" in window)) return Promise.resolve("unsupported");
 
   const request = getRequestPermission();
   if (!request) {
