@@ -245,7 +245,7 @@ export const INCREDICARD_THEMES = {
     fixed: [],
   },
 
-  // "modern"'s type on smoked glass: the page behind the card shows through,
+  // "modern"'s type on smoked glass, with a hint of blue-teal: the page behind the card shows through,
   // frosted and, where the browser can, bent at the rim (IncrediCardRefraction),
   // with a lit edge and a highlight that follows the light (IncrediCardGloss). Smoked rather than clear because the text
   // and an app's acceptance marks are white, and the card can sit on any
@@ -257,7 +257,7 @@ export const INCREDICARD_THEMES = {
     lineArt: "ribbons",
     face: {
       radius: "0.75rem",
-      background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(17 24 39 / 45%)",
+      background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(8 40 56 / 45%)",
       color: "#ffffff",
       // The inset is a soft inner glow, as light gathers in the glass's edge.
       shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%), inset 0 0 1.25rem rgb(255 255 255 / 10%)",

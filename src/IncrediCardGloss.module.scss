@@ -1,5 +1,7 @@
 .gloss,
 .specular,
+.bevel,
+.hairline,
 .rim,
 .rimLight {
   position: absolute;
@@ -18,14 +20,26 @@
   transition: opacity 200ms ease-out;
 }
 
-// Both rims are a full gradient cut down to a thin ring: the mask keeps the
-// whole box, minus its content box, leaving only the padding. A border
-// couldn't do this, since a gradient border-image ignores the radius, and the
-// usual padding-box trick paints the gradient under the whole translucent
-// face.
+// The same ring at two sizes. The bevel's is wide and blurred, so it fades
+// inward from the edge; `.face` clips what would fade outward. The hairline
+// stays sharp, for the edge itself.
+.bevel {
+  --ring-width: 0.3125rem;
+  opacity: 0.7;
+  filter: blur(0.25rem);
+}
+
+.hairline {
+  --ring-width: 0.0625rem;
+}
+
+// Each is a full gradient cut down to a ring: the mask keeps the whole box,
+// minus its content box, leaving only the padding. A border couldn't do
+// this, since a gradient border-image ignores the radius, and the usual
+// padding-box trick paints the gradient under the whole translucent face.
 .rim,
 .rimLight {
-  padding: 0.0625rem;
+  padding: var(--ring-width);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
