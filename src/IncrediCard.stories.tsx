@@ -480,10 +480,45 @@ function OnKnownBackdrop(args: IncrediCardStoryArgs) {
   );
 }
 
+// Tilt is on, and the button is here, because the copy's risk is how it moves:
+// on iOS the card hears no device tilt until something asks for motion access.
+function KnownBackdropDemo(args: IncrediCardStoryArgs) {
+  const [access, setAccess] = useState<IncrediCardMotionAccess | null>(null);
+  return (
+    <>
+      <OnKnownBackdrop {...args} />
+      <div className={themedStyles.motionActions}>
+        <button
+          type="button"
+          className={themedStyles.storyButton}
+          onClick={() => {
+            // Called straight from the handler, as in the DeviceTilt story.
+            void requestIncrediCardMotionAccess().then(setAccess);
+          }}
+        >
+          Allow motion access
+        </button>
+        {access ? (
+          <span className={themedStyles.motionStatus} data-access={access}>
+            {access}
+          </span>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 export const GlassKnownBackdrop: Story = {
   name: "Glass: With a Known Backdrop",
-  render: (args) => <OnKnownBackdrop {...args} />,
-  args: { id: "story-glass-known", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+  render: (args) => <KnownBackdropDemo {...args} />,
+  args: {
+    id: "story-glass-known",
+    theme: "glass",
+    layout: "overlay",
+    defaultValue: GLASS_VALUE,
+    tilt: true,
+    chipReflection: true,
+  },
 };
 
 // The copy's wiring, on both faces: lined up with the app's element, hidden
