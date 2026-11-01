@@ -258,13 +258,13 @@ export const INCREDICARD_THEMES = {
     lineArt: "ribbons",
     face: {
       radius: "0.75rem",
-      background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(8 40 56 / 45%)",
+      background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(2 58 78 / 45%)",
       color: "#ffffff",
       // A cast shadow, and a faint inner glow, as light gathers in the edge.
       shadow: "0 0.75rem 1.5rem rgb(0 0 0 / 35%), inset 0 0 0.75rem rgb(255 255 255 / 6%)",
       invalidColor: "#fca5a5",
       linesOpacity: 0.14,
-      backdrop: "blur(0.15625rem) saturate(1.5) brightness(0.6)",
+      backdrop: "blur(0.15625rem) saturate(1.5) brightness(0.55)",
       refraction: true,
       specular: 0.5,
       placeholder: "rgb(255 255 255 / 90%)",
