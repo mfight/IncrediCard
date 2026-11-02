@@ -590,7 +590,11 @@ export const GlassBackdropWiring: Story = {
       await expect(backdropFilter).toContain("blur");
       const id = backdropFilter.match(/url\("?#([^")]+)"?\)/)?.[1];
       await expect(id).toBeTruthy();
-      await expect(canvasElement.ownerDocument.getElementById(id!)?.tagName.toLowerCase()).toBe("filter");
+      const filter = canvasElement.ownerDocument.getElementById(id!);
+      await expect(filter?.tagName.toLowerCase()).toBe("filter");
+      // One bend per color channel, each its own strength, for the fringe.
+      const scales = [...filter!.querySelectorAll("feDisplacementMap")].map((map) => map.getAttribute("scale"));
+      await expect(new Set(scales).size).toBe(3);
       const rim = face.querySelector<HTMLElement>('[class*="rim"]');
       await expect(rim).not.toBeNull();
       // The resting rim gives way while the light is tracking, so the sheen
