@@ -8,12 +8,14 @@
   border-radius: inherit;
   pointer-events: none;
   // A band around the edge, fading out just past where the lens stops bending.
+  // In percentages because the lens map stretches to the card: its band is
+  // 20/325 of the width and 20/204 of the height (scripts/glassLens.mjs).
   -webkit-mask:
-    linear-gradient(90deg, #000, transparent 1rem, transparent calc(100% - 1rem), #000),
-    linear-gradient(#000, transparent 1rem, transparent calc(100% - 1rem), #000);
+    linear-gradient(90deg, #000, #000 3.5%, transparent 7%, transparent 93%, #000 96.5%, #000),
+    linear-gradient(#000, #000 5.5%, transparent 11%, transparent 89%, #000 94.5%, #000);
   mask:
-    linear-gradient(90deg, #000, transparent 1rem, transparent calc(100% - 1rem), #000),
-    linear-gradient(#000, transparent 1rem, transparent calc(100% - 1rem), #000);
+    linear-gradient(90deg, #000, #000 3.5%, transparent 7%, transparent 93%, #000 96.5%, #000),
+    linear-gradient(#000, #000 5.5%, transparent 11%, transparent 89%, #000 94.5%, #000);
 
   // Chromium bends the live page instead (the same check as the faces'
   // `backdrop-filter` rules).

@@ -9,9 +9,13 @@
 // So the backdrop stays calm behind the printed text and bends where it
 // reads as thickness.
 //
-// The band's strength comes from the distance to the card's rounded
-// rectangle, so it follows the corners. The map is small because the filter
-// stretches it to the card and the values change smoothly.
+// The bend comes from the glass's shape rather than a chosen curve: the edge is
+// a rounded profile, and each point's bend is how far a ray straight through it
+// lands away from where it entered, by Snell's law. So it's strongest where the
+// edge is steepest and fades out where the surface goes flat, and the distance
+// to the card's rounded rectangle makes that follow the corners. The map is
+// small because the filter stretches it to the card and the values change
+// smoothly.
 
 import { deflateSync } from "node:zlib";
 import { join } from "node:path";
@@ -23,14 +27,43 @@ export const LENS_FILE = join(IMAGES_DIR, "incredicard-glass-lens.png");
 const CARD = { width: 325, height: 204, radius: 12 };
 
 export const LENS = {
-  width: 96,
-  height: 60,
+  width: 240,
+  height: 150,
   // How far in from the edge the bend reaches, in artwork units. Narrow and
   // strong: this strip, where the backdrop is pulled in and squeezed, is what
-  // makes the glass look thick. Well short of the printed number, about 30
-  // units in.
-  band: 12,
+  // makes the glass look thick. Short of the printed number, about 30 units
+  // in.
+  band: 20,
+  // The rounded edge's shape: 2 is a circle's arc, and higher is a squarer
+  // shoulder, with the bend gathered closer to the rim.
+  curvature: 2,
+  // How thick the slab is and how tall its rounded edge, in artwork units, and
+  // how strongly the glass bends light. The thicker the slab, the further a ray
+  // travels after bending.
+  thickness: 20,
+  edgeHeight: 20,
+  refractiveIndex: 1.5,
+  // The map's peak, as a share of the most the filter's `scale` can move a
+  // pixel (IncrediCardRefraction).
+  strength: 1,
 };
+
+/** The edge's height at a point `x` of the way in from the rim, 0 to 1. */
+function edgeProfile(x, curvature) {
+  return (1 - (1 - x) ** curvature) ** (1 / curvature);
+}
+
+/** How far a ray entering `x` of the way in from the rim lands from where it
+ * entered, in artwork units. */
+function rayOffset(x, { band, curvature, thickness, edgeHeight, refractiveIndex }) {
+  const step = 1e-3;
+  const lower = Math.max(x - step, 0);
+  const upper = Math.min(x + step, 1);
+  const slope = ((edgeProfile(upper, curvature) - edgeProfile(lower, curvature)) / (upper - lower)) * (edgeHeight / band);
+  const incidence = Math.atan(slope);
+  const refraction = Math.asin(Math.sin(incidence) / refractiveIndex);
+  return (thickness + edgeHeight * edgeProfile(x, curvature)) * Math.tan(incidence - refraction);
+}
 
 /** Distance inside a rounded rectangle centered on the origin, and the unit
  * direction toward its interior. */
@@ -48,8 +81,18 @@ function insideDistance(x, y) {
     : { distance: CARD.radius - qy, nx: 0, ny: -Math.sign(y) };
 }
 
+/** Eases the bend to nothing across the band. A round edge's bend otherwise
+ * stops at a sudden angle where the surface goes flat, and anything straight
+ * behind the glass shows that as a kink. */
+function settle(x) {
+  return 1 - x * x * (3 - 2 * x);
+}
+
 /** The map's pixels, as rows of RGB bytes. */
-export function lensPixels({ width, height, band } = LENS) {
+export function lensPixels(options = LENS) {
+  const { width, height, band, strength: peak } = options;
+  // Scaled to the rim's own offset, the strongest there is.
+  const rim = rayOffset(0, options);
   const rows = [];
   for (let row = 0; row < height; row++) {
     const pixels = Buffer.alloc(width * 3);
@@ -57,9 +100,8 @@ export function lensPixels({ width, height, band } = LENS) {
       const x = ((column + 0.5) / width - 0.5) * CARD.width;
       const y = ((row + 0.5) / height - 0.5) * CARD.height;
       const { distance, nx, ny } = insideDistance(x, y);
-      // Nothing past the band, easing up to full strength at the edge.
-      const t = Math.max(0, 1 - Math.max(distance, 0) / band);
-      const strength = t * t;
+      const inward = Math.max(distance, 0) / band;
+      const strength = inward >= 1 ? 0 : peak * (rayOffset(inward, options) / rim) * settle(inward);
       pixels[column * 3] = Math.round(127.5 + 127.5 * strength * nx);
       pixels[column * 3 + 1] = Math.round(127.5 + 127.5 * strength * ny);
       pixels[column * 3 + 2] = 128;

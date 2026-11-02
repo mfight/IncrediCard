@@ -119,6 +119,17 @@ describe("IncrediCard card-face artwork", () => {
 
     // The whole point of a lens rather than noise: the backdrop behind the
     // printed text doesn't move.
+    it("bends most at the rim, and fades to nothing by the end of its band", () => {
+      const row = lensPixels()[Math.floor(LENS.height / 2)];
+      const bandEnd = Math.ceil((LENS.band / 325) * LENS.width);
+      const bends = Array.from({ length: bandEnd + 2 }, (_, column) => row[column * 3] - 128);
+      expect(bends[0]).toBeGreaterThan(100);
+      for (let column = 1; column < bends.length; column++) {
+        expect(bends[column]).toBeLessThanOrEqual(bends[column - 1]);
+      }
+      expect(bends[bandEnd + 1]).toBe(0);
+    });
+
     it("leaves the middle of the card alone and bends inward at the edge", () => {
       const rows = lensPixels();
       const pixel = (column: number, row: number) => [...rows[row].subarray(column * 3, column * 3 + 2)];
