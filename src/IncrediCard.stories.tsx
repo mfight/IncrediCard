@@ -58,6 +58,10 @@ const meta = {
       control: "select",
       options: ["sm", "md", "lg", "xl"],
     },
+    textTone: {
+      control: "select",
+      options: ["light", "dark"],
+    },
     theme: {
       control: "select",
       // Every theme themes.ts declares, so a new one appears here too.
@@ -457,19 +461,38 @@ export const GlassStacked: Story = {
   args: { id: "story-glass", theme: "glass", layout: "stacked", defaultValue: GLASS_VALUE },
 };
 
-// The hardest page for it: blur does nothing to plain white, so everything
-// here rests on the theme's tint and darkening. An empty card, for the
-// placeholder, which is the faintest text it has.
-export const GlassOnWhite: Story = {
-  name: "Glass: On a White Page",
-  args: { id: "story-glass-white", theme: "glass", layout: "overlay" },
+// Dark text, for a bright page. An empty card, for the placeholder, which is
+// the faintest text it has.
+export const GlassDarkText: Story = {
+  name: "Glass: Dark Text on a White Page",
+  args: { id: "story-glass-white", theme: "glass", textTone: "dark", layout: "overlay" },
+};
+
+// Dark text, filled in, on a page with color in it. The demo's marks are white,
+// so an app would pass dark ones here; this one leaves them out to show the
+// network's name, which follows the text.
+export const GlassDarkTextFilled: Story = {
+  name: "Glass: Dark Text, Filled",
+  render: (args) => (
+    <div style={{ padding: "3rem", background: "linear-gradient(120deg, #fde68a, #fbcfe8 50%, #bfdbfe)" }}>
+      <IncrediCard {...cardProps(args)} />
+    </div>
+  ),
+  args: {
+    id: "story-glass-dark-filled",
+    theme: "glass",
+    textTone: "dark",
+    layout: "overlay",
+    acceptanceMarks: {},
+    defaultValue: GLASS_VALUE,
+  },
 };
 
 // Told what's behind it, so browsers that can't bend the live page bend a copy
 // at the rim. Chromium looks the same as Glass: Overlay; open this in Safari to
 // see the difference.
 const KNOWN_BACKDROP =
-  "repeating-linear-gradient(115deg, rgb(255 255 255 / 85%) 0 0.5rem, rgb(255 255 255 / 0%) 0.5rem 2.5rem), linear-gradient(120deg, #f97316, #ec4899 45%, #6366f1 75%, #06b6d4)";
+  "repeating-linear-gradient(115deg, rgb(255 255 255 / 16%) 0 0.5rem, rgb(255 255 255 / 0%) 0.5rem 2.5rem), linear-gradient(120deg, #0f172a, #312e81 50%, #134e4a)";
 
 function OnKnownBackdrop(args: IncrediCardStoryArgs) {
   const page = useRef<HTMLDivElement>(null);

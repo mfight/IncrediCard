@@ -49,14 +49,19 @@
   mask-composite: exclude;
 }
 
-// Brightest at the corners the light falls on, and thin along the sides.
+// Lit at two opposite corners, fading to a trace of shade at the other two,
+// so the edge isn't one continuous line. `to bottom right` rather than an
+// angle puts the middle of the gradient exactly on those two corners at any
+// card proportions.
 .rim {
   background: linear-gradient(
-    135deg,
+    to bottom right,
     rgb(255 255 255 / 90%),
-    rgb(255 255 255 / 38%) 18%,
-    rgb(255 255 255 / 16%) 50%,
-    rgb(255 255 255 / 34%) 82%,
+    rgb(255 255 255 / 30%) 18%,
+    rgb(255 255 255 / 0%) 38%,
+    rgb(0 0 0 / 12%) 50%,
+    rgb(255 255 255 / 0%) 62%,
+    rgb(255 255 255 / 25%) 82%,
     rgb(255 255 255 / 75%)
   );
   // The resting light gives way while a real one is tracking, or the fixed

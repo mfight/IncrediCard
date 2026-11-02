@@ -349,6 +349,9 @@
   --theme-incredicard-field-border-color: transparent;
   --theme-incredicard-field-border-color-hover: rgb(255 255 255 / 25%);
   --theme-incredicard-field-color: var(--incredicard-face-color);
+  // Read by the input's text-shadow in IncrediCard.module.scss. Unset in a
+  // theme without one, which leaves that rule its `fieldEmboss`.
+  --incredicard-on-card-emboss: var(--incredicard-overlay-field-emboss);
   --theme-incredicard-field-radius: 0.125rem;
   --theme-incredicard-field-padding: 0;
 

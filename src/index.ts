@@ -29,6 +29,7 @@ export type {
   IncrediCardValue,
   IncrediCardLayout,
   IncrediCardTheme,
+  IncrediCardTextTone,
   IncrediCardLabels,
 } from "./IncrediCard";
 

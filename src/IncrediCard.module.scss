@@ -156,7 +156,7 @@
 .nameField,
 .printField {
   :global(input) {
-    text-shadow: var(--incredicard-field-emboss);
+    text-shadow: var(--incredicard-on-card-emboss, var(--incredicard-field-emboss));
   }
 }
 

@@ -11,8 +11,8 @@ import styles from "./IncrediCardGloss.module.scss";
 //
 // - a soft highlight on the surface, following the light;
 // - a faint glow just inside the edge;
-// - a thin rim at the very edge, brightest at the corners, where a rounded
-//   edge catches the most light.
+// - a thin rim at the very edge, lit at two opposite corners, where a rounded
+//   edge catches the most light, and fading out at the other two.
 //
 // All of it stays slight, because the refraction is what makes the glass look
 // thick (IncrediCardRefraction). Painting the thickness on instead reads as a

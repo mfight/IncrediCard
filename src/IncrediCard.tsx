@@ -27,6 +27,7 @@ import { useIncrediCardZoomFit } from "./IncrediCardZoomFit";
 import {
   getIncrediCardTheme,
   incredicardThemeStyle,
+  type IncrediCardTextTone,
   type IncrediCardTheme,
 } from "./themes";
 import styles from "./IncrediCard.module.scss";
@@ -107,7 +108,7 @@ export type IncrediCardLayout = "stacked" | "overlay";
 
 // The visual themes; each is one object in themes.ts, whose keys are the
 // valid names.
-export type { IncrediCardTheme } from "./themes";
+export type { IncrediCardTheme, IncrediCardTextTone } from "./themes";
 
 // Every user-facing string this component renders, all overridable. No
 // i18n hook is built in: a portable component can't assume a project has
@@ -195,6 +196,12 @@ type IncrediCardOwnProps = {
    * the card's front background, behind the real content. See
    * `IncrediCardHologram`'s header comment. */
   holographic?: boolean;
+  /** Default "light". Whether the "glass" theme's text is light or dark, for
+   * what's behind the card: light on a dark page, dark on a bright one. The
+   * glass is mostly clear, so nothing else protects its contrast. An
+   * `acceptanceMarks` image doesn't change with it, so pass marks that suit
+   * the tone. Other themes ignore this. */
+  textTone?: IncrediCardTextTone;
   /** What's behind the card, for the "glass" theme. Chromium bends the live
    * page at the card's edge; other browsers can only bend a copy, so this says
    * what to copy: the element behind the card and its CSS `background`.
@@ -337,6 +344,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       theme = "modern",
       chipReflection = true,
       holographic = false,
+      textTone = "light",
       glassBackdrop,
       tilt = false,
       scale = false,
@@ -663,7 +671,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       cardNumberPattern(networkInfo, 0),
     );
     const isOverlay = layout === "overlay";
-    const themeDefinition = getIncrediCardTheme(theme);
+    const themeDefinition = getIncrediCardTheme(theme, textTone);
     const refractionFilterId = useId();
     // Fits the "stacked" zoom to the viewport; "overlay" fits its own in
     // IncrediCardEmbeddedFace. See IncrediCardZoomFit.ts.

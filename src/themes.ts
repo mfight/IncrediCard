@@ -31,6 +31,8 @@ import { INCREDICARD_LINE_ART, type IncrediCardLineArt } from "./lineArt";
 
 export type IncrediCardFaceLayout = "printed" | "embossed";
 
+export type IncrediCardTextTone = "light" | "dark";
+
 // The hologram's blend mode and the color that, under that mode, means
 // "leave the backdrop alone". The glare layers fade toward that color
 // away from their highlight, so a mismatch doesn't soften the effect, it
@@ -117,6 +119,16 @@ export type IncrediCardThemeDefinition = {
     faceEmboss: string | null;
     /** The same, tuned for the fields' light background. */
     fieldEmboss: string | null;
+    /** The shadow on a field sitting on the card, in the overlay layout.
+     * `null` uses `fieldEmboss` there too. */
+    overlayFieldEmboss: string | null;
+  };
+  /** What `textTone="dark"` changes, for a theme that offers it. Other themes
+   * ignore `textTone`. */
+  darkText?: {
+    face: Pick<IncrediCardThemeDefinition["face"], "color" | "invalidColor" | "placeholder" | "linesOpacity">;
+    hologram: IncrediCardThemeDefinition["hologram"];
+    type: Pick<IncrediCardThemeDefinition["type"], "faceEmboss" | "overlayFieldEmboss">;
   };
   /** Knobs this theme pins, ignoring any `--theme-*` override. */
   fixed: readonly IncrediCardThemeKnob[];
@@ -159,6 +171,7 @@ export const INCREDICARD_THEMES = {
       printFont: null,
       faceEmboss: null,
       fieldEmboss: null,
+      overlayFieldEmboss: null,
     },
     fixed: [],
   },
@@ -207,6 +220,7 @@ export const INCREDICARD_THEMES = {
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%), 0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%)",
       fieldEmboss:
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 90%), 0.0625rem 0.0625rem 0.0625rem rgb(0 0 0 / 25%)",
+      overlayFieldEmboss: null,
     },
     fixed: [],
   },
@@ -241,33 +255,34 @@ export const INCREDICARD_THEMES = {
       printFont: null,
       faceEmboss: null,
       fieldEmboss: null,
+      overlayFieldEmboss: null,
     },
     fixed: [],
   },
 
-  // "modern"'s type on smoked glass, with a hint of blue-teal: the page behind the card shows through,
-  // softened and, where the browser can, bent at the edge
-  // (IncrediCardRefraction), with a thin rim and a highlight that follows the
-  // light (IncrediCardGloss). Smoked rather than clear because the text
-  // and an app's acceptance marks are white, and the card can sit on any
-  // page. Blur alone guarantees nothing: on a white page it stays white. So
-  // the backdrop is darkened as well as tinted, far enough that the text and
-  // placeholder keep AA contrast over pure white (themes.test.ts checks it).
+  // "modern"'s type on mostly clear glass: the page behind the card shows
+  // through, softened and, where the browser can, bent at the edge
+  // (IncrediCardRefraction), with a rim lit at two opposite corners and a
+  // highlight that follows the light (IncrediCardGloss). Clear glass can't
+  // keep its text readable on every page, so the app chooses the text that
+  // suits its own, through `textTone`. A soft shadow helps on a busy page, but
+  // nothing here guarantees contrast. The hologram follows the tone: light
+  // text means a dark page, which only dodge can light, and dark text means a
+  // bright one, which only burn can mark.
   glass: {
     faceLayout: "printed",
     lineArt: "ribbons",
     face: {
       radius: "0.75rem",
-      background: "linear-gradient(160deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 0%) 40%), rgb(2 58 78 / 45%)",
+      background: "rgb(232 247 251 / 10%)",
       color: "#ffffff",
-      // A cast shadow, and a faint inner glow, as light gathers in the edge.
-      shadow: "0 0.75rem 1.5rem rgb(0 0 0 / 35%), inset 0 0 0.75rem rgb(255 255 255 / 6%)",
-      invalidColor: "#fca5a5",
-      linesOpacity: 0.14,
-      backdrop: "blur(0.15625rem) saturate(1.5) brightness(0.55)",
+      shadow: "0 0.75rem 1.5rem rgb(0 0 0 / 35%)",
+      invalidColor: "#fecaca",
+      linesOpacity: 0.2,
+      backdrop: "blur(0.15625rem) saturate(1.2)",
       refraction: true,
       specular: 0.5,
-      placeholder: "rgb(255 255 255 / 90%)",
+      placeholder: "rgb(255 255 255 / 85%)",
     },
     hologram: {
       blend: "color-dodge",
@@ -279,8 +294,28 @@ export const INCREDICARD_THEMES = {
     type: {
       nameFont: null,
       printFont: null,
-      faceEmboss: null,
+      faceEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
       fieldEmboss: null,
+      overlayFieldEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
+    },
+    darkText: {
+      face: {
+        color: "#05131a",
+        invalidColor: "#7f1d1d",
+        placeholder: "rgb(5 19 26 / 85%)",
+        linesOpacity: 0.3,
+      },
+      hologram: {
+        blend: "color-burn",
+        opacity: 0.35,
+        restingSaturation: 1,
+        glareStrength: 1,
+        colorRadius: "72%",
+      },
+      type: {
+        faceEmboss: "0 0 0.25rem rgb(255 255 255 / 60%)",
+        overlayFieldEmboss: "0 0 0.25rem rgb(255 255 255 / 60%)",
+      },
     },
     fixed: [],
   },
@@ -289,11 +324,22 @@ export const INCREDICARD_THEMES = {
 export type IncrediCardTheme = keyof typeof INCREDICARD_THEMES;
 
 /** A theme by name, falling back to "modern" for a name it doesn't
- * know (only reachable from untyped code). */
-export function getIncrediCardTheme(name: string | undefined): IncrediCardThemeDefinition {
-  return Object.hasOwn(INCREDICARD_THEMES, name ?? "")
+ * know (only reachable from untyped code), with its dark text if asked for
+ * and it has any. */
+export function getIncrediCardTheme(
+  name: string | undefined,
+  textTone: IncrediCardTextTone = "light",
+): IncrediCardThemeDefinition {
+  const theme: IncrediCardThemeDefinition = Object.hasOwn(INCREDICARD_THEMES, name ?? "")
     ? INCREDICARD_THEMES[name as IncrediCardTheme]
     : INCREDICARD_THEMES.modern;
+  if (textTone !== "dark" || !theme.darkText) return theme;
+  return {
+    ...theme,
+    face: { ...theme.face, ...theme.darkText.face },
+    hologram: theme.darkText.hologram,
+    type: { ...theme.type, ...theme.darkText.type },
+  };
 }
 
 /**
@@ -339,6 +385,7 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
     "--incredicard-print-font": theme.type.printFont,
     "--incredicard-face-emboss": theme.type.faceEmboss,
     "--incredicard-field-emboss": theme.type.fieldEmboss,
+    "--incredicard-overlay-field-emboss": theme.type.overlayFieldEmboss,
   };
   for (const [name, value] of Object.entries(type)) {
     if (value !== null) style[name] = value;

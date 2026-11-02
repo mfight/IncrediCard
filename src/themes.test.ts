@@ -58,11 +58,11 @@ describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme)
   });
 
   it("writes only the type values it has", () => {
-    const written = ["nameFont", "printFont", "faceEmboss", "fieldEmboss"].filter(
+    const written = ["nameFont", "printFont", "faceEmboss", "fieldEmboss", "overlayFieldEmboss"].filter(
       (key) => theme.type[key as keyof typeof theme.type] !== null,
     ).length;
     const typeProps = Object.keys(style).filter((p) =>
-      /^--incredicard-(name-font|print-font|face-emboss|field-emboss)$/.test(p),
+      /^--incredicard-(name-font|print-font|face-emboss|field-emboss|overlay-field-emboss)$/.test(p),
     );
     expect(typeProps).toHaveLength(written);
   });
@@ -87,34 +87,22 @@ describe("incredicardThemeStyle", () => {
 describe("the glass backdrop", () => {
   const glass = INCREDICARD_THEMES.glass;
 
-  const luminance = (rgb: number[]) => {
-    const [r, g, b] = rgb.map((c) => {
-      const v = c / 255;
-      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-    });
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  };
-  const contrast = (a: number[], b: number[]) => {
-    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-    return (hi + 0.05) / (lo + 0.05);
-  };
-  const over = (top: number[], alpha: number, under: number[]) => under.map((c, i) => top[i] * alpha + c * (1 - alpha));
-
-  // Blur and saturation leave pure white as it is, so a white page is the
-  // brightest the glass can get. Worst of all where the sheen is strongest.
-  const brightness = Number(glass.face.backdrop.match(/brightness\(([\d.]+)\)/)![1]);
-  const [r, g, b, tint] = glass.face.background.match(/rgb\((\d+) (\d+) (\d+) \/ (\d+)%\)$/)!.slice(1).map(Number);
-  const sheen = Number(glass.face.background.match(/rgb\(255 255 255 \/ (\d+)%\)/)![1]);
-  const page = [255, 255, 255].map((c) => c * brightness);
-  const worst = over([255, 255, 255], sheen / 100, over([r, g, b], tint / 100, page));
-
-  it("keeps the text readable over a pure white page", () => {
-    expect(contrast([255, 255, 255], worst)).toBeGreaterThanOrEqual(4.5);
+  // The two tones stay paired: light text with the blend that can light a dark
+  // page, dark text with the one that can mark a bright page.
+  it("offers dark text, which brings its own colors and hologram", () => {
+    const dark = getIncrediCardTheme("glass", "dark");
+    expect(glass.face.color).toBe("#ffffff");
+    expect(glass.hologram.blend).toBe("color-dodge");
+    expect(dark.face.color).toBe("#05131a");
+    expect(dark.hologram.blend).toBe("color-burn");
+    expect(dark.face.backdrop).toBe(glass.face.backdrop);
+    const style = incredicardThemeStyle(dark) as Record<string, string>;
+    expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS["color-burn"].falloffColor);
   });
 
-  it("keeps the placeholder readable over a pure white page", () => {
-    const alpha = Number(glass.face.placeholder.match(/\/ (\d+)%/)![1]) / 100;
-    expect(contrast(over([255, 255, 255], alpha, worst), worst)).toBeGreaterThanOrEqual(4.5);
+  it("leaves the other themes alone", () => {
+    expect(getIncrediCardTheme("modern", "dark")).toBe(modern);
+    expect(getIncrediCardTheme("vintage", "dark")).toBe(INCREDICARD_THEMES.vintage);
   });
 
   it("refers to the card's own filter, ahead of the backdrop", () => {
