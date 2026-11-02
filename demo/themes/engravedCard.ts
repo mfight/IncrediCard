@@ -4,7 +4,7 @@
 import { extendIncrediCardTheme } from "../../src";
 import artwork from "./engraved-card.svg";
 
-export const engravedCardTheme = extendIncrediCardTheme("modern", {
+export const engravedCardTheme = extendIncrediCardTheme("vintage", {
   face: {
     background: `url("${artwork}") 0 0 / 100% 100% no-repeat`,
     color: "#10231a",
@@ -13,11 +13,5 @@ export const engravedCardTheme = extendIncrediCardTheme("modern", {
     shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 25%)",
     // The artwork is the whole face, so no line art prints over it.
     linesOpacity: 0,
-  },
-  // The number prints across the artwork's emblem, so the text carries a soft
-  // halo in the face's own color to stay readable over its lines.
-  type: {
-    faceEmboss: "0 0 0.25rem rgb(223 241 223 / 90%)",
-    overlayFieldEmboss: "0 0 0.25rem rgb(223 241 223 / 90%)",
   },
 });

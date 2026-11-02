@@ -161,58 +161,153 @@ function wordmark(text, top, capHeight, widen) {
   return `<g transform="translate(${fmt(left)} ${top}) scale(${scaleX} ${scaleY})" fill="${INK}" fill-rule="evenodd">${glyphs.join("")}</g>`;
 }
 
-// The emblem: an engraved head of Liberty in profile, in an oval at the center
-// of the card. The number prints across it, so the engraving stays a mid green
-// that dark text reads over, with its heaviest ink above and below the number.
+// The emblem: an inked head and shoulders of Liberty, in an oval at the center
+// of the card. Everything is drawn in the oval's own coordinates, as brush
+// shapes rather than even lines: the ink swells and tapers, the way an
+// engraver's line does. The number prints across the neck and collar, so the
+// shadows there are hatched in a mid green, and the solid ink stays above it.
 const CENTER = { x: WIDTH / 2, y: HEIGHT / 2 };
 const OVAL_SIZE = { rx: 40, ry: 50 };
 const ENGRAVE = "#3f7d58";
-const ENGRAVE_DARK = "#1d4a33";
+const PAPER = "#eff8ef";
 
-function hatch(from, to, count, bend) {
+// A brush stroke along a curve from `a` to `b` through control `c`, thickest in
+// the middle and coming to a point at each end.
+function brush(a, c, b, width) {
+  const left = [];
+  const right = [];
+  const steps = 14;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = (1 - t) ** 2 * a[0] + 2 * (1 - t) * t * c[0] + t ** 2 * b[0];
+    const y = (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * c[1] + t ** 2 * b[1];
+    const dx = 2 * (1 - t) * (c[0] - a[0]) + 2 * t * (b[0] - c[0]);
+    const dy = 2 * (1 - t) * (c[1] - a[1]) + 2 * t * (b[1] - c[1]);
+    const length = Math.hypot(dx, dy) || 1;
+    const half = (width / 2) * Math.sin(Math.PI * t) ** 0.8;
+    left.push([x - (dy / length) * half, y + (dx / length) * half]);
+    right.unshift([x + (dy / length) * half, y - (dx / length) * half]);
+  }
+  return `${path([...left, ...right])}Z`;
+}
+
+// Parallel fine lines between two edges, for a shadow.
+function hatch(from, to, count) {
   const lines = [];
   for (let i = 0; i < count; i++) {
     const t = count === 1 ? 0 : i / (count - 1);
-    const [x1, y1] = [from[0][0] + (from[1][0] - from[0][0]) * t, from[0][1] + (from[1][1] - from[0][1]) * t];
-    const [x2, y2] = [to[0][0] + (to[1][0] - to[0][0]) * t, to[0][1] + (to[1][1] - to[0][1]) * t];
-    lines.push(`M${fmt(x1)} ${fmt(y1)}Q${fmt((x1 + x2) / 2 + bend[0])} ${fmt((y1 + y2) / 2 + bend[1])} ${fmt(x2)} ${fmt(y2)}`);
+    const at = (edge) => [edge[0][0] + (edge[1][0] - edge[0][0]) * t, edge[0][1] + (edge[1][1] - edge[0][1]) * t];
+    lines.push(path([at(from), at(to)]));
   }
-  return `<path d="${lines.join("")}"/>`;
+  return lines.join("");
+}
+
+function rays() {
+  const [ox, oy] = [0.5, -17];
+  const shapes = [];
+  for (const [degrees, tip] of [[-170, 32], [-145, 30], [-118, 28], [-90, 27], [-62, 28], [-35, 30], [-10, 32]]) {
+    const a = (degrees * Math.PI) / 180;
+    const at = (r, delta) => [ox + r * Math.cos(a + delta), oy + r * Math.sin(a + delta)];
+    const spread = 0.13;
+    shapes.push(`<path d="${path([at(15, spread), at(tip, 0), at(15, -spread)])}Z" fill="${PAPER}" stroke="${INK}" stroke-width="0.4"/>`);
+    // The shadowed half of each ray, on the side away from the light.
+    shapes.push(`<path d="${path([at(15, 0), at(tip, 0), at(15, -spread)])}Z" fill="${INK}"/>`);
+  }
+  return shapes.join("");
+}
+
+function crown() {
+  const windows = [];
+  for (let i = 0; i < 13; i++) {
+    const t = i / 12;
+    const a = Math.PI + t * Math.PI;
+    const point = (rx, ry) => [0.5 + rx * Math.cos(a), -18.5 + ry * Math.sin(a)];
+    const [p, q] = [point(13.5, 10.2), point(15.3, 12.2)];
+    windows.push(`<path d="M${fmt(p[0])} ${fmt(p[1])}L${fmt(q[0])} ${fmt(q[1])}"/>`);
+  }
+  return [
+    // The band sits on the brow, with a row of windows in its upper half.
+    `<path d="M-16.5 -17C-16 -35 17 -35 17.5 -17C13 -24 -12 -24 -16.5 -17Z" fill="${INK}"/>`,
+    `<path d="M-14.8 -19C-13 -32.4 14.5 -32.4 15.8 -19C11 -25 -10.5 -25 -14.8 -19Z" fill="${PAPER}"/>`,
+    `<g stroke="${INK}" stroke-width="1" fill="none">${windows.join("")}</g>`,
+    `<path d="M-14.5 -18.6C-10 -24.6 11 -24.6 15.5 -18.6C11 -22.6 -10 -22.6 -14.5 -18.6Z" fill="${INK}"/>`,
+  ].join("");
+}
+
+function portrait() {
+  // Three-quarters to the right, so the far side of the face has its own
+  // contour: the brow, the cheek, the lips and the chin.
+  const face =
+    "M-13 -19C-8 -23 9 -23 13 -19.5C14.3 -17 13.6 -15.8 13 -14.6C13.5 -12 13.2 -10.5 12.6 -8.8C12.9 -7.6 12.4 -6.6 11.6 -5.9C11.7 -4.9 11.2 -4.2 10.6 -3.6C10.6 -1.8 9.2 0.6 6.6 1.6C3 3 -1 2.2 -4 -0.4C-8.4 -3.8 -12.2 -8.5 -13.4 -13C-13.6 -15 -13.4 -17 -13 -19Z";
+  const neck = "M-7.5 -1.5L-8.5 13C-3 19 6 19 10 13L8 1C4 3 -2 2 -7.5 -1.5Z";
+  const robe = "M-44 54L-42 40C-34 30 -22 26 -13 20C-6 28 8 28 15 20C25 26 34 30 42 39L44 54Z";
+  const headInk = [
+    // The hair: a wave under the crown, then heavy locks behind the jaw.
+    brush([-12.4, -20], [-6, -18], [-13.4, -12], 1.7),
+    brush([-14, -19], [-23, -10], [-16, 4], 5),
+    brush([-13, -10], [-20, -1], [-15, 11], 3.8),
+    brush([-18, -13], [-25, -2], [-20, 13], 2.6),
+    brush([14, -18.5], [18.5, -9], [13, 4], 2.8),
+    brush([16, -13], [20, -4], [15.5, 9], 1.8),
+    // The brows, thin at their ends.
+    brush([-9.2, -16.5], [-3.2, -18.8], [2.6, -15.8], 0.65),
+    brush([5.8, -15.9], [9.2, -18], [13, -16.2], 0.6),
+    // The eyes: a heavy upper lid and a fine lower one, with no pupils, as on
+    // a statue.
+    brush([-8.2, -13.7], [-4, -15.2], [0.9, -13.3], 0.75),
+    brush([-7.2, -13.2], [-3.6, -11.9], [0.7, -13.1], 0.45),
+    brush([6.3, -13.3], [9, -14.8], [12, -13.7], 0.7),
+    brush([7, -13], [9.4, -12], [11.7, -13.2], 0.4),
+    // The nose: its shadowed far plane, the shadow under it and its near wing.
+    "M4.6 -15.2L6.6 -11L8.7 -6.7L6.8 -5.9L6 -9.2Z",
+    brush([1.4, -5.7], [4.8, -4.1], [8.6, -5.9], 1.2),
+    brush([1.5, -7.4], [0.5, -5.8], [2.4, -5], 0.55),
+    // The mouth: the line between the lips, and the shadow under the lower.
+    brush([0.2, -2.5], [3.8, -1.5], [7.8, -2.8], 0.6),
+    brush([1.8, -3.5], [4.6, -4.2], [7, -3.4], 0.4),
+    brush([1.8, -0.4], [4.4, 0.5], [7.2, -0.6], 0.7),
+    // The jaw's near edge, lost toward the chin.
+    brush([-12.6, -9], [-8.5, -2.4], [-2, 1.9], 0.8),
+  ];
+  const robeInk = [
+    // The folds fall from the neck and shoulders, and a sash crosses the chest.
+    brush([-13, 21], [-29, 29], [-38, 49], 2.2),
+    brush([-19, 29], [-27, 38], [-28, 54], 1.5),
+    brush([-10, 28], [-19, 38], [-18, 55], 2.4),
+    brush([-3, 29], [-11, 42], [-7, 55], 1.2),
+    brush([-22, 40], [1, 33], [29, 53], 2.6),
+    brush([-15, 45], [4, 39], [20, 54], 1.2),
+    brush([8, 28], [15, 33], [20, 42], 1.8),
+    brush([16, 21], [31, 28], [37, 48], 2.4),
+    brush([24, 30], [31, 40], [32, 54], 1.4),
+    // The collar's fold, under the neck.
+    brush([-13.5, 20], [0, 31], [15.5, 20], 1.8),
+    brush([-9, 24], [1, 33], [11, 25], 0.9),
+  ];
+  return [
+    `<path d="${robe}" fill="${PAPER}" stroke="${INK}" stroke-width="0.8"/>`,
+    `<path d="${hatch([[25, 34], [41, 42]], [[23, 54], [38, 54]], 16)}" fill="none" stroke="${ENGRAVE}" stroke-width="0.3"/>`,
+    `<path d="${hatch([[-5, 36], [10, 37]], [[-7, 54], [18, 54]], 18)}" fill="none" stroke="${ENGRAVE}" stroke-width="0.3"/>`,
+    `<path d="${robeInk.join("")}" fill="${INK}"/>`,
+    `<g transform="translate(0 4) scale(1.14 1.2)">`,
+    rays(),
+    `<path d="${neck}" fill="${PAPER}" stroke="${INK}" stroke-width="0.45"/>`,
+    // The neck's shadow, which the number prints over.
+    `<path d="${hatch([[-7.5, 1], [8, 3]], [[-7, 15], [9.5, 14]], 20)}" fill="none" stroke="${ENGRAVE}" stroke-width="0.4"/>`,
+    `<path d="${face}" fill="${PAPER}" stroke="${INK}" stroke-width="0.45"/>`,
+    // The modeling: the far cheek, the eye sockets and the shadow from the crown.
+    `<path d="${hatch([[8.8, -11.4], [8, -2.2]], [[12.4, -10.8], [10, -1.6]], 11)}" fill="none" stroke="${ENGRAVE}" stroke-width="0.22"/>`,
+    `<path d="${hatch([[-8.5, -15.8], [1.6, -14.9]], [[-8, -14.3], [1.8, -13.6]], 10)}" fill="none" stroke="${ENGRAVE}" stroke-width="0.2"/>`,
+    `<path d="${hatch([[-11, -20], [12, -20.4]], [[-11, -18], [12, -18.4]], 24)}" fill="none" stroke="${ENGRAVE}" stroke-width="0.24"/>`,
+    `<path d="${headInk.join("")}" fill="${INK}"/>`,
+    crown(),
+    `</g>`,
+  ].join("");
 }
 
 function emblem() {
   const { x, y } = CENTER;
   const { rx, ry } = OVAL_SIZE;
-  // All in the oval's own coordinates: the head looks right.
-  const head =
-    "M15 -21C19 -16 20 -12 19 -8C20 -5 25 0 26 3C26 5 23 6 21 6C22 8 22 9 21 10C22 11 22 13 20 14C21 17 20 21 16 23C11 25 7 26 3 25C3 30 5 36 11 42L14 54H-26L-20 36C-20 30 -20 26 -22 20C-29 10 -30 -6 -24 -15C-14 -26 4 -28 15 -21Z";
-  const rays = [];
-  for (const degrees of [-165, -140, -116, -92, -68, -44, -20]) {
-    const a = (degrees * Math.PI) / 180;
-    const base = 21;
-    const tip = 44;
-    const [ox, oy] = [-3, -9];
-    const across = 0.13;
-    const at = (r, delta) => `${fmt(ox + r * Math.cos(a + delta))} ${fmt(oy + r * Math.sin(a + delta))}`;
-    rays.push(
-      `<path d="M${at(base, across)}L${at(tip, 0)}L${at(base, -across)}Z" fill="#eef8ee" stroke="${ENGRAVE_DARK}" stroke-width="0.6"/>`,
-      `<path d="M${at(base, 0)}L${at(tip - 2, 0)}L${at(base, -across)}Z" fill="${ENGRAVE_DARK}"/>`,
-    );
-  }
-  const hair = [];
-  for (let i = 0; i < 9; i++) {
-    const t = i / 8;
-    const startX = 13 - t * 28;
-    const startY = -9 + t * 2;
-    hair.push(
-      `M${fmt(startX)} ${fmt(startY)}C${fmt(startX - 9)} ${fmt(startY + 4)} ${fmt(startX + 1)} ${fmt(startY + 10)} ${fmt(startX - 8)} ${fmt(startY + 16)}S${fmt(-22 + t * 3)} ${fmt(startY + 24)} ${fmt(-20 - t * 6)} ${fmt(26 - t * 6)}`,
-    );
-  }
-  const drape = [];
-  for (let i = 0; i < 7; i++) {
-    const offset = i * 7;
-    drape.push(`M${fmt(-36 + offset)} 50C${fmt(-28 + offset)} 40 ${fmt(-24 + offset)} ${fmt(38 + i * 0.7)} ${fmt(-14 + offset)} ${fmt(36 + i)}`);
-  }
   return [
     `<clipPath id="oval"><ellipse rx="${rx}" ry="${ry}"/></clipPath>`,
     `<ellipse cx="${x}" cy="${y + 1}" rx="${rx + 2.6}" ry="${ry + 2.6}" fill="${INK}" fill-opacity="0.22"/>`,
@@ -220,26 +315,7 @@ function emblem() {
     `<g transform="translate(${x} ${y})">`,
     `<ellipse rx="${rx}" ry="${ry}" fill="#dff1df" stroke="${INK}" stroke-width="0.5"/>`,
     `<g clip-path="url(#oval)">`,
-    // The sky behind the head: fine engraved lines, heavier toward the top.
-    `<g fill="none" stroke="${ENGRAVE}" stroke-width="0.22">`,
-    hatch([[-42, -50], [-42, 52]], [[42, -50], [42, 52]], 52, [0, 1.5]),
-    `</g>`,
-    rays.join(""),
-    `<path d="${head}" fill="#eaf6ea" stroke="${ENGRAVE_DARK}" stroke-width="0.8"/>`,
-    // Shading: the neck and the jaw, then the hair.
-    `<g fill="none" stroke="${ENGRAVE}" stroke-width="0.3">`,
-    hatch([[-18, 22], [4, 28]], [[-22, 54], [12, 54]], 18, [2, 0]),
-    hatch([[-4, 2], [3, 24]], [[6, -4], [14, 22]], 10, [1, 1]),
-    `</g>`,
-    `<path d="${hair.join("")}" fill="none" stroke="${ENGRAVE_DARK}" stroke-width="0.8" stroke-linecap="round"/>`,
-    // The crown's band, across the brow to the back of the head.
-    `<path d="M16 -14C4 -19 -14 -19 -28 -9L-26 -16C-13 -26 5 -26 16 -21Z" fill="${ENGRAVE_DARK}"/>`,
-    `<path d="M13 -18C2 -22 -12 -21 -25 -12.5" fill="none" stroke="#eaf6ea" stroke-width="0.6" stroke-dasharray="1.6 1.6"/>`,
-    // The eye and brow, the lips' line and the nostril.
-    `<path d="M9 -9C12 -11 15 -11 18 -9M10 -5C12 -7 15 -7 17 -5C15 -4 12 -4 10 -5ZM14 8.6C16 8.4 18 8.4 21 9.6M17 2.4C19 1.6 21 2 22 3" fill="none" stroke="${ENGRAVE_DARK}" stroke-width="0.7" stroke-linecap="round"/>`,
-    // The robe, over the shoulder.
-    `<path d="M-40 54L-30 38C-20 32 -2 32 12 42L24 54Z" fill="#d8ecd8" stroke="${ENGRAVE_DARK}" stroke-width="0.7"/>`,
-    `<path d="${drape.join("")}" fill="none" stroke="${ENGRAVE_DARK}" stroke-width="0.55"/>`,
+    portrait(),
     `</g>`,
     `</g>`,
   ].join("");
