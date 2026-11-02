@@ -84,16 +84,18 @@ console.log(JSON.stringify({ html, label: DEFAULT_INCREDICARD_LABELS.cardNumberL
     join(app, "src/main.tsx"),
     `import "incredicard/styles.css";
 import { createRoot } from "react-dom/client";
-import { IncrediCard, type IncrediCardAcceptanceMarks } from "incredicard";
+import { IncrediCard, extendIncrediCardTheme, type IncrediCardAcceptanceMarks } from "incredicard";
 import visaMark from "./visa-mark.svg";
 
 const marks: IncrediCardAcceptanceMarks = { visa: visaMark };
+const customTheme = extendIncrediCardTheme("glass", { face: { background: "rgb(1 2 3)" } }, { textTone: "dark" });
 
 createRoot(document.getElementById("root")!).render(
   <>
     <IncrediCard id="plain-card" />
     <IncrediCard id="marked-card" acceptanceMarks={marks} />
     <IncrediCard id="atlas-card" theme="atlas" holographic />
+    <IncrediCard id="custom-card" theme={customTheme} />
     <IncrediCard id="glass-card" theme="glass" />
     <IncrediCard id="copy-card" theme="glass" glassBackdrop={{ element: { current: document.body }, background: "linear-gradient(#123, #456)" }} />
   </>,
@@ -166,6 +168,12 @@ createRoot(document.getElementById("root")!).render(
       const copyBent = copyImage?.parentElement;
       const copy = copyBent?.parentElement;
       const lensHref = document.querySelector("#glass-card feImage")?.getAttribute("href") ?? "";
+      const customRoot = document.querySelector("#custom-card")?.closest("[style*='--incredicard-face-background']");
+      const custom = customRoot && {
+        background: getComputedStyle(customRoot).getPropertyValue("--incredicard-face-background"),
+        color: getComputedStyle(customRoot).getPropertyValue("--incredicard-face-color"),
+        theme: customRoot.getAttribute("data-theme"),
+      };
       const ribbons = lineArt("#plain-card");
       const globe = lineArt("#atlas-card");
       const plain = document.querySelector("#plain-card");
@@ -183,6 +191,7 @@ createRoot(document.getElementById("root")!).render(
         markLoaded: Boolean(mark?.complete && mark.naturalWidth > 0),
         glassFilter: glassFace ? getComputedStyle(glassFace).backdropFilter : null,
         lensInlined: lensHref.startsWith("data:image/png"),
+        custom,
         glassBaseRules: baseRules.length,
         copy: copy && {
           display: getComputedStyle(copy).display,
@@ -206,6 +215,7 @@ createRoot(document.getElementById("root")!).render(
     );
     // This Chromium run has to get both. An app's minifier is what can lose
     // either one, which is why this is checked on a real, minified build.
+    check(facts.custom?.background.includes("rgb(1 2 3)") && facts.custom.color.includes("#05131a") && facts.custom.theme === null, `a theme extended from glass, with dark text, renders as its own (${JSON.stringify(facts.custom)})`);
     check(facts.glassFilter?.includes("url(") && facts.glassFilter.includes("blur") && facts.lensInlined, `theme="glass" frosts and refracts the backdrop, with its lens map inlined (${facts.glassFilter}, inlined: ${facts.lensInlined})`);
     check(facts.glassBaseRules === 2, `both faces' base rules keep the standard backdrop-filter after minifying, for Firefox (${facts.glassBaseRules})`);
     check(facts.copy?.display === "none" && facts.copy.mask.includes("gradient") && facts.copy.filter.includes("url(") && facts.copy.filter.includes("blur"), `glassBackdrop's copy stays out of Chromium, with its mask and filter intact after minifying (${JSON.stringify(facts.copy)})`);

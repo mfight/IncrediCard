@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import frontBlackArtwork from "./assets/images/incredicard-front-black.svg";
-import { INCREDICARD_LINE_ART, type IncrediCardLineArt } from "./lineArt";
+import { INCREDICARD_LINE_ART, type IncrediCardLineArt, type IncrediCardLineArtFiles } from "./lineArt";
 
 // IncrediCard's themes. Each one is a single object below, and adding a
 // theme means adding one more: its key becomes a valid `theme` prop, and
@@ -26,8 +26,10 @@ import { INCREDICARD_LINE_ART, type IncrediCardLineArt } from "./lineArt";
 // starts with adding that read, with a default that leaves the existing
 // themes unchanged.
 //
-// The objects are internal for now: `theme` takes a name. The shape is
-// meant to become public, so apps can define their own themes.
+// An app can pass its own definition to `theme`, or start from one of these
+// with `extendIncrediCardTheme`. These objects stay internal, so their values
+// aren't API. A theme is one fixed look: it doesn't change with the page's
+// light or dark mode, and only a built-in theme can offer `textTone`.
 
 export type IncrediCardFaceLayout = "printed" | "embossed";
 
@@ -75,8 +77,9 @@ export type IncrediCardThemeKnob = keyof typeof KNOBS;
 
 export type IncrediCardThemeDefinition = {
   faceLayout: IncrediCardFaceLayout;
-  /** The line art the face prints and the hologram lights. */
-  lineArt: IncrediCardLineArt;
+  /** The line art the face prints and the hologram lights: a built-in piece
+   * by name, or your own three files. */
+  lineArt: IncrediCardLineArt | IncrediCardLineArtFiles;
   face: {
     /** Tied to the artwork's own corner radius (its `rx`). */
     radius: string;
@@ -123,15 +126,24 @@ export type IncrediCardThemeDefinition = {
      * `null` uses `fieldEmboss` there too. */
     overlayFieldEmboss: string | null;
   };
-  /** What `textTone="dark"` changes, for a theme that offers it. Other themes
-   * ignore `textTone`. */
+  /** Knobs this theme pins, ignoring any `--theme-*` override. */
+  fixed: readonly IncrediCardThemeKnob[];
+};
+
+/** What `extendIncrediCardTheme` takes: any part of a definition. */
+export type IncrediCardThemeOverrides = Partial<Pick<IncrediCardThemeDefinition, "faceLayout" | "lineArt" | "fixed">> & {
+  face?: Partial<IncrediCardThemeDefinition["face"]>;
+  hologram?: Partial<IncrediCardThemeDefinition["hologram"]>;
+  type?: Partial<IncrediCardThemeDefinition["type"]>;
+};
+
+// A built-in theme can also carry what `textTone="dark"` changes.
+type BuiltInTheme = IncrediCardThemeDefinition & {
   darkText?: {
     face: Pick<IncrediCardThemeDefinition["face"], "color" | "invalidColor" | "placeholder" | "linesOpacity">;
     hologram: IncrediCardThemeDefinition["hologram"];
     type: Pick<IncrediCardThemeDefinition["type"], "faceEmboss" | "overlayFieldEmboss">;
   };
-  /** Knobs this theme pins, ignoring any `--theme-*` override. */
-  fixed: readonly IncrediCardThemeKnob[];
 };
 
 export const INCREDICARD_THEMES = {
@@ -319,27 +331,56 @@ export const INCREDICARD_THEMES = {
     },
     fixed: [],
   },
-} as const satisfies Record<string, IncrediCardThemeDefinition>;
+} as const satisfies Record<string, BuiltInTheme>;
 
 export type IncrediCardTheme = keyof typeof INCREDICARD_THEMES;
 
-/** A theme by name, falling back to "modern" for a name it doesn't
+/** A built-in theme by name, falling back to "modern" for a name it doesn't
  * know (only reachable from untyped code), with its dark text if asked for
- * and it has any. */
+ * and it has any. An app's own definition comes back as it is: it's one fixed
+ * look, so `textTone` doesn't apply to it. */
 export function getIncrediCardTheme(
-  name: string | undefined,
+  theme: string | IncrediCardThemeDefinition | undefined,
   textTone: IncrediCardTextTone = "light",
 ): IncrediCardThemeDefinition {
-  const theme: IncrediCardThemeDefinition = Object.hasOwn(INCREDICARD_THEMES, name ?? "")
-    ? INCREDICARD_THEMES[name as IncrediCardTheme]
+  if (typeof theme === "object" && theme !== null) return theme;
+  const builtIn: BuiltInTheme = Object.hasOwn(INCREDICARD_THEMES, theme ?? "")
+    ? INCREDICARD_THEMES[theme as IncrediCardTheme]
     : INCREDICARD_THEMES.modern;
-  if (textTone !== "dark" || !theme.darkText) return theme;
+  if (textTone !== "dark" || !builtIn.darkText) return builtIn;
   return {
-    ...theme,
-    face: { ...theme.face, ...theme.darkText.face },
-    hologram: theme.darkText.hologram,
-    type: { ...theme.type, ...theme.darkText.type },
+    ...builtIn,
+    face: { ...builtIn.face, ...builtIn.darkText.face },
+    hologram: builtIn.darkText.hologram,
+    type: { ...builtIn.type, ...builtIn.darkText.type },
   };
+}
+
+/** A definition of your own, starting from a built-in theme. Each of `face`,
+ * `hologram` and `type` merges with the base's, so you only name what changes;
+ * `fixed` and `lineArt` replace the base's whole. The result is one fixed look,
+ * so a tone is chosen here: `textTone` on the card doesn't apply to it. */
+export function extendIncrediCardTheme(
+  base: IncrediCardTheme,
+  overrides: IncrediCardThemeOverrides,
+  options: { textTone?: IncrediCardTextTone } = {},
+): IncrediCardThemeDefinition {
+  const { faceLayout, lineArt, fixed, face, hologram, type } = getIncrediCardTheme(base, options.textTone);
+  return {
+    faceLayout: overrides.faceLayout ?? faceLayout,
+    lineArt: overrides.lineArt ?? lineArt,
+    face: { ...face, ...overrides.face },
+    hologram: { ...hologram, ...overrides.hologram },
+    type: { ...type, ...overrides.type },
+    fixed: overrides.fixed ?? fixed,
+  };
+}
+
+// A URL as a CSS string. Line art can now come from an app, so a quote or a
+// line break in it can't be allowed to end the string early.
+function cssUrl(url: string) {
+  const escaped = url.replace(/["\\]/g, "\\$&").replace(/\r\n|[\n\r\f]/g, "\\a ");
+  return `url("${escaped}")`;
 }
 
 /**
@@ -374,10 +415,10 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
     style["--incredicard-refraction-filter"] = `url(#${refractionFilterId})`;
     style["--incredicard-face-backdrop-refracted"] = `url(#${refractionFilterId}) var(--incredicard-face-backdrop)`;
   }
-  const lineArt = INCREDICARD_LINE_ART[theme.lineArt];
-  style["--incredicard-lines"] = `url("${lineArt.foil}")`;
-  style["--incredicard-lines-mask-a"] = `url("${lineArt.maskA}")`;
-  style["--incredicard-lines-mask-b"] = `url("${lineArt.maskB}")`;
+  const lineArt = typeof theme.lineArt === "string" ? INCREDICARD_LINE_ART[theme.lineArt] : theme.lineArt;
+  style["--incredicard-lines"] = cssUrl(lineArt.foil);
+  style["--incredicard-lines-mask-a"] = cssUrl(lineArt.maskA);
+  style["--incredicard-lines-mask-b"] = cssUrl(lineArt.maskB);
   // Left unset when null, so the rules that read them fall back to
   // inheriting, exactly as if they had never been declared.
   const type = {

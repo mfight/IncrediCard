@@ -5,10 +5,14 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 // the compound namespace is composed, and it has to be.
 import {
   IncrediCard,
+  extendIncrediCardTheme,
   requestIncrediCardMotionAccess,
   type IncrediCardMotionAccess,
 } from ".";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
+import globeFoil from "./assets/images/incredicard-lines-globe.svg";
+import globeMaskA from "./assets/images/incredicard-lines-globe-a.svg";
+import globeMaskB from "./assets/images/incredicard-lines-globe-b.svg";
 import { ForceReducedMotion } from "./reducedMotion";
 import { INCREDICARD_THEMES } from "./themes";
 import themedStyles from "./IncrediCard.stories.module.scss";
@@ -459,6 +463,39 @@ export const GlassStacked: Story = {
   name: "Glass: Stacked",
   decorators: [onGlassBackdrop],
   args: { id: "story-glass", theme: "glass", layout: "stacked", defaultValue: GLASS_VALUE },
+};
+
+// An app's own theme: `modern` with a different material and its own line art,
+// passed as files rather than a name.
+export const CustomTheme: Story = {
+  name: "Custom Theme",
+  args: {
+    id: "story-custom-theme",
+    theme: extendIncrediCardTheme("modern", {
+      face: {
+        background: "linear-gradient(135deg, #0b3b3c, #14532d)",
+        linesOpacity: 0.16,
+      },
+      lineArt: { foil: globeFoil, maskA: globeMaskA, maskB: globeMaskB },
+    }),
+    layout: "overlay",
+    holographic: true,
+    defaultValue: {
+      cardholderName: "Alex Rivera",
+      cardNumber: "4242424242424242",
+      expirationMonth: "12",
+      expirationYear: "29",
+      cvc: "123",
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const root = canvasElement.querySelector<HTMLElement>("[style*='--incredicard-face-background']");
+    await expect(root).not.toBeNull();
+    await expect(root?.hasAttribute("data-theme")).toBe(false);
+    const style = getComputedStyle(root as HTMLElement);
+    await expect(style.getPropertyValue("--incredicard-face-background")).toContain("linear-gradient");
+    await expect(style.getPropertyValue("--incredicard-lines")).toContain("globe");
+  },
 };
 
 // Dark text, for a bright page. An empty card, for the placeholder, which is

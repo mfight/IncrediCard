@@ -29,6 +29,7 @@ import {
   incredicardThemeStyle,
   type IncrediCardTextTone,
   type IncrediCardTheme,
+  type IncrediCardThemeDefinition,
 } from "./themes";
 import styles from "./IncrediCard.module.scss";
 
@@ -187,8 +188,9 @@ type IncrediCardOwnProps = {
    * "stacked": a purely decorative card (`IncrediCardFace`) above a
    * normal, fully labeled list of real fields. */
   layout?: IncrediCardLayout;
-  /** Default "modern". See themes.ts for what each theme is. */
-  theme?: IncrediCardTheme;
+  /** Default "modern". A built-in theme's name (see themes.ts for what each
+   * is), or a definition of your own (see `extendIncrediCardTheme`). */
+  theme?: IncrediCardTheme | IncrediCardThemeDefinition;
   /** Default true. Forwarded to whichever card face is active; see the
    * `reflection` prop of `IncrediCardChip` (IncrediCardChip.tsx). */
   chipReflection?: boolean;
@@ -200,7 +202,7 @@ type IncrediCardOwnProps = {
    * what's behind the card: light on a dark page, dark on a bright one. The
    * glass is mostly clear, so nothing else protects its contrast. An
    * `acceptanceMarks` image doesn't change with it, so pass marks that suit
-   * the tone. Other themes ignore this. */
+   * the tone. Other themes, and your own definitions, ignore this. */
   textTone?: IncrediCardTextTone;
   /** What's behind the card, for the "glass" theme. Chromium bends the live
    * page at the card's edge; other browsers can only bend a copy, so this says
@@ -1074,7 +1076,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         ref={mergeRefs(fieldsetRef, ref)}
         id={id}
         disabled={disabled}
-        data-theme={theme}
+        data-theme={typeof theme === "string" ? theme : undefined}
         // The theme's values, as the custom properties every stylesheet
         // reads (see themes.ts). Your own `style` still applies on top.
         style={{ ...incredicardThemeStyle(themeDefinition, refractionFilterId), ...rest.style }}

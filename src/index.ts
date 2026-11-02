@@ -22,8 +22,17 @@ export { DEFAULT_INCREDICARD_LABELS } from "./IncrediCard";
 // one-shot and remembered per origin. See the header of
 // IncrediCardOrientation.ts.
 export { requestIncrediCardMotionAccess } from "./IncrediCardOrientation";
+export { extendIncrediCardTheme } from "./themes";
 export type { IncrediCardMotionAccess } from "./IncrediCardOrientation";
 export type { IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
+export type {
+  IncrediCardFaceLayout,
+  IncrediCardHologramBlend,
+  IncrediCardThemeDefinition,
+  IncrediCardThemeKnob,
+  IncrediCardThemeOverrides,
+} from "./themes";
+export type { IncrediCardLineArt, IncrediCardLineArtFiles } from "./lineArt";
 export type {
   IncrediCardProps,
   IncrediCardValue,

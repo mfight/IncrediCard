@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   INCREDICARD_HOLOGRAM_BLENDS,
   INCREDICARD_THEMES,
+  extendIncrediCardTheme,
   getIncrediCardTheme,
   incredicardThemeStyle,
   type IncrediCardThemeDefinition,
@@ -158,6 +159,66 @@ describe("getIncrediCardTheme", () => {
   });
 });
 
+describe("a custom theme", () => {
+  const files = { foil: "/foil.svg", maskA: "/a.svg", maskB: "/b.svg" };
+
+  it("comes back as it is, whatever the text tone", () => {
+    const custom: IncrediCardThemeDefinition = { ...modern, lineArt: files };
+    expect(getIncrediCardTheme(custom)).toBe(custom);
+    expect(getIncrediCardTheme(custom, "dark")).toBe(custom);
+  });
+
+  it("merges each group with its base, and keeps the rest", () => {
+    const custom = extendIncrediCardTheme("modern", {
+      face: { background: "#123456" },
+      hologram: { opacity: 0.5 },
+      type: { printFont: "Example" },
+    });
+    expect(custom.face).toEqual({ ...modern.face, background: "#123456" });
+    expect(custom.hologram).toEqual({ ...modern.hologram, opacity: 0.5 });
+    expect(custom.type).toEqual({ ...modern.type, printFont: "Example" });
+    expect(custom.lineArt).toBe(modern.lineArt);
+    expect(custom.faceLayout).toBe(modern.faceLayout);
+  });
+
+  it("replaces fixed and line art whole, and leaves the built-in theme alone", () => {
+    const before = structuredClone(modern);
+    const custom = extendIncrediCardTheme("modern", { fixed: ["color"], lineArt: files });
+    expect(custom.fixed).toEqual(["color"]);
+    expect(custom.lineArt).toBe(files);
+    expect(modern).toEqual(before);
+  });
+
+  it("takes its tone once, when it's made, and keeps no tones of its own", () => {
+    const dark = extendIncrediCardTheme("glass", { face: { background: "#ffffff1a" } }, { textTone: "dark" });
+    expect(dark.face.color).toBe("#05131a");
+    expect(dark.hologram.blend).toBe("color-burn");
+    expect(dark.face.background).toBe("#ffffff1a");
+    expect(dark).not.toHaveProperty("darkText");
+    expect(getIncrediCardTheme(dark, "light")).toBe(dark);
+
+    const light = extendIncrediCardTheme("glass", {});
+    expect(light.face.color).toBe("#ffffff");
+    expect(getIncrediCardTheme(light, "dark").face.color).toBe("#ffffff");
+  });
+
+  it("gets the falloff color that goes with its blend mode", () => {
+    const custom = extendIncrediCardTheme("modern", { hologram: { blend: "color-burn" } });
+    const style = incredicardThemeStyle(custom) as Record<string, string>;
+    expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS["color-burn"].falloffColor);
+  });
+
+  it("writes its own line art, and can't break out of the URL's string", () => {
+    const style = incredicardThemeStyle({
+      ...modern,
+      lineArt: { foil: "/foil.svg", maskA: 'x"), url("/other', maskB: "a\\b\nc" },
+    }) as Record<string, string>;
+    expect(style["--incredicard-lines"]).toBe('url("/foil.svg")');
+    expect(style["--incredicard-lines-mask-a"]).toBe('url("x\\"), url(\\"/other")');
+    expect(style["--incredicard-lines-mask-b"]).toBe('url("a\\\\b\\a c")');
+  });
+});
+
 // Compile-time guarantees, checked by `npm run typecheck` rather than at
 // run time: a theme missing a piece, or setting its falloff color
 // directly, doesn't type-check.
@@ -173,4 +234,22 @@ export const unpairedFalloff = {
   ...modern,
   // @ts-expect-error -- the falloff color comes with the blend mode, never on its own.
   hologram: { ...modern.hologram, falloffColor: "#000000" },
+} satisfies IncrediCardThemeDefinition;
+
+export const incompleteLineArt = {
+  ...modern,
+  // @ts-expect-error -- custom line art needs all three of its files.
+  lineArt: { foil: "/foil.svg", maskA: "/a.svg" },
+} satisfies IncrediCardThemeDefinition;
+
+export const customLayout = {
+  ...modern,
+  // @ts-expect-error -- a layout is a CSS block, so only the built-in ones exist.
+  faceLayout: "sideways",
+} satisfies IncrediCardThemeDefinition;
+
+export const publicToneVariants = {
+  ...modern,
+  // @ts-expect-error -- a custom theme is one fixed look, with no tone variants.
+  darkText: INCREDICARD_THEMES.glass.darkText,
 } satisfies IncrediCardThemeDefinition;

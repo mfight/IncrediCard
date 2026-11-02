@@ -373,7 +373,31 @@ Each theme is a single object in `src/themes.ts`, and its key is the name the `t
 
 The **face layout** is the one structural choice: how the printed text sits on the card. `"printed"` (used by `"modern"`, `"atlas"` and `"glass"`) sets it the way a modern printed card does. `"embossed"` (used by `"vintage"`) sets it the way an embosser lays out a raised-character card: the number centered across the plate, smaller type caps, wider tracking. A layout is a CSS block keyed off `data-face-layout`, so themes can share one.
 
-A theme can pin any of the overridable values in its `fixed` list, when an override would make no sense against its artwork; no built-in theme pins anything today. Themes are built in for now: `theme` takes a name, not an object.
+A theme can pin any of the overridable values in its `fixed` list, when an override would make no sense against its artwork; no built-in theme pins anything today.
+
+### Defining Your Own Theme
+
+`theme` also takes a definition object. A theme is one fixed look: you set it once, and it doesn't change with the page's light or dark mode. The simplest way to make one is `extendIncrediCardTheme`, which starts from a built-in theme. `face`, `hologram` and `type` each merge with the base's, so you only name what changes; `lineArt` and `fixed` replace the base's whole.
+
+<Source language="tsx" copyable={false} dark={true} code={`import { IncrediCard, extendIncrediCardTheme } from "incredicard";
+
+const forestCard = extendIncrediCardTheme("modern", {
+  face: { background: "linear-gradient(135deg, #0b3b3c, #14532d)" },
+  lineArt: { foil: foilUrl, maskA: landUrl, maskB: ringsUrl },
+});
+
+<IncrediCard id="payment" theme={forestCard} />`} />
+
+To write every value yourself, type the object as `IncrediCardThemeDefinition`; leaving out a piece is a compile error. What a custom theme can use:
+
+- **Face layout:** `"printed"` or `"embossed"`. A layout is a CSS block in this package, so a theme can't define a new one.
+- **Line art:** a built-in name (`"ribbons"`, `"globe"`) or your own three files. `foil` holds the lines, which the face prints faintly and the hologram lights. `maskA` and `maskB` each hold some of those lines, one for each pair of glare layers, at the same size as the foil. Browsers fetch masks with CORS, so both must be same-origin, CORS-enabled or inlined; otherwise the foil still shows, but the glare doesn't appear.
+- **Fonts:** `nameFont` and `printFont` take a `font-family` value. This package only loads its own fonts, so load yours yourself.
+- **Hologram blend:** `"color-dodge"` or `"color-burn"`. Each comes with the falloff color it needs, which isn't a value you set.
+- **Text tone:** a custom theme ignores the `textTone` prop. To start from `glass` with dark text, choose the tone when you make the theme: `extendIncrediCardTheme("glass", overrides, { textTone: "dark" })`.
+- **Refraction:** `face.refraction` bends the backdrop, and `glassBackdrop` only applies when it's on.
+
+Nothing checks a custom theme's contrast, so make sure its text is readable on its material, and on the page behind it if the material is translucent.
 
 ## API
 

@@ -25,3 +25,15 @@ export const INCREDICARD_LINE_ART = {
 } as const;
 
 export type IncrediCardLineArt = keyof typeof INCREDICARD_LINE_ART;
+
+/** Your own line art, for a custom theme, as three URLs of the same size. */
+export type IncrediCardLineArtFiles = {
+  /** The lines themselves: printed faintly on the face, and lit by the
+   * hologram. */
+  foil: string;
+  /** Some of the foil's lines, for one pair of glare layers. A mask, so the
+   * browser fetches it with CORS: same-origin, CORS-enabled or inlined. */
+  maskA: string;
+  /** The foil's other lines, for the other pair. The same fetching rule. */
+  maskB: string;
+};
