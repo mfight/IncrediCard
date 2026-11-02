@@ -10,6 +10,7 @@ import {
   type IncrediCardMotionAccess,
 } from ".";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
+import { engravedCardTheme } from "../demo/themes/engravedCard";
 import globeFoil from "./assets/images/incredicard-lines-globe.svg";
 import globeMaskA from "./assets/images/incredicard-lines-globe-a.svg";
 import globeMaskB from "./assets/images/incredicard-lines-globe-b.svg";
@@ -495,6 +496,27 @@ export const CustomTheme: Story = {
     const style = getComputedStyle(root as HTMLElement);
     await expect(style.getPropertyValue("--incredicard-face-background")).toContain("linear-gradient");
     await expect(style.getPropertyValue("--incredicard-lines")).toContain("globe");
+  },
+};
+
+// What a custom theme is for: an issuer's own printed card, with no foil. The
+// face is the issuer's artwork, and the fields sit on it in dark text.
+export const CustomThemeEngravedCard: Story = {
+  name: "Custom Theme: Engraved Card",
+  args: {
+    id: "story-custom-theme-engraved",
+    theme: engravedCardTheme,
+    // The demo's marks are white, for dark cards. An app would pass dark ones
+    // here; without any, the network's name prints in the theme's dark text.
+    acceptanceMarks: undefined,
+    layout: "overlay",
+    defaultValue: {
+      cardholderName: "Alex Rivera",
+      cardNumber: "4242424242424242",
+      expirationMonth: "12",
+      expirationYear: "29",
+      cvc: "123",
+    },
   },
 };
 

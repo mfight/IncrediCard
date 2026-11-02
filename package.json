@@ -45,6 +45,7 @@
     "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "test:consumer": "node scripts/test-consumer.mjs",
     "artwork:line-art": "node scripts/generate-line-art.mjs",
+    "artwork:engraved-card": "node scripts/engraved-card.mjs",
     "storybook": "storybook dev -p ${PORT:-6006}",
     "build-storybook": "storybook build",
     "prepack": "npm run build"
