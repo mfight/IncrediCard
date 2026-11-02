@@ -1,8 +1,9 @@
 // The demo's example of what a custom theme is for: an issuer's own card, in
-// its own material and colors, set once. The issuer is fictional, and the
-// artwork (drawn by scripts/engraved-card.mjs) isn't part of the npm package.
+// its own material and colors, set once. It recreates an older card rather than
+// a readable one, so the number prints straight across the artwork. The issuer
+// is fictional, and the artwork isn't part of the npm package.
 import { extendIncrediCardTheme } from "../../src";
-import artwork from "./engraved-card.svg";
+import artwork from "./example-bank.png";
 
 export const engravedCardTheme = extendIncrediCardTheme("vintage", {
   face: {
