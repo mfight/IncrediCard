@@ -14,4 +14,10 @@ export const engravedCardTheme = extendIncrediCardTheme("modern", {
     // The artwork is the whole face, so no line art prints over it.
     linesOpacity: 0,
   },
+  // The number prints across the artwork's emblem, so the text carries a soft
+  // halo in the face's own color to stay readable over its lines.
+  type: {
+    faceEmboss: "0 0 0.25rem rgb(223 241 223 / 90%)",
+    overlayFieldEmboss: "0 0 0.25rem rgb(223 241 223 / 90%)",
+  },
 });
