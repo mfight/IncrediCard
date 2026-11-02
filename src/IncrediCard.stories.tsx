@@ -512,10 +512,10 @@ export const CustomThemeEngravedCard: Story = {
     layout: "overlay",
     defaultValue: {
       cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
+      cardNumber: "378282246310005",
       expirationMonth: "12",
       expirationYear: "29",
-      cvc: "123",
+      cvc: "1234",
     },
   },
 };
