@@ -1,7 +1,10 @@
+@use "./reducedMotion/reduced-motion";
+
 .gloss,
 .specular,
 .reflection,
-.spots,
+.spotsStart,
+.spotsEnd,
 .glow,
 .edge,
 .rim,
@@ -43,17 +46,50 @@
 
 // Small spots of light just inside the two lit corners, the way a thick,
 // slightly rounded slab catches a light near its edge: each a short flare
-// along the edge with a smaller one beside it. They sit at rest with the rim,
-// and dim with it while a real light is tracking.
-.spots {
+// along the edge with a smaller one beside it.
+//
+// They follow the card's tilt. `--spots-near` is how far the top-left corner
+// leans toward the viewer, from -1 to 1, and the bottom-right corner leans
+// the other way. (The tilt tips the left edge toward the viewer at a positive
+// y angle and the top edge away at a positive x angle, up to 24deg each; see
+// IncrediCardTilt.ts.) As a corner comes closer its spots slide in toward it
+// and brighten, and as it goes away they slide off along the edge and fade
+// out. Without tilt the angles are 0deg, and the spots rest in between.
+.spotsStart,
+.spotsEnd {
+  --spots-near: calc(
+    (sin(var(--incredicard-tilt-y, 0deg)) - sin(var(--incredicard-tilt-x, 0deg))) / (2 * sin(24deg))
+  );
+  filter: blur(0.03125rem);
+  // The same easing as the card's own tilt, and like it, none while the tilt
+  // is tracking, which smooths the value itself (see the faces' stylesheets).
+  transition:
+    transform 280ms cubic-bezier(0, 0, 0.2, 1),
+    opacity 280ms cubic-bezier(0, 0, 0.2, 1);
+
+  :global([data-tilt-tracking]) & {
+    transition: none;
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}
+
+.spotsStart {
   background:
     radial-gradient(ellipse 1rem 0.2rem at 15% 4.5%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
-    radial-gradient(ellipse 0.3rem 0.15rem at 24% 4.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%)),
+    radial-gradient(ellipse 0.3rem 0.15rem at 24% 4.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
+  transform: translateX(calc(var(--spots-near) * -1.25rem));
+  opacity: clamp(0, 0.75 + var(--spots-near), 1);
+}
+
+.spotsEnd {
+  background:
     radial-gradient(ellipse 1rem 0.2rem at 85% 95.5%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
     radial-gradient(ellipse 0.3rem 0.15rem at 76% 95.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
-  filter: blur(0.03125rem);
-  opacity: calc(1 - var(--incredicard-chip-light-active, 0) * 0.5);
-  transition: opacity 200ms ease-out;
+  transform: translateX(calc(var(--spots-near) * -1.25rem));
+  opacity: clamp(0, 0.75 - var(--spots-near), 1);
 }
 
 // The same ring at two sizes. The glow's is blurred, so its inner side is
