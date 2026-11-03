@@ -96,7 +96,7 @@
 
 // The track each spot rides, in rem (the numbers below are rem without the
 // unit, so a distance along the curve can become an angle): along the edge
-// 0.5625rem in, around a quarter circle of radius 0.75rem through the corner,
+// 0.4375rem in, around a quarter circle of radius 0.75rem through the corner,
 // drifting outward as it goes, then along the side 0.3125rem in. The circle is looser than the card's own
 // corner, which a track this far in would round in 3px, so the spots turn
 // rather than snap.
@@ -110,14 +110,14 @@
 .flare,
 .dot {
   position: absolute;
-  --u-rest: 1.6875;
-  --u-travel: calc(-3.366 * max(var(--near), 0) - 1.25 * min(var(--near), 0));
+  --u-rest: 1.8125;
+  --u-travel: calc(-3.4905 * max(var(--near), 0) - 1.25 * min(var(--near), 0));
   // How far around the curve, from 0 to 1.
   --around: calc(clamp(0, -1 * var(--u), 1.178) / 1.178);
   transform: translateX(calc(max(var(--u), 0) * 1rem))
     rotate(calc(var(--around) * -90deg))
     translateX(calc(max(-1 * var(--u) - 1.178, 0) * -1rem))
-    translateY(calc(var(--around) * -0.25rem))
+    translateY(calc(var(--around) * -0.125rem))
     scaleX(var(--length, 1));
   // The same easing as the card's own tilt, and like it, none while the tilt
   // is tracking, which smooths the value itself (see the faces' stylesheets).
@@ -140,22 +140,22 @@
 .flare {
   --u: calc(var(--u-rest) + var(--u-travel));
   --length: calc((1 - 0.35 * var(--near)) * (1 - 0.5 * sin(var(--around) * 180deg)));
-  left: 0.3125rem;
-  top: 0.3625rem;
+  left: 0.1875rem;
+  top: 0.1575rem;
   width: 2rem;
-  height: 0.4rem;
-  transform-origin: 1rem 0.95rem;
+  height: 0.56rem;
+  transform-origin: 1rem 1.03rem;
   background: radial-gradient(closest-side, rgb(255 255 255 / 95%), rgb(255 255 255 / 0%));
 }
 
 // Trailing the flare, a little closer behind it as it comes in.
 .dot {
   --u: calc(var(--u-rest) + var(--u-travel) + 1.5 - 0.5 * max(var(--near), 0));
-  left: 1.0125rem;
-  top: 0.4125rem;
+  left: 0.8875rem;
+  top: 0.2275rem;
   width: 0.6rem;
-  height: 0.3rem;
-  transform-origin: 0.3rem 0.9rem;
+  height: 0.42rem;
+  transform-origin: 0.3rem 0.96rem;
   background: radial-gradient(closest-side, rgb(255 255 255 / 80%), rgb(255 255 255 / 0%));
 }
 
