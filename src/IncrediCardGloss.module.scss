@@ -48,19 +48,34 @@
 // slightly rounded slab catches a light near its edge: each a short flare
 // along the edge with a smaller one beside it.
 //
-// They follow the card's tilt. `--spots-near` is how far the top-left corner
-// leans toward the viewer, from -1 to 1, and the bottom-right corner leans
-// the other way. (The tilt tips the left edge toward the viewer at a positive
-// y angle and the top edge away at a positive x angle, up to 24deg each; see
-// IncrediCardTilt.ts.) As a corner comes closer its spots slide in toward it
-// and brighten, and as it goes away they slide off along the edge and fade
-// out. Without tilt the angles are 0deg, and the spots rest in between.
+// They follow the card's tilt, which leans the left edge toward the viewer at
+// a positive y angle and tips the top edge away at a positive x angle, up to
+// 24deg each (see IncrediCardTilt.ts). Two leans, each from -1 to 1, decide
+// everything:
+//
+// - `--near`, how far the side the spots are on leans toward the viewer.
+//   Coming closer, they slide in toward their corner and narrow; leaning
+//   away, they slide off along the edge, widen and fade out.
+// - `--lit`, how far the edge the spots are on tips away, back toward the
+//   light. The near spots are brightest when it does, and faint when it
+//   tips forward instead.
+//
+// Without tilt both are 0, and the spots rest between the two, half lit.
 .spotsStart,
 .spotsEnd {
-  --spots-near: calc(
-    (sin(var(--incredicard-tilt-y, 0deg)) - sin(var(--incredicard-tilt-x, 0deg))) / (2 * sin(24deg))
-  );
+  // Each spot pair's own box, so it narrows around itself rather than the
+  // whole card: from 1rem before the flare's center (15% in from its side)
+  // to 0.3rem past the dot's (24%).
+  inset: auto;
+  width: calc(9% + 1.3rem);
+  height: 0.6rem;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse 1rem 0.2rem at var(--flare-x) 50%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
+    radial-gradient(ellipse 0.3rem 0.15rem at var(--dot-x) 50%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
   filter: blur(0.03125rem);
+  transform: translateX(calc(var(--toward-corner) * var(--near) * 1.25rem)) scaleX(calc(1 - 0.35 * var(--near)));
+  opacity: calc(clamp(0, 0.75 + 1.75 * var(--near), 1) * clamp(0.2, 0.6 + 0.4 * var(--lit), 1));
   // The same easing as the card's own tilt, and like it, none while the tilt
   // is tracking, which smooths the value itself (see the faces' stylesheets).
   transition:
@@ -76,20 +91,26 @@
   }
 }
 
+// Along the top edge, near the top-left corner.
 .spotsStart {
-  background:
-    radial-gradient(ellipse 1rem 0.2rem at 15% 4.5%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
-    radial-gradient(ellipse 0.3rem 0.15rem at 24% 4.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
-  transform: translateX(calc(var(--spots-near) * -1.25rem));
-  opacity: clamp(0, 0.75 + var(--spots-near), 1);
+  --near: calc(sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg));
+  --lit: calc(sin(var(--incredicard-tilt-x, 0deg)) / sin(24deg));
+  --toward-corner: -1;
+  --flare-x: 1rem;
+  --dot-x: calc(100% - 0.3rem);
+  inset-block-start: calc(4.5% - 0.3rem);
+  inset-inline-start: calc(15% - 1rem);
 }
 
+// Along the bottom edge, near the bottom-right corner: the mirror image.
 .spotsEnd {
-  background:
-    radial-gradient(ellipse 1rem 0.2rem at 85% 95.5%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
-    radial-gradient(ellipse 0.3rem 0.15rem at 76% 95.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
-  transform: translateX(calc(var(--spots-near) * -1.25rem));
-  opacity: clamp(0, 0.75 - var(--spots-near), 1);
+  --near: calc(-1 * sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg));
+  --lit: calc(-1 * sin(var(--incredicard-tilt-x, 0deg)) / sin(24deg));
+  --toward-corner: 1;
+  --flare-x: calc(100% - 1rem);
+  --dot-x: 0.3rem;
+  inset-block-end: calc(4.5% - 0.3rem);
+  inset-inline-end: calc(15% - 1rem);
 }
 
 // The same ring at two sizes. The glow's is blurred, so its inner side is
