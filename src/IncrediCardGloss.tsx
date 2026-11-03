@@ -10,8 +10,8 @@ import styles from "./IncrediCardGloss.module.scss";
 // under it. From the surface out to the edge:
 //
 // - a soft highlight on the surface, following the light;
-// - a flat reflection, a faintly lighter plane with a straight edge, turned
-//   and slid by the light;
+// - a flat reflection, a faintly lighter plane with a straight edge, slid
+//   across the face by the card's tilt;
 // - a flare on the rim near each of the two lit corners, for a thick,
 //   slightly rounded slab, traveling around its corner as the light brings it
 //   closer and fading as it leans away;

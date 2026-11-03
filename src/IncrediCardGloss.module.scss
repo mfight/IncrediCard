@@ -30,18 +30,44 @@
 }
 
 // A flat reflection across the face, like a window caught in a pane of glass:
-// one side of a straight edge a shade lighter than the other. Always there,
-// faint, and turned and slid by the light, so tilting the card swings it the
-// way a reflection swings, and with no light it rests on the diagonal.
+// one side of a straight edge a shade lighter than the other, kept faint. It
+// moves with the card, not the light, because what it reflects stays put
+// while the glass turns: it holds its diagonal and slides across the face,
+// away from whichever side or edge the tilt brings nearer. With `tilt` off,
+// or while a field holds the card flat, it rests on the diagonal.
+//
+// The edge's place is a registered percentage, so when the tilt eases back
+// to rest the reflection eases with it, rather than jumping as the tilt's
+// angles are cleared.
+@property --incredicard-reflection-edge {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 42%;
+}
+
 .reflection {
-  --reflection-edge: calc(42% + (var(--incredicard-chip-light-x, 50%) - 50%) * 0.5);
+  --incredicard-reflection-edge: calc(
+    42% + 20% * sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg) - 20% * sin(var(--incredicard-tilt-x, 0deg)) /
+      sin(24deg)
+  );
   background: linear-gradient(
-    calc(135deg + var(--incredicard-chip-light-rotate, 0deg)),
-    rgb(255 255 255 / 0%) var(--reflection-edge),
-    rgb(255 255 255 / 9%) var(--reflection-edge),
-    rgb(255 255 255 / 3%) 100%
+    135deg,
+    rgb(255 255 255 / 0%) var(--incredicard-reflection-edge),
+    rgb(255 255 255 / 5%) var(--incredicard-reflection-edge),
+    rgb(255 255 255 / 1.5%) 100%
   );
   opacity: calc(var(--incredicard-face-specular) / 0.5);
+  // The card's own easing back to rest; none while the tilt is tracking,
+  // which smooths the angles itself (see the faces' stylesheets).
+  transition: --incredicard-reflection-edge 280ms cubic-bezier(0, 0, 0.2, 1);
+
+  :global([data-tilt-tracking]) & {
+    transition: none;
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
 }
 
 // A flare on the rim near each of the two lit corners: a streak of light on
