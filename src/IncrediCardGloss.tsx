@@ -12,8 +12,8 @@ import styles from "./IncrediCardGloss.module.scss";
 // - a soft highlight on the surface, following the light;
 // - a flat reflection, a faintly lighter plane with a straight edge, turned
 //   and slid by the light;
-// - small spots of light just inside the two lit corners, for a thick,
-//   slightly rounded slab, traveling around a corner as the tilt brings it
+// - a flare on the rim near each of the two lit corners, for a thick,
+//   slightly rounded slab, traveling around its corner as the tilt brings it
 //   closer and fading as it leans away;
 // - a faint glow just inside the edge;
 // - a thin rim at the very edge, lit at two opposite corners, where a rounded
@@ -33,13 +33,11 @@ export function IncrediCardGloss() {
     <span className={styles.gloss} aria-hidden="true">
       <span className={styles.reflection} />
       <span className={styles.specular} />
-      <span className={styles.spotsStart}>
+      <span className={styles.flareStart}>
         <span className={styles.flare} />
-        <span className={styles.dot} />
       </span>
-      <span className={styles.spotsEnd}>
+      <span className={styles.flareEnd}>
         <span className={styles.flare} />
-        <span className={styles.dot} />
       </span>
       <span className={styles.glow}>
         <span className={styles.rim} />

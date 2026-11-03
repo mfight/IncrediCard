@@ -3,8 +3,8 @@
 .gloss,
 .specular,
 .reflection,
-.spotsStart,
-.spotsEnd,
+.flareStart,
+.flareEnd,
 .glow,
 .edge,
 .rim,
@@ -44,33 +44,34 @@
   opacity: calc(var(--incredicard-face-specular) / 0.5);
 }
 
-// Small spots of light just inside the two lit corners, the way a thick,
-// slightly rounded slab catches a light near its edge: a short flare along
-// the edge with a smaller dot trailing it.
+// A flare on the rim near each of the two lit corners: a streak of light on
+// the edge of the glass, the way a thick, slightly rounded slab catches a
+// light at its edge.
 //
 // They follow the card's tilt, which leans the left edge toward the viewer at
 // a positive y angle and tips the top edge away at a positive x angle, up to
 // 24deg each (see IncrediCardTilt.ts). Two leans, each from -1 to 1, decide
 // everything:
 //
-// - `--near`, how far the side the spots are on leans toward the viewer.
-//   Coming closer, they travel toward their corner, narrowing and
-//   brightening, round it, and run a little way down the side; leaning
-//   away, they slide off along the edge, widen and fade out.
-// - `--lit`, how far the edge the spots are on tips away, back toward the
-//   light. They're brightest when it does, and faint when it tips forward.
+// - `--near`, how far the side a flare is on leans toward the viewer. Coming
+//   closer, it travels toward its corner, narrowing and brightening, rounds
+//   it, and runs a little way down the side; leaning away, it slides off
+//   along the edge, widens and fades out.
+// - `--lit`, how far the edge a flare is on tips away, back toward the
+//   light. It's brightest when it does, and faint when it tips forward.
 //
-// Without tilt both are 0, and the spots rest 3rem in from the side, half lit.
+// Without tilt both are 0, and the flares rest 3rem in from the side, mostly
+// lit.
 //
 // Each group covers the card, and the bottom-right one is the top-left one
 // turned half a turn, so both are drawn from the top-left corner.
-.spotsStart,
-.spotsEnd {
+.flareStart,
+.flareEnd {
   filter: blur(0.03125rem);
   // Brightening all the way in, and gone by about a 10deg lean away.
   opacity: calc(
-    clamp(0, 0.6 + 0.4 * max(var(--near), 0) + 1.4 * min(var(--near), 0), 1) *
-      clamp(0.2, 0.6 + 0.4 * var(--lit), 1)
+    clamp(0, 0.8 + 0.2 * max(var(--near), 0) + 1.9 * min(var(--near), 0), 1) *
+      clamp(0.35, 0.75 + 0.25 * var(--lit), 1)
   );
   transition: opacity 280ms cubic-bezier(0, 0, 0.2, 1);
 
@@ -83,58 +84,77 @@
   }
 }
 
-.spotsStart {
+.flareStart {
   --near: calc(sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg));
   --lit: calc(sin(var(--incredicard-tilt-x, 0deg)) / sin(24deg));
 }
 
-.spotsEnd {
+.flareEnd {
   --near: calc(-1 * sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg));
   --lit: calc(-1 * sin(var(--incredicard-tilt-x, 0deg)) / sin(24deg));
   transform: rotate(180deg);
 }
 
-// The track each spot rides: along the edge 0.4375rem in, around a quarter
-// circle of radius 0.75rem through the corner, drifting outward as it goes,
-// then along the side 0.3125rem in. The circle is looser than the card's own
-// corner, which a track this far in would round in 3px, so the spots turn
-// rather than snap.
+// The flare rides a track on the rim itself, 0.0625rem in: along the edge,
+// around the corner on a circle concentric with the card's own (0.6875rem),
+// then along the side. The card's edge clips its outer half, so what shows is
+// a hot streak on the edge of the glass with its glow spilling inward, which
+// is what lets it read against the rim's own light.
 //
-// The spots are reflections of two lights in a curved rim, so each one's
-// place is set by which way the rim faces there, not by a distance. `--s` is
-// that facing, from 0 where the edge meets the curve to 1 where the curve
-// meets the side. A straight run faces one way, so the smallest turn carries a
-// reflection a long way along it (3.02rem per unit along the edge, 1.667rem
-// along the side), while the curve keeps turning and holds it (1.178rem,
-// a quarter of the circle, for the whole unit). So, with no rule of their
-// own:
+// It's a reflection in a curved rim, so its place is set by which way the rim
+// faces there, not by a distance. `--s` is that facing, from 0 where the edge
+// meets the curve to 1 where the curve meets the side. A straight run faces
+// one way, so the smallest turn carries a reflection a long way along it
+// (3.75rem per unit along the edge, 9.17rem along the side), while the curve
+// keeps turning and holds it (1.08rem, a quarter of the circle, for the whole
+// unit). So the flare lingers in the corner: it crosses the edge in the first
+// third of the lean, takes half of it to round the curve, and spends the rest
+// on the side, where it draws out into a long sheen about half the card's
+// height, fading toward the corner.
 //
-// - the spots linger in the corner: the flare crosses the edge in the first
-//   third of the lean, takes half of it to round the curve, and runs down
-//   the side in the rest;
-// - the dot, which faces half a unit behind the flare, falls in close
-//   behind it in the curve and opens out again along a straight run, the
-//   way a curved mirror shrinks what it reflects. Two lights stay two
-//   reflections, so they never quite merge.
-//
-// Each spot's box is centered where the edge meets the curve and turns about
-// the circle's center (its `transform-origin`), so the transform walks it out
+// Its box is centered where the edge meets the curve and turns about the
+// circle's center (its `transform-origin`), so the transform walks it out
 // along the edge, around the curve, and down the side, turning with the curve
-// as it goes. Each also foreshortens through the curve, most at the middle.
-.flare,
-.dot {
+// as it goes. It narrows as it comes in, along its own length, whichever way
+// it's facing, foreshortens through the curve, most at the middle, and is a
+// touch brighter there, where the curve concentrates it. On the side it
+// stretches to about three times that length while it moves down, so its
+// upper end stays near the corner, and fades out toward that end.
+.flare {
   position: absolute;
-  // At rest the flare faces 0.6 before the curve, 3rem in from the side; at
-  // full lean 0.3 past it, 0.5rem down the side; leaning away, up to 0.4
+  // At rest it faces 0.6 before the curve, 3rem in from the side; at full lean
+  // 0.3 past it, its center 2.75rem down the side; leaning away, up to 0.4
   // further back along the edge.
-  --s-flare: calc(-0.6 + 1.9 * max(var(--near), 0) + 0.4 * min(var(--near), 0));
+  --s: calc(-0.6 + 1.9 * max(var(--near), 0) + 0.4 * min(var(--near), 0));
   --around: clamp(0, var(--s), 1);
-  --foreshorten: calc(1 - 0.5 * sin(var(--around) * 180deg));
-  transform: translateX(calc(max(-1 * var(--s), 0) * 3.02rem))
+  // How far along the side, from 0 to 1.
+  --side: clamp(0, (var(--s) - 1) / 0.3, 1);
+  left: -1rem;
+  top: -0.6875rem;
+  width: 3.5rem;
+  height: 1.5rem;
+  transform-origin: 1.75rem 1.4375rem;
+  transform: translateX(calc(max(-1 * var(--s), 0) * 3.75rem))
     rotate(calc(var(--around) * -90deg))
-    translateX(calc(max(var(--s) - 1, 0) * -1.667rem))
-    translateY(calc(var(--around) * -0.125rem))
-    scaleX(var(--length));
+    translateX(calc(var(--side) * -2.75rem))
+    scaleX(
+      calc(
+        (1 - 0.35 * max(var(--near), 0)) * (1 - 0.5 * sin(var(--around) * 180deg)) *
+          (1 + 2.1 * var(--side))
+      )
+    );
+  // Fading toward the corner end (its local right) as it draws out.
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--side) * 60%), transparent);
+  // A hot core along the edge, and a soft glow around it.
+  background:
+    radial-gradient(
+      ellipse 45% 25% at 50% 50%,
+      rgb(255 255 255 / 100%),
+      rgb(255 255 255 / 90%) 45%,
+      rgb(255 255 255 / 0%)
+    ),
+    radial-gradient(closest-side, rgb(255 255 255 / 60%), rgb(255 255 255 / 0%));
+  opacity: calc(0.85 + 0.15 * sin(var(--around) * 180deg));
   // The same easing as the card's own tilt, and like it, none while the tilt
   // is tracking, which smooths the value itself (see the faces' stylesheets).
   transition:
@@ -148,31 +168,6 @@
   @include reduced-motion.reduced-motion {
     transition: none;
   }
-}
-
-// It narrows as it comes in, along its own length, whichever way it's facing,
-// and is a touch brighter at the middle of the curve, which concentrates it.
-.flare {
-  --s: var(--s-flare);
-  --length: calc((1 - 0.35 * max(var(--near), 0)) * var(--foreshorten));
-  left: 0.1875rem;
-  top: 0.2375rem;
-  width: 2rem;
-  height: 0.4rem;
-  transform-origin: 1rem 0.95rem;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 95%), rgb(255 255 255 / 0%));
-  opacity: calc(0.85 + 0.15 * sin(var(--around) * 180deg));
-}
-
-.dot {
-  --s: calc(var(--s-flare) - 0.5);
-  --length: var(--foreshorten);
-  left: 0.8875rem;
-  top: 0.2875rem;
-  width: 0.6rem;
-  height: 0.3rem;
-  transform-origin: 0.3rem 0.9rem;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 80%), rgb(255 255 255 / 0%));
 }
 
 // The same ring at two sizes. The glow's is blurred, so its inner side is
