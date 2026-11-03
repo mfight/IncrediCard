@@ -138,8 +138,8 @@ export type IncrediCardThemeDefinition = {
     /** The number field's placeholder, on a floating card. */
     placeholder: string;
   };
-  /** The foil `holographic` turns on. `null` for a card with no foil, where
-   * `holographic` does nothing. */
+  /** The foil `holofoil` turns on. `null` for a card with no foil, where
+   * `holofoil` does nothing. */
   hologram: {
     blend: IncrediCardHologramBlend;
     opacity: number;

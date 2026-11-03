@@ -198,7 +198,7 @@ type IncrediCardOwnProps = {
    * the card's front background, behind the real content. See
    * `IncrediCardHologram`'s header comment. A theme with no foil, such as
    * "vintage", ignores it. */
-  holographic?: boolean;
+  holofoil?: boolean;
   /** Default "light". Whether the "glass" theme's text is light or dark, for
    * what's behind the card: light on a dark page, dark on a bright one. The
    * glass is mostly clear, so nothing else protects its contrast. An
@@ -346,7 +346,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       layout = "floating",
       theme = "ribbons",
       chipReflection = true,
-      holographic = false,
+      holofoil = false,
       textTone = "light",
       glassBackdrop,
       tilt = false,
@@ -675,8 +675,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     );
     const isFloating = layout === "floating";
     const themeDefinition = getIncrediCardTheme(theme, textTone);
-    // A theme with no foil ("vintage") has nothing for `holographic` to show.
-    const showsFoil = holographic && themeDefinition.hologram !== null;
+    // A theme with no foil ("vintage") has nothing for `holofoil` to show.
+    const showsFoil = holofoil && themeDefinition.hologram !== null;
     const refractionFilterId = useId();
     // Fits the "stacked" zoom to the viewport; "floating" fits its own in
     // IncrediCardEmbeddedFace. See IncrediCardZoomFit.ts.
@@ -1106,7 +1106,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             flipAngleDeg={flipTurns * 180}
             faceLayout={themeDefinition.faceLayout}
             chipReflection={chipReflection}
-            holographic={showsFoil}
+            holofoil={showsFoil}
             gloss={themeDefinition.face.specular > 0}
             glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
             tilt={tilt}
@@ -1138,7 +1138,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 flipAngleDeg={flipTurns * 180}
                 faceLayout={themeDefinition.faceLayout}
                 chipReflection={chipReflection}
-                holographic={showsFoil}
+                holofoil={showsFoil}
                 gloss={themeDefinition.face.specular > 0}
                 glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
                 tilt={tilt}

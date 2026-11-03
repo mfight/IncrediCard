@@ -59,7 +59,7 @@ export type IncrediCardFaceProps = {
   /** Default false. An optional enhancement that renders
    * `IncrediCardHologram` on the front face's background only, behind
    * the real content. See that component's header comment. */
-  holographic?: boolean;
+  holofoil?: boolean;
   /** Default false. An optional visual-depth interaction: a subtle 3D
    * tilt following the pointer, composed with the flip. See
    * `useIncrediCardTilt`'s header comment (IncrediCardTilt.ts). */
@@ -155,7 +155,7 @@ export function IncrediCardFace({
   flipAngleDeg,
   faceLayout = "printed",
   chipReflection = true,
-  holographic = false,
+  holofoil = false,
   gloss = false,
   glassBackdrop,
   tilt = false,
@@ -190,7 +190,7 @@ export function IncrediCardFace({
   // hologram's pointer response; see useIncrediCardChipLight's header
   // comment in IncrediCardChip.tsx.
   const chipLightRef = useIncrediCardChipLight(
-    chipReflection || holographic,
+    chipReflection || holofoil,
   );
   // Same `.faceWrapper` root, a separate hook/listener; see
   // useIncrediCardTilt's header comment for why this isn't folded into
@@ -256,7 +256,7 @@ export function IncrediCardFace({
               {processingLabel}
             </span>
           ) : null}
-          {holographic ? <IncrediCardHologram /> : null}
+          {holofoil ? <IncrediCardHologram /> : null}
           <div className={styles.topRow}>
             <span className={styles.chipOffset}>
               <IncrediCardChip reflection={chipReflection} />

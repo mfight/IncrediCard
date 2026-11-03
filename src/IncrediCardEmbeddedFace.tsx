@@ -95,7 +95,7 @@ export type IncrediCardEmbeddedFaceProps = {
   /** Default false. Renders `IncrediCardGloss` on both faces, for a theme
    * with a glass surface. */
   gloss?: boolean;
-  holographic?: boolean;
+  holofoil?: boolean;
   /** Default false. See the identical prop on IncrediCardFace.tsx. */
   tilt?: boolean;
   /** See the identical prop on IncrediCardFace.tsx. Tracked at
@@ -181,7 +181,7 @@ export function IncrediCardEmbeddedFace({
   flipAngleDeg,
   faceLayout = "printed",
   chipReflection = true,
-  holographic = false,
+  holofoil = false,
   gloss = false,
   glassBackdrop,
   tilt = false,
@@ -231,7 +231,7 @@ export function IncrediCardEmbeddedFace({
   // hologram's pointer response; see useIncrediCardChipLight's header
   // comment in IncrediCardChip.tsx.
   const chipLightRef = useIncrediCardChipLight(
-    chipReflection || holographic,
+    chipReflection || holofoil,
   );
   // Same `.faceWrapper` root, a separate hook/listener; see
   // useIncrediCardTilt's header comment for why this isn't folded into
@@ -292,7 +292,7 @@ export function IncrediCardEmbeddedFace({
               {processingLabel}
             </span>
           ) : null}
-          {holographic ? <IncrediCardHologram /> : null}
+          {holofoil ? <IncrediCardHologram /> : null}
           <div className={styles.topRow}>
             <span className={styles.chipOffset}>
               <IncrediCardChip reflection={chipReflection} />

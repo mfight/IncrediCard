@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 // The device-orientation half of this component's pointer effects:
-// `holographic`, `tilt` and `chipReflection` all read a position signal.
+// `holofoil`, `tilt` and `chipReflection` all read a position signal.
 // On a phone there is no pointer, so without this module all three would
 // sit at their resting visual.
 //

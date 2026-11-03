@@ -168,6 +168,14 @@
   width: min(64rem, calc(100vw - 2rem));
 }
 
+// Two cards side by side per row, for comparing a pair.
+.pairGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 20rem);
+  justify-content: center;
+  gap: 2.5rem 2rem;
+}
+
 .example {
   width: 20rem;
   margin: 0;

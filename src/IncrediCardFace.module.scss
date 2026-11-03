@@ -95,7 +95,7 @@
   // still decelerating smoothly into the flip's resting angle.
   transition: transform 280ms cubic-bezier(0, 0, 0.2, 1);
   // Promotes this element to its own GPU compositor layer ahead of time.
-  // This matters most with `holographic` and `tilt` both on: tilt's
+  // This matters most with `holofoil` and `tilt` both on: tilt's
   // frequent pointer-driven transform updates would otherwise force the
   // browser to repaint this element's entire subtree on every change,
   // including IncrediCardHologram's `mix-blend-mode`/`filter` layers,
@@ -228,7 +228,7 @@
   // not something to verify; it cannot go wrong.
   //
   // A pseudo-element, not a real one, so nothing about the component's
-  // markup or its `holographic` prop changes--and `position: absolute`
+  // markup or its `holofoil` prop changes--and `position: absolute`
   // is load-bearing beyond placement: `.face` is a flex column, so a
   // static `::before` would become a flex ITEM and push the real content
   // around.

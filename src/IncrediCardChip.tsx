@@ -31,7 +31,7 @@ import {
 // components.
 //
 // Inert (attaches nothing) unless `active` is true--the caller passes
-// `true` once `chipReflection` and/or `holographic` is set (the
+// `true` once `chipReflection` and/or `holofoil` is set (the
 // hologram's pointer response reuses these same properties), so the
 // plain default case (neither) adds no listener at all. Also inert
 // under `prefers-reduced-motion`--WCAG's "Animation from Interactions"

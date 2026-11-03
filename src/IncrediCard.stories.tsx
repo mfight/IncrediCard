@@ -12,9 +12,6 @@ import {
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { engravedCardTheme } from "../demo/themes/engravedCard";
 import { tumblingBlocksTheme } from "../demo/themes/tumblingBlocks";
-import globeFoil from "./assets/images/incredicard-lines-globe.svg";
-import globeMaskA from "./assets/images/incredicard-lines-globe-a.svg";
-import globeMaskB from "./assets/images/incredicard-lines-globe-b.svg";
 import { ForceReducedMotion } from "./reducedMotion";
 import { INCREDICARD_THEMES } from "./themes";
 import themedStyles from "./IncrediCard.stories.module.scss";
@@ -76,7 +73,7 @@ const meta = {
     chipReflection: {
       control: "boolean",
     },
-    holographic: {
+    holofoil: {
       control: "boolean",
     },
     // The Effects story relies on these controls as the way to toggle an
@@ -156,17 +153,17 @@ const bothLayouts = {
 // separately.
 export const Ribbons: Story = {
   ...bothLayouts,
-  args: { id: "story-ribbons", theme: "ribbons", holographic: true, defaultValue: FILLED },
+  args: { id: "story-ribbons", theme: "ribbons", holofoil: true, defaultValue: FILLED },
 };
 
 // OCR-A (the name) and OCR-B (the number, expiration and CVC) on an
 // aged-ivory face, with an embossed text-shadow standing in for a real card's
 // raised plastic; see the "vintage" theme in themes.ts. The fonts apply to the
 // real on-card fields as well as the stacked card's decorative mirror. It has
-// no foil, so there's no `holographic` control.
+// no foil, so there's no `holofoil` control.
 export const Vintage: Story = {
   ...bothLayouts,
-  argTypes: { ...bothLayouts.argTypes, holographic: { table: { disable: true } } },
+  argTypes: { ...bothLayouts.argTypes, holofoil: { table: { disable: true } } },
   args: { id: "story-vintage", theme: "vintage", defaultValue: FILLED },
 };
 
@@ -175,7 +172,7 @@ export const Vintage: Story = {
 // card to light the land and the sphere's rings separately.
 export const Globe: Story = {
   ...bothLayouts,
-  args: { id: "story-globe", theme: "globe", holographic: true, defaultValue: FILLED },
+  args: { id: "story-globe", theme: "globe", holofoil: true, defaultValue: FILLED },
 };
 
 // The page behind the card shows through, so this story gives it pages worth
@@ -266,33 +263,33 @@ export const GlassKnownBackdrop: Story = {
   },
 };
 
-// An app's own themes, each one fixed look made with `extendIncrediCardTheme`:
-// - Forest: the "ribbons" card in a different material, with the globe's line
-//   art passed as files rather than a name.
-// - Tumbling Blocks: a foil of its own (demo/themes/tumblingBlocks.ts).
-// - Engraved Card: an issuer's own artwork, from "vintage", so it has no foil,
-//   and `holographic` does nothing on it (demo/themes/engravedCard.ts). The
+// An app's own themes, each one fixed look made with `extendIncrediCardTheme`,
+// one for each kind of thing a theme can change:
+// - Customize Colors: the "ribbons" card in a different material.
+// - Customize Art: an issuer's own artwork, from "vintage", so it has no foil,
+//   and `holofoil` does nothing on it (demo/themes/engravedCard.ts). The
 //   demo's marks are white, for dark cards; an app would pass dark ones here,
 //   and without any, the network's name prints in the theme's dark text.
+// - Customize Holofoil: line art of its own, passed as files, which the foil
+//   prints and lights (demo/themes/tumblingBlocks.ts).
 const forestTheme = extendIncrediCardTheme("ribbons", {
   face: {
     background: "linear-gradient(135deg, #0b3b3c, #14532d)",
     linesOpacity: 0.16,
   },
-  lineArt: { foil: globeFoil, maskA: globeMaskA, maskB: globeMaskB },
 });
 
 const CUSTOM_THEMES = [
-  { key: "forest", caption: "Forest", theme: forestTheme, cardNumber: "4242424242424242", cvc: "123" },
-  { key: "blocks", caption: "Tumbling Blocks", theme: tumblingBlocksTheme, cardNumber: "5555555555554444", cvc: "123" },
+  { key: "colors", caption: "Customize Colors", theme: forestTheme, cardNumber: "4242424242424242", cvc: "123" },
   {
-    key: "engraved",
-    caption: "Engraved Card",
+    key: "art",
+    caption: "Customize Art",
     theme: engravedCardTheme,
     cardNumber: "378282246310005",
     cvc: "1234",
     acceptanceMarks: undefined,
   },
+  { key: "holofoil", caption: "Customize Holofoil", theme: tumblingBlocksTheme, cardNumber: "5555555555554444", cvc: "123" },
 ];
 
 export const CustomThemes: Story = {
@@ -313,64 +310,67 @@ export const CustomThemes: Story = {
     </div>
   ),
   argTypes: { theme: { table: { disable: true } } },
-  args: { id: "story-custom-themes", layout: "floating", holographic: true },
+  args: { id: "story-custom-themes", layout: "floating", holofoil: true },
   play: async ({ canvasElement }) => {
     // The card's root, which takes its id and carries the theme.
     const root = (key: string) => canvasElement.querySelector<HTMLElement>(`#story-custom-themes-${key}`)!;
-    for (const key of ["forest", "blocks", "engraved"]) {
+    for (const key of ["colors", "art", "holofoil"]) {
       await expect(root(key).hasAttribute("data-theme")).toBe(false);
     }
-    const forest = getComputedStyle(root("forest"));
-    await expect(forest.getPropertyValue("--incredicard-face-background")).toContain("linear-gradient");
-    await expect(forest.getPropertyValue("--incredicard-lines")).toContain("globe");
+    await expect(getComputedStyle(root("colors")).getPropertyValue("--incredicard-face-background")).toContain(
+      "linear-gradient",
+    );
     // Its own masks, by whatever URL the bundler gave them.
-    const blocksMask = getComputedStyle(root("blocks")).getPropertyValue("--incredicard-lines-mask-a");
+    const blocksMask = getComputedStyle(root("holofoil")).getPropertyValue("--incredicard-lines-mask-a");
     const blocksArt = tumblingBlocksTheme.lineArt;
     await expect(typeof blocksArt === "object" && blocksMask.includes(blocksArt.maskA)).toBe(true);
-    // The engraved card has no foil, so `holographic` adds no glare to it.
-    const masked = [...root("engraved").querySelectorAll("*")].filter((el) => getComputedStyle(el).maskImage !== "none");
+    // The engraved card has no foil, so `holofoil` adds no glare to it.
+    const masked = [...root("art").querySelectorAll("*")].filter((el) => getComputedStyle(el).maskImage !== "none");
     await expect(masked).toEqual([]);
   },
 };
 
-// Every supported network, in alphabetical order. Each number detects as the
-// network it claims (per `detectCardNetwork`), passes `luhnCheck`, AND has
-// one of that network's lengths, which is what the card requires before it
-// will reveal.
+// Every supported network, in alphabetical order, with the app's acceptance
+// mark on the left and, on the right, what an app that supplies no mark gets:
+// the network's name in text. Each number detects as the network it claims
+// (per `detectCardNetwork`), passes `luhnCheck`, AND has one of that
+// network's lengths, which is what the card requires before it will reveal.
 //
 // Amex has the most structural differences: 4-6-5 number grouping, a 4-digit
 // CVC, and that CVC printed on the FRONT of the card rather than the back.
-// Diners Club's 14-digit number groups 4-6-4. The rest share the neutral
-// shape, so what they show is detection itself, and their acceptance mark.
-// The last, "Without a mark", shows what an app that supplies no marks gets:
-// the corner names the network in text, and American Express, the longest
-// name, wraps onto two lines.
+// Its name, the longest, wraps onto two lines. Diners Club's 14-digit number
+// groups 4-6-4. The rest share the neutral shape, so what they show is
+// detection itself.
 const NETWORKS = [
-  { caption: "American Express", cardNumber: "378282246310005", cvc: "1234" },
-  { caption: "Diners Club", cardNumber: "30569309025904" },
-  { caption: "Discover", cardNumber: "6011111111111117" },
-  { caption: "JCB", cardNumber: "3530111333300000" },
-  { caption: "Maestro", cardNumber: "6700000000000000" },
-  { caption: "Mastercard", cardNumber: "5555555555554444" },
-  { caption: "UnionPay", cardNumber: "6200000000000005" },
-  { caption: "Visa", cardNumber: "4242424242424242" },
-  { caption: "Without a mark", cardNumber: "378282246310005", cvc: "1234", acceptanceMarks: {} },
+  { name: "American Express", cardNumber: "378282246310005", cvc: "1234" },
+  { name: "Diners Club", cardNumber: "30569309025904" },
+  { name: "Discover", cardNumber: "6011111111111117" },
+  { name: "JCB", cardNumber: "3530111333300000" },
+  { name: "Maestro", cardNumber: "6700000000000000" },
+  { name: "Mastercard", cardNumber: "5555555555554444" },
+  { name: "UnionPay", cardNumber: "6200000000000005" },
+  { name: "Visa", cardNumber: "4242424242424242" },
 ];
 
 export const Networks: Story = {
   render: (args) => (
-    <div className={themedStyles.exampleGrid}>
-      {NETWORKS.map(({ caption, cardNumber, cvc = "123", acceptanceMarks }, index) => (
-        <figure key={caption} className={themedStyles.example}>
-          <figcaption className={themedStyles.exampleCaption}>{caption}</figcaption>
-          <IncrediCard
-            {...cardProps(args)}
-            id={`${args.id}-${index}`}
-            defaultValue={{ ...FILLED, cardNumber, cvc }}
-            {...(acceptanceMarks && { acceptanceMarks })}
-          />
-        </figure>
-      ))}
+    <div className={themedStyles.pairGrid}>
+      {NETWORKS.flatMap(({ name, cardNumber, cvc = "123" }, index) =>
+        [
+          { key: "mark", caption: name, marks: args.acceptanceMarks },
+          { key: "name", caption: `${name}, without a mark`, marks: {} },
+        ].map(({ key, caption, marks }) => (
+          <figure key={`${name}-${key}`} className={themedStyles.example}>
+            <figcaption className={themedStyles.exampleCaption}>{caption}</figcaption>
+            <IncrediCard
+              {...cardProps(args)}
+              id={`${args.id}-${index}-${key}`}
+              acceptanceMarks={marks}
+              defaultValue={{ ...FILLED, cardNumber, cvc }}
+            />
+          </figure>
+        )),
+      )}
     </div>
   ),
   args: { id: "story-networks" },
@@ -537,7 +537,7 @@ export const ReducedMotion: Story = {
     id: "story-reduced-motion",
     reducedMotion: true,
     processing: true,
-    holographic: true,
+    holofoil: true,
     tilt: true,
     scale: true,
     chipReflection: true,
@@ -562,7 +562,7 @@ export const ReducedMotion: Story = {
 // prop behind each effect, so what is on screen maps to something you can
 // pass, and says plainly that they are independent.
 //
-// `holographic` and `tilt` both track the pointer, so with both on it can
+// `holofoil` and `tilt` both track the pointer, so with both on it can
 // be hard to attribute a given movement to one or the other. That is
 // exactly what you will see with both enabled, which a one-effect-at-a-
 // time story wouldn't show.
@@ -573,7 +573,7 @@ export const ReducedMotion: Story = {
 // asks for orientation permission itself.
 const EFFECTS: Array<{ prop: string; description: string }> = [
   {
-    prop: "holographic",
+    prop: "holofoil",
     description:
       "A rainbow-foil pattern behind the card's printed content, with a holographic reflection effect that follows the pointer. Follows device tilt on touch devices.",
   },
@@ -598,7 +598,7 @@ export const Effects: Story = {
   decorators: [withReducedMotion],
   args: {
     id: "story-effects",
-    holographic: true,
+    holofoil: true,
     tilt: true,
     scale: true,
     chipReflection: true,
@@ -771,7 +771,7 @@ function DeviceTiltDemo(args: IncrediCardStoryArgs) {
       </div>
       <div className={themedStyles.effectsLegend}>
         <p className={themedStyles.effectsLegendIntro}>
-          On a phone or tablet, <code>holographic</code>, <code>tilt</code> and{" "}
+          On a phone or tablet, <code>holofoil</code>, <code>tilt</code> and{" "}
           <code>chipReflection</code> follow the device instead of a pointer.
           The card responds to however you are already holding it: the first
           reading becomes center, and a small wrist roll moves the effects
@@ -842,7 +842,7 @@ export const DeviceTilt: Story = {
   decorators: [withReducedMotion],
   args: {
     id: "story-device-tilt",
-    holographic: true,
+    holofoil: true,
     tilt: true,
     scale: true,
     chipReflection: true,

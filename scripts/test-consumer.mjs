@@ -94,8 +94,8 @@ createRoot(document.getElementById("root")!).render(
   <>
     <IncrediCard id="plain-card" />
     <IncrediCard id="marked-card" acceptanceMarks={marks} />
-    <IncrediCard id="globe-card" theme="globe" holographic />
-    <IncrediCard id="vintage-card" theme="vintage" holographic />
+    <IncrediCard id="globe-card" theme="globe" holofoil />
+    <IncrediCard id="vintage-card" theme="vintage" holofoil />
     <IncrediCard id="custom-card" theme={customTheme} />
     <IncrediCard id="glass-card" theme="glass" />
     <IncrediCard id="copy-card" theme="glass" glassBackdrop={{ element: { current: document.body }, background: "linear-gradient(#123, #456)" }} />
@@ -215,7 +215,7 @@ createRoot(document.getElementById("root")!).render(
       /incredicard-lines-globe-[^/]*\.svg$/.test(facts.globe.printed ?? "") && facts.globe.status === 200 && /incredicard-lines-globe-a-[^/]*\.svg$/.test(facts.globe.mask ?? "") && facts.globe.maskStatus === 200,
       `theme="globe" prints the globe and masks its glare with it, both loaded as files (${facts.globe.printed}, ${facts.globe.status}; ${facts.globe.mask}, ${facts.globe.maskStatus})`,
     );
-    check(facts.vintageMask === null, `theme="vintage" has no foil, so holographic adds no glare to it (${facts.vintageMask})`);
+    check(facts.vintageMask === null, `theme="vintage" has no foil, so holofoil adds no glare to it (${facts.vintageMask})`);
     // This Chromium run has to get both. An app's minifier is what can lose
     // either one, which is why this is checked on a real, minified build.
     check(facts.custom?.background.includes("rgb(1 2 3)") && facts.custom.color.includes("#05131a") && facts.custom.theme === null, `a theme extended from glass, with dark text, renders as its own (${JSON.stringify(facts.custom)})`);
