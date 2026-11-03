@@ -54,8 +54,10 @@
 // everything:
 //
 // - `--near`, how far the side the spots are on leans toward the viewer.
-//   Coming closer, they slide in toward their corner and narrow; leaning
-//   away, they slide off along the edge, widen and fade out.
+//   Coming closer, they slide in toward their corner and narrow, until at
+//   full lean the flare's tip sits about as near the side as the spots sit
+//   to their edge; leaning away, they slide off along the edge, widen and
+//   fade out.
 // - `--lit`, how far the edge the spots are on tips away, back toward the
 //   light. The near spots are brightest when it does, and faint when it
 //   tips forward instead.
@@ -74,7 +76,18 @@
     radial-gradient(ellipse 1rem 0.2rem at var(--flare-x) 50%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
     radial-gradient(ellipse 0.3rem 0.15rem at var(--dot-x) 50%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
   filter: blur(0.03125rem);
-  transform: translateX(calc(var(--toward-corner) * var(--near) * 1.25rem)) scaleX(calc(1 - 0.35 * var(--near)));
+  // Toward the corner, from the flare's resting center (15cqw in) to 1.125rem
+  // from the side; away, up to 1.25rem along the edge. The flare narrows
+  // around its own center, so narrowing doesn't pull it back out of the
+  // corner.
+  transform: translateX(
+      calc(
+        var(--toward-corner) *
+          (max(var(--near), 0) * (15cqw - 1.125rem) + min(var(--near), 0) * 1.25rem)
+      )
+    )
+    scaleX(calc(1 - 0.35 * var(--near)));
+  transform-origin: var(--flare-x) 50%;
   opacity: calc(clamp(0, 0.75 + 1.75 * var(--near), 1) * clamp(0.2, 0.6 + 0.4 * var(--lit), 1));
   // The same easing as the card's own tilt, and like it, none while the tilt
   // is tracking, which smooths the value itself (see the faces' stylesheets).
