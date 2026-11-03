@@ -100,6 +100,17 @@ export function useIncrediCardChipLight(active: boolean) {
       // otherwise-restrained effect calls for.
       const rotate = ((y - 50) / 50) * 45;
       el!.style.setProperty("--incredicard-chip-light-rotate", `${rotate}deg`);
+      // The same position as plain numbers, -1 at the card's left or top
+      // edge to 1 at its right or bottom, for the glass's rim flares
+      // (IncrediCardGloss.module.scss), which turn it into how far each
+      // corner leans. CSS can't divide a percentage down to a number in
+      // every browser, so it's done here, as `rotate` is.
+      el!.style.setProperty("--incredicard-light-lean-x", String((x - 50) / 50));
+      el!.style.setProperty("--incredicard-light-lean-y", String((y - 50) / 50));
+      // Lets those flares follow the light directly while it's tracking and
+      // ease back to rest once it stops, as the card's tilt does with
+      // `data-tilt-tracking`.
+      if (!el!.hasAttribute("data-light-tracking")) el!.setAttribute("data-light-tracking", "");
     }
 
     function clearLight() {
@@ -107,6 +118,9 @@ export function useIncrediCardChipLight(active: boolean) {
       el!.style.removeProperty("--incredicard-chip-light-y");
       el!.style.removeProperty("--incredicard-chip-light-active");
       el!.style.removeProperty("--incredicard-chip-light-rotate");
+      el!.style.removeProperty("--incredicard-light-lean-x");
+      el!.style.removeProperty("--incredicard-light-lean-y");
+      el!.removeAttribute("data-light-tracking");
     }
 
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {

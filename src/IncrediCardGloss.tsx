@@ -13,7 +13,7 @@ import styles from "./IncrediCardGloss.module.scss";
 // - a flat reflection, a faintly lighter plane with a straight edge, turned
 //   and slid by the light;
 // - a flare on the rim near each of the two lit corners, for a thick,
-//   slightly rounded slab, traveling around its corner as the tilt brings it
+//   slightly rounded slab, traveling around its corner as the light brings it
 //   closer and fading as it leans away;
 // - a faint glow just inside the edge;
 // - a thin rim at the very edge, lit at two opposite corners, where a rounded
