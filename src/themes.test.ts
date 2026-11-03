@@ -87,37 +87,59 @@ describe("incredicardThemeStyle", () => {
 });
 
 describe("the glare's blends", () => {
-  const { "color-dodge": dodge, "color-burn": burn } = INCREDICARD_HOLOGRAM_BLENDS;
-  const stops = (texture: string) => texture.match(/#[0-9a-f]{6}/g)!;
+  const { "color-dodge": dodge, screen } = INCREDICARD_HOLOGRAM_BLENDS;
+  const lightness = (hex: string) => {
+    const n = parseInt(hex.slice(1), 16);
+    return (Math.max(n >> 16, (n >> 8) & 255, n & 255) + Math.min(n >> 16, (n >> 8) & 255, n & 255)) / 510;
+  };
+  const stops = (texture: string) => texture.match(/#[0-9a-f]{6}/gi)!;
 
-  // Burn is dodge turned inside out, so its glare is too. Dodge's own dark
-  // texture under burn draws the lit lines in near-black.
-  it("turns the whole glare inside out for color-burn", () => {
-    expect(dodge.glare.light).toBe("255 255 255");
-    expect(burn.glare.light).toBe("0 0 0");
-    expect(dodge.glare.layers).toBe("color-dodge, multiply, normal");
-    expect(burn.glare.layers).toBe("color-burn, screen, normal");
-    const inverse = stops(dodge.glare.texture).map(
-      (hex) => `#${(0xffffff - parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`,
-    );
-    expect(stops(burn.glare.texture)).toEqual(inverse);
+  // On a light face the foil has to get lighter than the face, not darker,
+  // and a translucent face can't count on the blend to do it: its layers
+  // mostly show as they are. So everything screen paints is light.
+  it("builds a light face's glare from light colors, and brightens its lines", () => {
+    expect(Math.min(...stops(screen.glare.texture).map(lightness))).toBeGreaterThan(0.65);
+    expect(Math.max(...stops(dodge.glare.texture).map(lightness))).toBeLessThan(0.35);
+    expect(screen.glare.layers).toBe("screen, screen, normal");
+    // A black highlight and falloff center add nothing under screen.
+    expect(screen.glare.light).toBe("0 0 0");
+    expect(screen.brightness).toBeGreaterThan(1);
+    expect(dodge.brightness).toBe(1);
   });
 
   it("writes the glare that goes with the theme's blend mode", () => {
     const style = incredicardThemeStyle(getIncrediCardTheme("glass", "dark")) as Record<string, string>;
-    expect(style["--incredicard-holo-glare-light"]).toBe(burn.glare.light);
-    expect(style["--incredicard-holo-glare-texture"]).toBe(burn.glare.texture);
-    expect(style["--incredicard-holo-glare-layers"]).toBe(burn.glare.layers);
+    expect(style["--incredicard-holo-blend-mode"]).toBe("screen");
+    expect(style["--incredicard-holo-brightness"]).toBe(String(screen.brightness));
+    expect(style["--incredicard-holo-glare-light"]).toBe(screen.glare.light);
+    expect(style["--incredicard-holo-glare-texture"]).toBe(screen.glare.texture);
+    expect(style["--incredicard-holo-glare-layers"]).toBe(screen.glare.layers);
+    expect(style["--incredicard-holo-glare-filter"]).toBe(screen.glare.filter);
   });
 
-  it("is what every glare layer reads, not a fixed highlight or texture", () => {
+  it("is what every glare layer reads, not a fixed highlight, texture or filter", () => {
     const css = readFileSync(new URL("IncrediCardHologram.module.scss", import.meta.url), "utf8");
     const rules = css.replace(/^\s*\/\/.*$/gm, "");
     expect(rules).not.toMatch(/rgb\(255 255 255/);
     expect(rules.match(/var\(--incredicard-holo-glare-texture,/g)).toHaveLength(4);
     expect(rules.match(/var\(--incredicard-holo-glare-layers,/g)).toHaveLength(4);
+    expect(rules.match(/var\(--incredicard-holo-glare-filter,/g)).toHaveLength(4);
     expect(rules.match(/var\(--incredicard-holo-glare-light,/g)).toHaveLength(8);
   });
+
+  // A positioned layer paints over in-flow text whatever the markup order,
+  // and only the blend math hid it while the foil was dark layers over
+  // light text, or the reverse.
+  it.each(["IncrediCardHologram.module.scss", "IncrediCardFace.module.scss", "IncrediCardEmbeddedFace.module.scss"])(
+    "%s keeps the foil and printed lines under the card's text",
+    (sheet) => {
+      const css = readFileSync(new URL(sheet, import.meta.url), "utf8");
+      const block = sheet.startsWith("IncrediCardHologram")
+        ? css.slice(css.indexOf(".hologramWrapper {"), css.indexOf("}", css.indexOf(".hologramWrapper {")))
+        : css.slice(css.indexOf("&::before {"), css.indexOf("}", css.indexOf("&::before {")));
+      expect(block).toContain("z-index: -1;");
+    },
+  );
 });
 
 describe("a theme with no foil", () => {
@@ -138,8 +160,8 @@ describe("a theme with no foil", () => {
   });
 
   it("gains one from tuning, starting from the default theme's", () => {
-    const foiled = extendIncrediCardTheme("vintage", { hologram: { blend: "color-burn" } });
-    expect(foiled.hologram).toEqual({ ...ribbons.hologram, blend: "color-burn" });
+    const foiled = extendIncrediCardTheme("vintage", { hologram: { blend: "screen" } });
+    expect(foiled.hologram).toEqual({ ...ribbons.hologram, blend: "screen" });
   });
 });
 
@@ -153,10 +175,10 @@ describe("the glass backdrop", () => {
     expect(glass.face.color).toBe("#ffffff");
     expect(glass.hologram.blend).toBe("color-dodge");
     expect(dark.face.color).toBe("#05131a");
-    expect(dark.hologram?.blend).toBe("color-burn");
+    expect(dark.hologram?.blend).toBe("screen");
     expect(dark.face.backdrop).toBe(glass.face.backdrop);
     const style = incredicardThemeStyle(dark) as Record<string, string>;
-    expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS["color-burn"].falloffColor);
+    expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS.screen.falloffColor);
   });
 
   it("leaves the other themes alone", () => {
@@ -250,7 +272,7 @@ describe("a custom theme", () => {
   it("takes its tone once, when it's made, and keeps no tones of its own", () => {
     const dark = extendIncrediCardTheme("glass", { face: { background: "#ffffff1a" } }, { textTone: "dark" });
     expect(dark.face.color).toBe("#05131a");
-    expect(dark.hologram?.blend).toBe("color-burn");
+    expect(dark.hologram?.blend).toBe("screen");
     expect(dark.face.background).toBe("#ffffff1a");
     expect(dark).not.toHaveProperty("darkText");
     expect(getIncrediCardTheme(dark, "light")).toBe(dark);
@@ -261,9 +283,9 @@ describe("a custom theme", () => {
   });
 
   it("gets the falloff color that goes with its blend mode", () => {
-    const custom = extendIncrediCardTheme("ribbons", { hologram: { blend: "color-burn" } });
+    const custom = extendIncrediCardTheme("ribbons", { hologram: { blend: "screen" } });
     const style = incredicardThemeStyle(custom) as Record<string, string>;
-    expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS["color-burn"].falloffColor);
+    expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS.screen.falloffColor);
   });
 
   it("writes its own line art, and can't break out of the URL's string", () => {

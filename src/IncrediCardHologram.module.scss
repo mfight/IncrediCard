@@ -40,6 +40,11 @@ $glare-texture: repeating-linear-gradient(
 .hologramWrapper {
   position: absolute;
   inset: 0;
+  // Under the printed content. A positioned element paints after the
+  // in-flow content around it whatever the markup order, so without this
+  // the foil would sit over the card's text. Each face isolates itself, so
+  // -1 means just above the face's own background, not behind the card.
+  z-index: -1;
   pointer-events: none;
 }
 
@@ -78,12 +83,12 @@ $glare-texture: repeating-linear-gradient(
   //
   // Themeable through a custom property, because no single blend mode
   // serves every face. `color-dodge` (the default, tuned for the "ribbons"
-  // theme's dark card) only ever brightens, so it washes out to almost
-  // nothing against a light face, such as dark-text glass on a bright page,
-  // which takes `color-burn` instead; `overlay` splits the difference but
-  // reads as underwhelming on both rather than good on either. Each theme
-  // in themes.ts sets both this and the opacity below, tuned for its own
-  // face.
+  // theme's dark card) is made of dark layers that light up; a light face,
+  // such as dark-text glass on a bright page, takes `screen` and layers made
+  // of light colors instead (see `INCREDICARD_HOLOGRAM_BLENDS` in
+  // themes.ts); `overlay` splits the difference but reads as underwhelming
+  // on both rather than good on either. Each theme in themes.ts sets both
+  // this and the opacity below, tuned for its own face.
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   // The foil AT REST. It shows whether or not a pointer is anywhere near
   // the card, so it is half of what reads as "the ribbons in the
@@ -118,7 +123,7 @@ $glare-texture: repeating-linear-gradient(
   // visible. This is the only place the public property is read.
   --incredicard-holo-sat: var(--incredicard-holo-resting-saturation, 1);
 
-  filter: saturate(var(--incredicard-holo-sat, 1));
+  filter: saturate(var(--incredicard-holo-sat, 1)) brightness(var(--incredicard-holo-brightness, 1));
   // Slow, subtle resting movement that works without any hover or
   // pointer input: a narrow hue-rotate oscillation, not a full 0-360deg
   // spin. The svg's diagonal stripes are already a complete rainbow, so a
@@ -244,7 +249,7 @@ $glare-texture: repeating-linear-gradient(
   // comment for why the value travels through a private property.
   --incredicard-holo-sat: 1;
 
-  filter: saturate(var(--incredicard-holo-sat, 1));
+  filter: saturate(var(--incredicard-holo-sat, 1)) brightness(var(--incredicard-holo-brightness, 1));
   // Matched to `.holo`'s own resting opacity rather than set
   // independently, so the lit region reads as the same material at the
   // same weight with its color back--not as a second, brighter sheet
@@ -293,11 +298,11 @@ $glare-texture: repeating-linear-gradient(
 @keyframes incredicardHoloShift {
   0%,
   100% {
-    filter: saturate(var(--incredicard-holo-sat, 1)) hue-rotate(-15deg);
+    filter: saturate(var(--incredicard-holo-sat, 1)) brightness(var(--incredicard-holo-brightness, 1)) hue-rotate(-15deg);
   }
 
   50% {
-    filter: saturate(var(--incredicard-holo-sat, 1)) hue-rotate(15deg);
+    filter: saturate(var(--incredicard-holo-sat, 1)) brightness(var(--incredicard-holo-brightness, 1)) hue-rotate(15deg);
   }
 }
 
@@ -400,22 +405,19 @@ $glare-texture: repeating-linear-gradient(
 // desaturated `.holo` showing through as silver. The ribbons stay
 // visible everywhere, and the COLOR concentrates where the light is.
 //
-// It is also the one value that must change per theme. `color-burn` is
-// `color-dodge`'s mirror and its no-op color is WHITE, so dark-text
-// "glass" overrides this to #e0e0e0 -- the same 12% offset, reflected. Left at
-// #1f1f1f, that theme would paint the far half of the card solid black
-// on hover, an inversion rather than a softening. So a theme doesn't set
-// this color at all: it names its blend mode, and the color comes paired
-// with it (`INCREDICARD_HOLOGRAM_BLENDS` in themes.ts).
-//
-// The same goes for everything else these layers are made of. Under
-// `color-burn` a white highlight and a dark texture are backwards too: the
-// highlight does nothing and the texture burns the lit lines nearly black.
-// So the highlight's color, the texture and the layers' own blend modes
-// come from the same table (`--incredicard-holo-glare-light`, `-texture`,
-// `-layers`): for burn, a black highlight, the texture's inverse, and
-// screen in place of multiply, the whole stack mirrored. The values below
-// are dodge's, as fallbacks.
+// It is also a value that changes with the blend mode, along with
+// everything else these layers are made of: the highlight's color, the
+// texture, the layers' own blend modes and their filter
+// (`--incredicard-holo-glare-light`, `-texture`, `-layers`, `-filter`).
+// Under `screen`, for a light face, every one of them is light, so the lit
+// lines get lighter than the face instead of darker: a light rainbow
+// screened over a black center, falling off to a pale silver (#e0e0e0),
+// with no highlight on top. Dark layers on a light face draw the lines
+// dark, whatever the blend: a translucent face is its own blend group, so
+// there the layers mostly show as they are. So a theme doesn't set any of
+// this: it names its blend mode, and the rest comes paired with it
+// (`INCREDICARD_HOLOGRAM_BLENDS` in themes.ts). The values below are
+// dodge's, as fallbacks.
 //
 // Shared positioning/masking/fade-in-on-hover rules are duplicated
 // across all four classes below rather than factored into a shared
@@ -480,7 +482,7 @@ $glare-texture: repeating-linear-gradient(
   // foil reads as more vivid than a plain gradient would. The values are
   // this high because the translucent highlight above leaves real color
   // for the filter to amplify.
-  filter: contrast(1.75) saturate(2.2);
+  filter: var(--incredicard-holo-glare-filter, contrast(1.75) saturate(2.2));
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   // Invisible at rest, not just centered: `--incredicard-chip-light-active` is
   // only set while a pointer or orientation sensor is driving the card
@@ -596,7 +598,7 @@ $glare-texture: repeating-linear-gradient(
         var(--incredicard-holo-color-radius, 72%)
     );
   background-blend-mode: var(--incredicard-holo-glare-layers, color-dodge, multiply, normal);
-  filter: contrast(1.75) saturate(2.2);
+  filter: var(--incredicard-holo-glare-filter, contrast(1.75) saturate(2.2));
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   opacity: calc(
     var(--incredicard-chip-light-active, 0) * 0.52 *
@@ -723,7 +725,7 @@ $glare-texture: repeating-linear-gradient(
   // moves less and renders at a lower opacity than `.glareRadial`, so it
   // needs at least as much punch to read clearly as its own distinct
   // effect rather than fading into the background.
-  filter: contrast(1.75) saturate(2.2);
+  filter: var(--incredicard-holo-glare-filter, contrast(1.75) saturate(2.2));
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   // Same fade-in-on-hover contract as `.glareRadial` above (see that
   // class's comment, including why the four caps scale together), but a
@@ -832,7 +834,7 @@ $glare-texture: repeating-linear-gradient(
     0 0,
     0 0;
   background-blend-mode: var(--incredicard-holo-glare-layers, color-dodge, multiply, normal);
-  filter: contrast(1.75) saturate(2.2);
+  filter: var(--incredicard-holo-glare-filter, contrast(1.75) saturate(2.2));
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   opacity: calc(
     var(--incredicard-chip-light-active, 0) * 0.46 *

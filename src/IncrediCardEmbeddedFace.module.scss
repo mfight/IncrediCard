@@ -221,11 +221,11 @@
   // `isolation: isolate` states the answer instead of leaving it
   // inferred: the blend can only reach what is painted before it INSIDE
   // `.face`, which is the card background -- exactly the surface the
-  // effect is meant to look like light on. The real fields paint after
-  // and are therefore out of reach by construction, so the effect can
-  // never recolor or dim the card number, name, expiration or CVC text.
-  // Chrome renders identically with or without it. An explicit `z-index`
-  // on the content is not needed once the group is bounded.
+  // effect is meant to look like light on. The foil and the printed lines
+  // sit at `z-index: -1` inside this group, so the real fields paint after
+  // them and are out of reach, and the effect can never recolor or dim the
+  // card number, name, expiration or CVC text. Without that z-index they'd
+  // paint over it: positioned elements paint after in-flow ones.
   isolation: isolate;
 
   // The printed line art, as its own layer; identical to
@@ -242,7 +242,10 @@
     background-size: 100% 100%;
     background-position: 0 0;
     opacity: var(--incredicard-face-lines-opacity);
-    filter: saturate(var(--incredicard-holo-resting-saturation));
+    filter: saturate(var(--incredicard-holo-resting-saturation)) brightness(var(--incredicard-holo-brightness, 1));
+    // Under the printed content, like the hologram, and for the same
+    // reason (see `.hologramWrapper` in IncrediCardHologram.module.scss).
+    z-index: -1;
     pointer-events: none;
   }
 }

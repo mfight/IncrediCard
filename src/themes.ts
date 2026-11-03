@@ -35,28 +35,29 @@ export type IncrediCardFaceLayout = "printed" | "embossed";
 
 export type IncrediCardTextTone = "light" | "dark";
 
-// The hologram's blend mode and the color that, under that mode, means
-// "leave the backdrop alone". The glare layers fade toward that color
-// away from their highlight, so a mismatch doesn't soften the effect, it
-// inverts it: black under `color-burn` drives every channel to zero and
-// paints the far half of the card solid black. So a theme names only the
-// blend mode, and its falloff color comes with it from here. A new blend
-// mode is a new row, with its own correctly paired color.
+// The hologram's blend mode, and everything its layers are made of that has
+// to agree with it. So a theme names only the blend mode, and the rest comes
+// with it from here. A new blend mode is a new row.
 //
-// Not pure black and white: 12% off each, so the far side of the card
-// keeps its ribbons lit but drained rather than going dark (see the
-// falloff note in IncrediCardHologram.module.scss).
+// - `color-dodge`, for a dark face: light on dark only ever brightens. Its
+//   glare is a white highlight over a dark rainbow texture, where dark means
+//   "add nothing", and it falls off toward near-black away from the light.
+// - `screen`, for a light face: every layer is made of light colors, so the
+//   lines catch the light by getting lighter than the face rather than
+//   darker: silver at rest, brightened a little, and a light rainbow where the
+//   light falls, with a black highlight and falloff center, which screen
+//   ignores, and a pale silver away from it. This has to hold even where the
+//   blend can't see the page: a translucent face (glass) is its own blend
+//   group, so its foil only meets the face's faint tint, and what the layers
+//   are made of is what shows. A dark texture there paints the lines dark.
 //
-// The rest of the glare comes paired too. Its layers are built for
-// `color-dodge`, where dark means "leave the backdrop alone": a white
-// highlight over a dark rainbow texture. `color-burn` is dodge turned inside
-// out, so it gets everything turned inside out: a black highlight, the
-// texture's inverse, and screen where dodge multiplies. Burning with dodge's
-// own dark texture would draw the lit lines in near-black instead of color.
-// The texture cycles through every hue, so its inverse is still a rainbow.
-const GLARE_TEXTURE = ["#6e2159", "#6e4a35", "#62661f", "#1f6640", "#1c5c66", "#24276e", "#4a2166", "#6e2159"];
-
-const invertHex = (hex: string) => `#${(0xffffff ^ parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`;
+// The falloff colors aren't pure black and white: 12% off each, so the far
+// side of the card keeps its ribbons lit but drained rather than going dark
+// (see the falloff note in IncrediCardHologram.module.scss).
+const DARK_GLARE_TEXTURE = ["#6e2159", "#6e4a35", "#62661f", "#1f6640", "#1c5c66", "#24276e", "#4a2166", "#6e2159"];
+// The foil's own hues, kept light but saturated enough to read as color
+// against a light face.
+const LIGHT_GLARE_TEXTURE = ["#ff9be8", "#ffd36b", "#f3ff6b", "#6bffb5", "#5ce8ff", "#8fa0ff", "#e19bff", "#ff9be8"];
 
 // One stop every 8%, repeating, at the foil's own 115deg grain.
 const glareTexture = (stops: string[]) =>
@@ -65,11 +66,23 @@ const glareTexture = (stops: string[]) =>
 export const INCREDICARD_HOLOGRAM_BLENDS = {
   "color-dodge": {
     falloffColor: "#1f1f1f",
-    glare: { light: "255 255 255", texture: glareTexture(GLARE_TEXTURE), layers: "color-dodge, multiply, normal" },
+    brightness: 1,
+    glare: {
+      light: "255 255 255",
+      texture: glareTexture(DARK_GLARE_TEXTURE),
+      layers: "color-dodge, multiply, normal",
+      filter: "contrast(1.75) saturate(2.2)",
+    },
   },
-  "color-burn": {
+  screen: {
     falloffColor: "#e0e0e0",
-    glare: { light: "0 0 0", texture: glareTexture(GLARE_TEXTURE.map(invertHex)), layers: "color-burn, screen, normal" },
+    brightness: 1.25,
+    glare: {
+      light: "0 0 0",
+      texture: glareTexture(LIGHT_GLARE_TEXTURE),
+      layers: "screen, screen, normal",
+      filter: "saturate(1.4)",
+    },
   },
 } as const;
 
@@ -298,8 +311,8 @@ export const INCREDICARD_THEMES = {
   // keep its text readable on every page, so the app chooses the text that
   // suits its own, through `textTone`. A soft shadow helps on a busy page, but
   // nothing here guarantees contrast. The hologram follows the tone: light
-  // text means a dark page, which only dodge can light, and dark text means a
-  // bright one, which only burn can mark.
+  // text means a dark page, which dodge lights, and dark text means a bright
+  // one, where the foil lightens instead (screen).
   glass: {
     faceLayout: "printed",
     lineArt: "ribbons",
@@ -337,7 +350,7 @@ export const INCREDICARD_THEMES = {
         linesOpacity: 0.3,
       },
       hologram: {
-        blend: "color-burn",
+        blend: "screen",
         opacity: 0.35,
         // Silver at rest, like the light text's foil: the color comes with
         // the light.
@@ -442,12 +455,14 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
   // Internal: these let each theme tune the hologram for its own face, and
   // are not an override point.
   if (hologram) {
-    const { glare } = INCREDICARD_HOLOGRAM_BLENDS[hologram.blend];
+    const { brightness, glare } = INCREDICARD_HOLOGRAM_BLENDS[hologram.blend];
     style["--incredicard-holo-blend-mode"] = hologram.blend;
     style["--incredicard-holo-opacity"] = String(hologram.opacity);
+    style["--incredicard-holo-brightness"] = String(brightness);
     style["--incredicard-holo-glare-light"] = glare.light;
     style["--incredicard-holo-glare-texture"] = glare.texture;
     style["--incredicard-holo-glare-layers"] = glare.layers;
+    style["--incredicard-holo-glare-filter"] = glare.filter;
   }
   if (theme.face.refraction && refractionFilterId) {
     style["--incredicard-refraction-filter"] = `url(#${refractionFilterId})`;
