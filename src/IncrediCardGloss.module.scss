@@ -1,5 +1,7 @@
 .gloss,
 .specular,
+.reflection,
+.spots,
 .glow,
 .edge,
 .rim,
@@ -10,13 +12,47 @@
   pointer-events: none;
 }
 
+// The light source reflected off the glass: brightest where the light is,
+// fading out within about a quarter of the card, and kept faint so it reads
+// as a sheen on the surface rather than a lamp behind it.
 .specular {
   background: radial-gradient(
     circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
-    rgb(255 255 255 / 60%),
-    rgb(255 255 255 / 0%) 55%
+    rgb(255 255 255 / 60%) 0,
+    rgb(255 255 255 / 18%) 10%,
+    rgb(255 255 255 / 0%) 28%
   );
   opacity: calc(var(--incredicard-chip-light-active, 0) * var(--incredicard-face-specular));
+  transition: opacity 200ms ease-out;
+}
+
+// A flat reflection across the face, like a window caught in a pane of glass:
+// one side of a straight edge a shade lighter than the other. Always there,
+// faint, and turned and slid by the light, so tilting the card swings it the
+// way a reflection swings, and with no light it rests on the diagonal.
+.reflection {
+  --reflection-edge: calc(42% + (var(--incredicard-chip-light-x, 50%) - 50%) * 0.5);
+  background: linear-gradient(
+    calc(135deg + var(--incredicard-chip-light-rotate, 0deg)),
+    rgb(255 255 255 / 0%) var(--reflection-edge),
+    rgb(255 255 255 / 9%) var(--reflection-edge),
+    rgb(255 255 255 / 3%) 100%
+  );
+  opacity: calc(var(--incredicard-face-specular) / 0.5);
+}
+
+// Small spots of light just inside the two lit corners, the way a thick,
+// slightly rounded slab catches a light near its edge: each a short flare
+// along the edge with a smaller one beside it. They sit at rest with the rim,
+// and dim with it while a real light is tracking.
+.spots {
+  background:
+    radial-gradient(ellipse 1rem 0.2rem at 15% 4.5%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
+    radial-gradient(ellipse 0.3rem 0.15rem at 24% 4.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%)),
+    radial-gradient(ellipse 1rem 0.2rem at 85% 95.5%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
+    radial-gradient(ellipse 0.3rem 0.15rem at 76% 95.5%, rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
+  filter: blur(0.03125rem);
+  opacity: calc(1 - var(--incredicard-chip-light-active, 0) * 0.5);
   transition: opacity 200ms ease-out;
 }
 

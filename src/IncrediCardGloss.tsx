@@ -10,6 +10,10 @@ import styles from "./IncrediCardGloss.module.scss";
 // under it. From the surface out to the edge:
 //
 // - a soft highlight on the surface, following the light;
+// - a flat reflection, a faintly lighter plane with a straight edge, turned
+//   and slid by the light;
+// - small spots of light just inside the two lit corners, for a thick,
+//   slightly rounded slab;
 // - a faint glow just inside the edge;
 // - a thin rim at the very edge, lit at two opposite corners, where a rounded
 //   edge catches the most light, and fading out at the other two.
@@ -26,7 +30,9 @@ import styles from "./IncrediCardGloss.module.scss";
 export function IncrediCardGloss() {
   return (
     <span className={styles.gloss} aria-hidden="true">
+      <span className={styles.reflection} />
       <span className={styles.specular} />
+      <span className={styles.spots} />
       <span className={styles.glow}>
         <span className={styles.rim} />
         <span className={styles.rimLight} />
