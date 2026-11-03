@@ -45,8 +45,8 @@
 }
 
 // Small spots of light just inside the two lit corners, the way a thick,
-// slightly rounded slab catches a light near its edge: each a short flare
-// along the edge with a smaller one beside it.
+// slightly rounded slab catches a light near its edge: a short flare along
+// the edge with a smaller dot trailing it.
 //
 // They follow the card's tilt, which leans the left edge toward the viewer at
 // a positive y angle and tips the top edge away at a positive x angle, up to
@@ -54,50 +54,25 @@
 // everything:
 //
 // - `--near`, how far the side the spots are on leans toward the viewer.
-//   Coming closer, they slide in toward their corner, narrow and brighten,
-//   until at full lean the flare's tip sits a few pixels from the side;
-//   leaning away, they slide off along the edge, widen and fade out. They
-//   keep their distance from their edge either way.
+//   Coming closer, they travel toward their corner, narrowing and
+//   brightening, round it, and run a little way down the side; leaning
+//   away, they slide off along the edge, widen and fade out.
 // - `--lit`, how far the edge the spots are on tips away, back toward the
-//   light. The near spots are brightest when it does, and faint when it
-//   tips forward instead.
+//   light. They're brightest when it does, and faint when it tips forward.
 //
-// Without tilt both are 0, and the spots rest between the two, half lit.
+// Without tilt both are 0, and the spots rest 3rem in from the side, half lit.
+//
+// Each group covers the card, and the bottom-right one is the top-left one
+// turned half a turn, so both are drawn from the top-left corner.
 .spotsStart,
 .spotsEnd {
-  // Each spot pair's own box, so it narrows around itself rather than the
-  // whole card: from 1rem before the flare's center (15% in from its side)
-  // to 0.3rem past the dot's (24%).
-  inset: auto;
-  width: calc(9% + 1.3rem);
-  height: 0.6rem;
-  border-radius: 0;
-  background:
-    radial-gradient(ellipse 1rem 0.2rem at var(--flare-x) 50%, rgb(255 255 255 / 95%), rgb(255 255 255 / 0%)),
-    radial-gradient(ellipse 0.3rem 0.15rem at var(--dot-x) 50%, rgb(255 255 255 / 80%), rgb(255 255 255 / 0%));
   filter: blur(0.03125rem);
-  // Toward the corner, from the flare's resting center (15cqw in) to 0.875rem
-  // from the side; away, up to 1.25rem along the edge. The flare narrows
-  // around its own center, so narrowing doesn't pull it back out of the
-  // corner.
-  transform: translateX(
-      calc(
-        var(--toward-corner) *
-          (max(var(--near), 0) * (15cqw - 0.875rem) + min(var(--near), 0) * 1.25rem)
-      )
-    )
-    scaleX(calc(1 - 0.35 * var(--near)));
-  transform-origin: var(--flare-x) 50%;
   // Brightening all the way in, and gone by about a 10deg lean away.
   opacity: calc(
     clamp(0, 0.6 + 0.4 * max(var(--near), 0) + 1.4 * min(var(--near), 0), 1) *
       clamp(0.2, 0.6 + 0.4 * var(--lit), 1)
   );
-  // The same easing as the card's own tilt, and like it, none while the tilt
-  // is tracking, which smooths the value itself (see the faces' stylesheets).
-  transition:
-    transform 280ms cubic-bezier(0, 0, 0.2, 1),
-    opacity 280ms cubic-bezier(0, 0, 0.2, 1);
+  transition: opacity 280ms cubic-bezier(0, 0, 0.2, 1);
 
   :global([data-tilt-tracking]) & {
     transition: none;
@@ -108,26 +83,80 @@
   }
 }
 
-// Along the top edge, near the top-left corner.
 .spotsStart {
   --near: calc(sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg));
   --lit: calc(sin(var(--incredicard-tilt-x, 0deg)) / sin(24deg));
-  --toward-corner: -1;
-  --flare-x: 1rem;
-  --dot-x: calc(100% - 0.3rem);
-  inset-block-start: calc(4.5% - 0.3rem);
-  inset-inline-start: calc(15% - 1rem);
 }
 
-// Along the bottom edge, near the bottom-right corner: the mirror image.
 .spotsEnd {
   --near: calc(-1 * sin(var(--incredicard-tilt-y, 0deg)) / sin(24deg));
   --lit: calc(-1 * sin(var(--incredicard-tilt-x, 0deg)) / sin(24deg));
-  --toward-corner: 1;
-  --flare-x: calc(100% - 1rem);
-  --dot-x: 0.3rem;
-  inset-block-end: calc(4.5% - 0.3rem);
-  inset-inline-end: calc(15% - 1rem);
+  transform: rotate(180deg);
+}
+
+// The track each spot rides, in rem (the numbers below are rem without the
+// unit, so a distance along the curve can become an angle): along the edge
+// 0.5625rem in, around a quarter circle of radius 0.75rem through the corner,
+// drifting outward as it goes, then along the side 0.3125rem in. The circle is looser than the card's own
+// corner, which a track this far in would round in 3px, so the spots turn
+// rather than snap.
+//
+// `--u` is a spot's distance along the track from where the edge meets the
+// curve: positive along the edge, then the curve's 1.178 (a quarter of its
+// circumference), then the side. Each spot's box is centered on that meeting
+// point and turns about the circle's center (its `transform-origin`), so the
+// transform below walks it out along the edge, around the curve, and down the
+// side, turning with the curve as it goes.
+.flare,
+.dot {
+  position: absolute;
+  --u-rest: 1.6875;
+  --u-travel: calc(-3.366 * max(var(--near), 0) - 1.25 * min(var(--near), 0));
+  // How far around the curve, from 0 to 1.
+  --around: calc(clamp(0, -1 * var(--u), 1.178) / 1.178);
+  transform: translateX(calc(max(var(--u), 0) * 1rem))
+    rotate(calc(var(--around) * -90deg))
+    translateX(calc(max(-1 * var(--u) - 1.178, 0) * -1rem))
+    translateY(calc(var(--around) * -0.25rem))
+    scaleX(var(--length, 1));
+  // The same easing as the card's own tilt, and like it, none while the tilt
+  // is tracking, which smooths the value itself (see the faces' stylesheets).
+  transition: transform 280ms cubic-bezier(0, 0, 0.2, 1);
+
+  :global([data-tilt-tracking]) & {
+    transition: none;
+  }
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+}
+
+// At rest 3rem in from the side; at full lean round the corner and 0.5rem
+// down the side; leaning away, up to 1.25rem further along the edge. It
+// narrows as it comes in, along its own length, whichever way it's facing,
+// and narrower still while it turns, most at the middle of the curve, the
+// way a highlight foreshortens rounding a bend.
+.flare {
+  --u: calc(var(--u-rest) + var(--u-travel));
+  --length: calc((1 - 0.35 * var(--near)) * (1 - 0.5 * sin(var(--around) * 180deg)));
+  left: 0.3125rem;
+  top: 0.3625rem;
+  width: 2rem;
+  height: 0.4rem;
+  transform-origin: 1rem 0.95rem;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 95%), rgb(255 255 255 / 0%));
+}
+
+// Trailing the flare, a little closer behind it as it comes in.
+.dot {
+  --u: calc(var(--u-rest) + var(--u-travel) + 1.5 - 0.5 * max(var(--near), 0));
+  left: 1.0125rem;
+  top: 0.4125rem;
+  width: 0.6rem;
+  height: 0.3rem;
+  transform-origin: 0.3rem 0.9rem;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 80%), rgb(255 255 255 / 0%));
 }
 
 // The same ring at two sizes. The glow's is blurred, so its inner side is
