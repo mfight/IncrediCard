@@ -1,0 +1,18 @@
+<svg width="325" height="204" viewBox="0 0 325 204" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- The foil's side faces, for the other pair: the left ones fully, the right ones faintly, as the foil prints them. -->
+<defs>
+  <pattern id="blocks" width="27.71" height="48" patternUnits="userSpaceOnUse">
+    <polygon points="-13.3,-7.04 -0.55,0.32 -0.55,15.04 -13.3,7.68" fill="#000"/>
+    <polygon points="14.41,-7.04 27.16,0.32 27.16,15.04 14.41,7.68" fill="#000"/>
+    <polygon points="0.55,16.96 13.3,24.32 13.3,39.04 0.55,31.68" fill="#000"/>
+    <polygon points="-13.3,40.96 -0.55,48.32 -0.55,63.04 -13.3,55.68" fill="#000"/>
+    <polygon points="14.41,40.96 27.16,48.32 27.16,63.04 14.41,55.68" fill="#000"/>
+    <polygon points="0.55,0.32 13.3,-7.04 13.3,7.68 0.55,15.04" fill="#000" fill-opacity="0.35"/>
+    <polygon points="28.27,0.32 41.01,-7.04 41.01,7.68 28.27,15.04" fill="#000" fill-opacity="0.35"/>
+    <polygon points="14.41,24.32 27.16,16.96 27.16,31.68 14.41,39.04" fill="#000" fill-opacity="0.35"/>
+    <polygon points="0.55,48.32 13.3,40.96 13.3,55.68 0.55,63.04" fill="#000" fill-opacity="0.35"/>
+    <polygon points="28.27,48.32 41.01,40.96 41.01,55.68 28.27,63.04" fill="#000" fill-opacity="0.35"/>
+  </pattern>
+</defs>
+<rect width="325" height="204" fill="url(#blocks)"/>
+</svg>

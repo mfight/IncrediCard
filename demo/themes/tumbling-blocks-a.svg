@@ -1,0 +1,13 @@
+<svg width="325" height="204" viewBox="0 0 325 204" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- The foil's top faces, for one pair of glare layers. -->
+<defs>
+  <pattern id="blocks" width="27.71" height="48" patternUnits="userSpaceOnUse">
+    <polygon points="0,-15.36 12.75,-8 0,-0.64 -12.75,-8" fill="#000"/>
+    <polygon points="27.71,-15.36 40.46,-8 27.71,-0.64 14.96,-8" fill="#000"/>
+    <polygon points="13.86,8.64 26.6,16 13.86,23.36 1.11,16" fill="#000"/>
+    <polygon points="0,32.64 12.75,40 0,47.36 -12.75,40" fill="#000"/>
+    <polygon points="27.71,32.64 40.46,40 27.71,47.36 14.96,40" fill="#000"/>
+  </pattern>
+</defs>
+<rect width="325" height="204" fill="url(#blocks)"/>
+</svg>

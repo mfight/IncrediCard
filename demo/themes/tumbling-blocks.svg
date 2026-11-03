@@ -1,0 +1,33 @@
+<svg width="325" height="204" viewBox="0 0 325 204" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Tumbling blocks: each cube's top face full strength, its left face half, its right face faint. The tiles repeat from one pattern cell; the colors run across the whole card. -->
+<defs>
+  <pattern id="blocks" width="27.71" height="48" patternUnits="userSpaceOnUse">
+    <polygon points="0,-15.36 12.75,-8 0,-0.64 -12.75,-8" fill="#fff"/>
+    <polygon points="27.71,-15.36 40.46,-8 27.71,-0.64 14.96,-8" fill="#fff"/>
+    <polygon points="13.86,8.64 26.6,16 13.86,23.36 1.11,16" fill="#fff"/>
+    <polygon points="0,32.64 12.75,40 0,47.36 -12.75,40" fill="#fff"/>
+    <polygon points="27.71,32.64 40.46,40 27.71,47.36 14.96,40" fill="#fff"/>
+    <polygon points="-13.3,-7.04 -0.55,0.32 -0.55,15.04 -13.3,7.68" fill="#8c8c8c"/>
+    <polygon points="14.41,-7.04 27.16,0.32 27.16,15.04 14.41,7.68" fill="#8c8c8c"/>
+    <polygon points="0.55,16.96 13.3,24.32 13.3,39.04 0.55,31.68" fill="#8c8c8c"/>
+    <polygon points="-13.3,40.96 -0.55,48.32 -0.55,63.04 -13.3,55.68" fill="#8c8c8c"/>
+    <polygon points="14.41,40.96 27.16,48.32 27.16,63.04 14.41,55.68" fill="#8c8c8c"/>
+    <polygon points="0.55,0.32 13.3,-7.04 13.3,7.68 0.55,15.04" fill="#383838"/>
+    <polygon points="28.27,0.32 41.01,-7.04 41.01,7.68 28.27,15.04" fill="#383838"/>
+    <polygon points="14.41,24.32 27.16,16.96 27.16,31.68 14.41,39.04" fill="#383838"/>
+    <polygon points="0.55,48.32 13.3,40.96 13.3,55.68 0.55,63.04" fill="#383838"/>
+    <polygon points="28.27,48.32 41.01,40.96 41.01,55.68 28.27,63.04" fill="#383838"/>
+  </pattern>
+  <mask id="faces" maskUnits="userSpaceOnUse" x="0" y="0" width="325" height="204">
+    <rect width="325" height="204" fill="url(#blocks)"/>
+  </mask>
+  <linearGradient id="foil" x1="0" y1="0" x2="325" y2="204" gradientUnits="userSpaceOnUse">
+  <stop offset="0" stop-color="#F7D9A0"/>
+  <stop offset="0.25" stop-color="#FBE7C6"/>
+  <stop offset="0.5" stop-color="#A8F0E0"/>
+  <stop offset="0.75" stop-color="#9CC9FA"/>
+  <stop offset="1" stop-color="#D6B8FA"/>
+</linearGradient>
+</defs>
+<rect width="325" height="204" fill="url(#foil)" mask="url(#faces)"/>
+</svg>

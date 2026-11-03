@@ -11,6 +11,7 @@ import {
 } from ".";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { engravedCardTheme } from "../demo/themes/engravedCard";
+import { tumblingBlocksTheme } from "../demo/themes/tumblingBlocks";
 import globeFoil from "./assets/images/incredicard-lines-globe.svg";
 import globeMaskA from "./assets/images/incredicard-lines-globe-a.svg";
 import globeMaskB from "./assets/images/incredicard-lines-globe-b.svg";
@@ -108,345 +109,11 @@ export default meta;
 // declared to satisfy.
 type Story = StoryObj<IncrediCardStoryArgs>;
 
-// The default layout: "floating", where the real fields live directly on
-// the card itself (IncrediCardEmbeddedFace), positioned where a physical
-// card's embossed text sits, instead of a separate decorative card above
-// a normal field list. No `layout` arg here on purpose: this story shows
-// what a plain `<IncrediCard id="..." />` renders, with the demo's marks.
-//
-// An empty card: only the number field exists until a valid number
-// reveals the rest, and it already sits in the position it will keep
-// once it does (no jump on reveal; see the placeholder-row comment in
-// IncrediCardEmbeddedFace). Every field's validation and
-// network-detection behavior is identical to the "stacked" stories; only
-// where the fields visually live differs.
-export const Default: Story = {
-  args: { id: "story-default" },
-};
-
-// The other layout: a purely decorative card (IncrediCardFace) above a
-// normal, fully labeled field list. Passed explicitly, as every story
-// that wants it must, since the component's default is "floating".
-export const StackedDefault: Story = {
-  name: "Stacked: Default",
-  args: { id: "story-stacked", layout: "stacked" },
-};
-
-// 4242424242424242: a widely published Visa test number, valid enough to
-// pass the Luhn and length checks and demonstrate the "valid" state
-// without anyone's actual card.
-export const StackedFilled: Story = {
-  name: "Stacked: Filled",
-  args: {
-    id: "story-filled",
-    layout: "stacked",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// One story per supported network, in the same alphabetical order the
-// sidebar shows them. Each `name` is set explicitly so they group under
-// a shared "Network:" prefix rather than sorting by export name.
-//
-// Every number below detects as the network it claims (per
-// `detectCardNetwork`), passes `luhnCheck`, AND has one of that network's
-// lengths, which is what the card requires before it will reveal.
-//
-// Amex is the one with the most structural differences to demonstrate:
-// 4-6-5 number grouping, a 4-digit CVC, and that CVC printed on the FRONT
-// of the card rather than the back. Diners Club's 14-digit number groups
-// 4-6-4. The rest share the neutral shape, so what they demonstrate is
-// detection itself, and their acceptance mark. The last, "without a mark",
-// shows what an app that supplies no marks gets.
-
-export const NetworkAmex: Story = {
-  name: "Network: AMEX",
-  args: {
-    id: "story-amex",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "378282246310005",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "1234",
-    },
-  },
-};
-
-export const NetworkDinersClub: Story = {
-  name: "Network: Diners Club",
-  args: {
-    id: "story-dinersclub",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "30569309025904",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const NetworkDiscover: Story = {
-  name: "Network: Discover",
-  args: {
-    id: "story-discover",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "6011111111111117",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const NetworkJcb: Story = {
-  name: "Network: JCB",
-  args: {
-    id: "story-jcb",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "3530111333300000",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const NetworkMaestro: Story = {
-  name: "Network: Maestro",
-  args: {
-    id: "story-maestro",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "6700000000000000",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const NetworkMastercard: Story = {
-  name: "Network: Mastercard",
-  args: {
-    id: "story-mastercard",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "5555555555554444",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const NetworkUnionPay: Story = {
-  name: "Network: UnionPay",
-  args: {
-    id: "story-unionpay",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "6200000000000005",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const NetworkVisa: Story = {
-  name: "Network: Visa",
-  args: {
-    id: "story-visa",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// An app that supplies no acceptance marks: the corner names the network
-// in text instead. American Express, the longest name, wraps onto two
-// lines.
-export const NetworkWithoutMark: Story = {
-  name: "Network: Without a Mark",
-  args: {
-    id: "story-without-mark",
-    acceptanceMarks: {},
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "378282246310005",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "1234",
-    },
-  },
-};
-
-export const StackedDisabled: Story = {
-  name: "Stacked: Disabled",
-  args: {
-    id: "story-disabled",
-    layout: "stacked",
-    disabled: true,
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// Visual-only busy state for a submission the application owns (see the
-// `processing` doc comment in IncrediCard.tsx); this component has no
-// submission flow of its own to pause.
-export const Processing: Story = {
-  decorators: [withReducedMotion],
-  args: {
-    id: "story-processing",
-    processing: true,
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// A "narrow layout" example would be redundant: every other story
-// renders at the "stacked" layout's narrowest supported width, since
-// Storybook's `layout: "centered"` parameter doesn't stretch its subject
-// wide enough to reach the row-layout switch. This story is wide enough
-// (`themedStyles.wideWrapper`, 720px) to cross the `@container
-// (min-width: 640px)` threshold and show the card and field column side
-// by side.
-export const StackedSideBySide: Story = {
-  name: "Stacked: Side By Side",
-  args: {
-    id: "story-side-by-side",
-    layout: "stacked",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-  render: (args) => (
-    <div className={themedStyles.wideWrapper}>
-      <IncrediCard {...cardProps(args)} />
-    </div>
-  ),
-};
-
-// theme="vintage": OCR-A (the name) and OCR-B (the number, expiration,
-// and CVC) on an aged-ivory card face, with an embossed text-shadow
-// treatment standing in for a real card's raised plastic; see the
-// "vintage" theme in themes.ts. A filled value
-// shows the effect on real digits and letters rather than placeholder
-// text.
-export const VintageStacked: Story = {
-  name: "Vintage: Stacked",
-  args: {
-    id: "story-vintage",
-    layout: "stacked",
-    theme: "vintage",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// The same "vintage" theme with layout="floating": the embossed OCR fonts
-// apply identically to the real on-card fields, not just to the
-// "stacked" layout's decorative mirror.
-export const VintageOverlay: Story = {
-  name: "Vintage: Overlay",
-  args: {
-    id: "story-vintage-overlay",
-    theme: "vintage",
-    layout: "floating",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// theme="globe": "ribbons"'s card and type, printed with an engraved globe
-// instead of ribbons (see the "globe" theme in themes.ts and its art in
-// lineArt.ts). Holographic, since the foil is what the line art is for:
-// move the pointer across the card to light the land and the sphere's
-// rings separately.
-export const AtlasOverlay: Story = {
-  name: "Globe: Overlay",
-  args: {
-    id: "story-globe-overlay",
-    theme: "globe",
-    layout: "floating",
-    holographic: true,
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-export const AtlasStacked: Story = {
-  name: "Globe: Stacked",
-  args: {
-    id: "story-globe",
-    theme: "globe",
-    layout: "stacked",
-    holographic: true,
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-};
-
-// theme="glass": the page behind the card shows through, so these stories
-// give it a page worth seeing, with hard edges for the frost and refraction
-// to act on. Move the pointer across the card for the highlight. Refraction
-// shows in Chromium; Safari gets the same glass without it.
-const onGlassBackdrop: Decorator = (Story) => (
-  <div className={themedStyles.glassBackdrop}>
-    <Story />
-  </div>
-);
-
-const GLASS_VALUE = {
+// A filled card: real digits and letters show each theme's type better than
+// placeholders do. 4242424242424242 is a widely published Visa test number,
+// valid enough to pass the Luhn and length checks without anyone's actual
+// card.
+const FILLED = {
   cardholderName: "Alex Rivera",
   cardNumber: "4242424242424242",
   expirationMonth: "12",
@@ -454,102 +121,98 @@ const GLASS_VALUE = {
   cvc: "123",
 };
 
-export const GlassOverlay: Story = {
-  name: "Glass: Overlay",
-  decorators: [onGlassBackdrop],
-  args: { id: "story-glass-overlay", theme: "glass", layout: "floating", defaultValue: GLASS_VALUE },
-};
+const LAYOUTS = [
+  { layout: "stacked", caption: "Stacked" },
+  { layout: "floating", caption: "Floating" },
+] as const;
 
-export const GlassStacked: Story = {
-  name: "Glass: Stacked",
-  decorators: [onGlassBackdrop],
-  args: { id: "story-glass", theme: "glass", layout: "stacked", defaultValue: GLASS_VALUE },
-};
-
-// An app's own theme: `ribbons` with a different material and its own line art,
-// passed as files rather than a name.
-export const CustomTheme: Story = {
-  name: "Custom Theme",
-  args: {
-    id: "story-custom-theme",
-    theme: extendIncrediCardTheme("ribbons", {
-      face: {
-        background: "linear-gradient(135deg, #0b3b3c, #14532d)",
-        linesOpacity: 0.16,
-      },
-      lineArt: { foil: globeFoil, maskA: globeMaskA, maskB: globeMaskB },
-    }),
-    layout: "floating",
-    holographic: true,
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "4242424242424242",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "123",
-    },
-  },
-  play: async ({ canvasElement }) => {
-    const root = canvasElement.querySelector<HTMLElement>("[style*='--incredicard-face-background']");
-    await expect(root).not.toBeNull();
-    await expect(root?.hasAttribute("data-theme")).toBe(false);
-    const style = getComputedStyle(root as HTMLElement);
-    await expect(style.getPropertyValue("--incredicard-face-background")).toContain("linear-gradient");
-    await expect(style.getPropertyValue("--incredicard-lines")).toContain("globe");
-  },
-};
-
-// What a custom theme is for: an issuer's own printed card, with no foil. The
-// face is the issuer's artwork, and the fields sit on it in dark text.
-export const CustomThemeEngravedCard: Story = {
-  name: "Custom Theme: Engraved Card",
-  args: {
-    id: "story-custom-theme-engraved",
-    theme: engravedCardTheme,
-    // The demo's marks are white, for dark cards. An app would pass dark ones
-    // here; without any, the network's name prints in the theme's dark text.
-    acceptanceMarks: undefined,
-    layout: "floating",
-    defaultValue: {
-      cardholderName: "Alex Rivera",
-      cardNumber: "378282246310005",
-      expirationMonth: "12",
-      expirationYear: "29",
-      cvc: "1234",
-    },
-  },
-};
-
-// Dark text, for a bright page. An empty card, for the placeholder, which is
-// the faintest text it has.
-export const GlassDarkText: Story = {
-  name: "Glass: Dark Text on a White Page",
-  args: { id: "story-glass-white", theme: "glass", textTone: "dark", layout: "floating" },
-};
-
-// Dark text, filled in, on a page with color in it. The demo's marks are white,
-// so an app would pass dark ones here; this one leaves them out to show the
-// network's name, which follows the text.
-export const GlassDarkTextFilled: Story = {
-  name: "Glass: Dark Text, Filled",
-  render: (args) => (
-    <div style={{ padding: "3rem", background: "linear-gradient(120deg, #fde68a, #fbcfe8 50%, #bfdbfe)" }}>
-      <IncrediCard {...cardProps(args)} />
+// Each theme's story: the same card in both layouts, side by side. "stacked"
+// is a purely decorative card (IncrediCardFace) above a normal, fully labeled
+// field list; "floating", the default, puts the real fields on the card itself
+// (IncrediCardEmbeddedFace), where a physical card's printed text sits. Only
+// where the fields live differs: validation and network detection are the
+// same in both.
+function BothLayouts(args: IncrediCardStoryArgs) {
+  return (
+    <div className={themedStyles.examples}>
+      {LAYOUTS.map(({ layout, caption }) => (
+        <figure key={layout} className={themedStyles.example}>
+          <figcaption className={themedStyles.exampleCaption}>{caption}</figcaption>
+          <IncrediCard {...cardProps(args)} id={`${args.id}-${layout}`} layout={layout} />
+        </figure>
+      ))}
     </div>
-  ),
-  args: {
-    id: "story-glass-dark-filled",
-    theme: "glass",
-    textTone: "dark",
-    layout: "floating",
-    acceptanceMarks: {},
-    defaultValue: GLASS_VALUE,
-  },
+  );
+}
+
+// The story shows both layouts, so a layout control would do nothing.
+const bothLayouts = {
+  render: (args) => <BothLayouts {...args} />,
+  argTypes: { layout: { table: { disable: true } } },
+} satisfies Story;
+
+// The default theme: a dark card printed with fine twisting lines, which the
+// foil lights. Move the pointer across the card to light the band and the fan
+// separately.
+export const Ribbons: Story = {
+  ...bothLayouts,
+  args: { id: "story-ribbons", theme: "ribbons", holographic: true, defaultValue: FILLED },
 };
+
+// OCR-A (the name) and OCR-B (the number, expiration and CVC) on an
+// aged-ivory face, with an embossed text-shadow standing in for a real card's
+// raised plastic; see the "vintage" theme in themes.ts. The fonts apply to the
+// real on-card fields as well as the stacked card's decorative mirror. It has
+// no foil, so there's no `holographic` control.
+export const Vintage: Story = {
+  ...bothLayouts,
+  argTypes: { ...bothLayouts.argTypes, holographic: { table: { disable: true } } },
+  args: { id: "story-vintage", theme: "vintage", defaultValue: FILLED },
+};
+
+// The "ribbons" card and type, printed with an engraved globe (see the "globe"
+// theme in themes.ts and its art in lineArt.ts). Move the pointer across the
+// card to light the land and the sphere's rings separately.
+export const Globe: Story = {
+  ...bothLayouts,
+  args: { id: "story-globe", theme: "globe", holographic: true, defaultValue: FILLED },
+};
+
+// The page behind the card shows through, so this story gives it pages worth
+// seeing: light text on a dark page with hard edges for the frost and
+// refraction to act on, and dark text on a bright one. Move the pointer across
+// the card for the highlight. Refraction shows in Chromium; Safari gets the
+// same glass without it. The demo's marks are white, so the dark-text cards
+// leave them out to show the network's name, which follows the text.
+function GlassTones(args: IncrediCardStoryArgs) {
+  return (
+    <div className={themedStyles.tones}>
+      <div className={`${themedStyles.glassBackdrop} ${themedStyles.onDark}`}>
+        <BothLayouts {...args} id={`${args.id}-light`} textTone="light" />
+      </div>
+      <div className={themedStyles.brightBackdrop}>
+        <BothLayouts {...args} id={`${args.id}-dark`} textTone="dark" acceptanceMarks={{}} />
+      </div>
+    </div>
+  );
+}
+
+export const Glass: Story = {
+  render: (args) => <GlassTones {...args} />,
+  argTypes: { ...bothLayouts.argTypes, textTone: { table: { disable: true } } },
+  args: { id: "story-glass", theme: "glass", defaultValue: FILLED },
+};
+
+// theme="glass" stories below that need a page behind one card.
+const onGlassBackdrop: Decorator = (Story) => (
+  <div className={themedStyles.glassBackdrop}>
+    <Story />
+  </div>
+);
 
 // Told what's behind it, so browsers that can't bend the live page bend a copy
-// at the rim. Chromium looks the same as Glass: Overlay; open this in Safari to
-// see the difference.
+// at the rim. Chromium looks the same as the Glass story; open this in Safari
+// to see the difference.
 const KNOWN_BACKDROP =
   "repeating-linear-gradient(115deg, rgb(255 255 255 / 16%) 0 0.5rem, rgb(255 255 255 / 0%) 0.5rem 2.5rem), linear-gradient(120deg, #0f172a, #312e81 50%, #134e4a)";
 
@@ -591,16 +254,153 @@ function KnownBackdropDemo(args: IncrediCardStoryArgs) {
 }
 
 export const GlassKnownBackdrop: Story = {
-  name: "Glass: With a Known Backdrop",
+  name: "Glass With a Known Backdrop",
   render: (args) => <KnownBackdropDemo {...args} />,
   args: {
     id: "story-glass-known",
     theme: "glass",
     layout: "floating",
-    defaultValue: GLASS_VALUE,
+    defaultValue: FILLED,
     tilt: true,
     chipReflection: true,
   },
+};
+
+// An app's own themes, each one fixed look made with `extendIncrediCardTheme`:
+// - Forest: the "ribbons" card in a different material, with the globe's line
+//   art passed as files rather than a name.
+// - Tumbling Blocks: a foil of its own (demo/themes/tumblingBlocks.ts).
+// - Engraved Card: an issuer's own artwork, from "vintage", so it has no foil,
+//   and `holographic` does nothing on it (demo/themes/engravedCard.ts). The
+//   demo's marks are white, for dark cards; an app would pass dark ones here,
+//   and without any, the network's name prints in the theme's dark text.
+const forestTheme = extendIncrediCardTheme("ribbons", {
+  face: {
+    background: "linear-gradient(135deg, #0b3b3c, #14532d)",
+    linesOpacity: 0.16,
+  },
+  lineArt: { foil: globeFoil, maskA: globeMaskA, maskB: globeMaskB },
+});
+
+const CUSTOM_THEMES = [
+  { key: "forest", caption: "Forest", theme: forestTheme, cardNumber: "4242424242424242", cvc: "123" },
+  { key: "blocks", caption: "Tumbling Blocks", theme: tumblingBlocksTheme, cardNumber: "5555555555554444", cvc: "123" },
+  {
+    key: "engraved",
+    caption: "Engraved Card",
+    theme: engravedCardTheme,
+    cardNumber: "378282246310005",
+    cvc: "1234",
+    acceptanceMarks: undefined,
+  },
+];
+
+export const CustomThemes: Story = {
+  render: (args) => (
+    <div className={themedStyles.examples}>
+      {CUSTOM_THEMES.map(({ key, caption, theme, cardNumber, cvc, ...rest }) => (
+        <figure key={key} className={themedStyles.example}>
+          <figcaption className={themedStyles.exampleCaption}>{caption}</figcaption>
+          <IncrediCard
+            {...cardProps(args)}
+            id={`${args.id}-${key}`}
+            theme={theme}
+            defaultValue={{ ...FILLED, cardNumber, cvc }}
+            {...rest}
+          />
+        </figure>
+      ))}
+    </div>
+  ),
+  argTypes: { theme: { table: { disable: true } } },
+  args: { id: "story-custom-themes", layout: "floating", holographic: true },
+  play: async ({ canvasElement }) => {
+    // The card's root, which takes its id and carries the theme.
+    const root = (key: string) => canvasElement.querySelector<HTMLElement>(`#story-custom-themes-${key}`)!;
+    for (const key of ["forest", "blocks", "engraved"]) {
+      await expect(root(key).hasAttribute("data-theme")).toBe(false);
+    }
+    const forest = getComputedStyle(root("forest"));
+    await expect(forest.getPropertyValue("--incredicard-face-background")).toContain("linear-gradient");
+    await expect(forest.getPropertyValue("--incredicard-lines")).toContain("globe");
+    // Its own masks, by whatever URL the bundler gave them.
+    const blocksMask = getComputedStyle(root("blocks")).getPropertyValue("--incredicard-lines-mask-a");
+    const blocksArt = tumblingBlocksTheme.lineArt;
+    await expect(typeof blocksArt === "object" && blocksMask.includes(blocksArt.maskA)).toBe(true);
+    // The engraved card has no foil, so `holographic` adds no glare to it.
+    const masked = [...root("engraved").querySelectorAll("*")].filter((el) => getComputedStyle(el).maskImage !== "none");
+    await expect(masked).toEqual([]);
+  },
+};
+
+// Every supported network, in alphabetical order. Each number detects as the
+// network it claims (per `detectCardNetwork`), passes `luhnCheck`, AND has
+// one of that network's lengths, which is what the card requires before it
+// will reveal.
+//
+// Amex has the most structural differences: 4-6-5 number grouping, a 4-digit
+// CVC, and that CVC printed on the FRONT of the card rather than the back.
+// Diners Club's 14-digit number groups 4-6-4. The rest share the neutral
+// shape, so what they show is detection itself, and their acceptance mark.
+// The last, "Without a mark", shows what an app that supplies no marks gets:
+// the corner names the network in text, and American Express, the longest
+// name, wraps onto two lines.
+const NETWORKS = [
+  { caption: "American Express", cardNumber: "378282246310005", cvc: "1234" },
+  { caption: "Diners Club", cardNumber: "30569309025904" },
+  { caption: "Discover", cardNumber: "6011111111111117" },
+  { caption: "JCB", cardNumber: "3530111333300000" },
+  { caption: "Maestro", cardNumber: "6700000000000000" },
+  { caption: "Mastercard", cardNumber: "5555555555554444" },
+  { caption: "UnionPay", cardNumber: "6200000000000005" },
+  { caption: "Visa", cardNumber: "4242424242424242" },
+  { caption: "Without a mark", cardNumber: "378282246310005", cvc: "1234", acceptanceMarks: {} },
+];
+
+export const Networks: Story = {
+  render: (args) => (
+    <div className={themedStyles.exampleGrid}>
+      {NETWORKS.map(({ caption, cardNumber, cvc = "123", acceptanceMarks }, index) => (
+        <figure key={caption} className={themedStyles.example}>
+          <figcaption className={themedStyles.exampleCaption}>{caption}</figcaption>
+          <IncrediCard
+            {...cardProps(args)}
+            id={`${args.id}-${index}`}
+            defaultValue={{ ...FILLED, cardNumber, cvc }}
+            {...(acceptanceMarks && { acceptanceMarks })}
+          />
+        </figure>
+      ))}
+    </div>
+  ),
+  args: { id: "story-networks" },
+};
+
+export const Disabled: Story = {
+  args: { id: "story-disabled", layout: "stacked", disabled: true, defaultValue: FILLED },
+};
+
+// Visual-only busy state for a submission the application owns (see the
+// `processing` doc comment in IncrediCard.tsx); this component has no
+// submission flow of its own to pause.
+export const Processing: Story = {
+  decorators: [withReducedMotion],
+  args: { id: "story-processing", processing: true, defaultValue: FILLED },
+};
+
+// Every other story renders the "stacked" layout at its narrowest supported
+// width, since Storybook's `layout: "centered"` parameter doesn't stretch its
+// subject wide enough to reach the row-layout switch. This story is wide
+// enough (`themedStyles.wideWrapper`, 720px) to cross the `@container
+// (min-width: 640px)` threshold and show the card and field column side by
+// side.
+export const SideBySide: Story = {
+  args: { id: "story-side-by-side", layout: "stacked", defaultValue: FILLED },
+  render: (args) => (
+    <div className={themedStyles.wideWrapper}>
+      <IncrediCard {...cardProps(args)} />
+    </div>
+  ),
 };
 
 // The copy's wiring, on both faces: lined up with the app's element, hidden
@@ -608,7 +408,7 @@ export const GlassKnownBackdrop: Story = {
 export const GlassBackdropCopyWiring: Story = {
   tags: ["!dev"],
   render: (args) => <OnKnownBackdrop {...args} />,
-  args: { id: "story-glass-copy", theme: "glass", layout: "floating", defaultValue: GLASS_VALUE },
+  args: { id: "story-glass-copy", theme: "glass", layout: "floating", defaultValue: FILLED },
   play: async ({ canvasElement }) => {
     const page = within(canvasElement).getByTestId("known-backdrop").getBoundingClientRect();
     const images = [...canvasElement.querySelectorAll<HTMLElement>('[class*="_image_"]')];
@@ -626,7 +426,7 @@ export const GlassBackdropCopyWiring: Story = {
 export const NoBackdropCopyOnOpaqueThemes: Story = {
   tags: ["!dev"],
   render: (args) => <OnKnownBackdrop {...args} />,
-  args: { id: "story-modern-copy", theme: "ribbons", layout: "floating", defaultValue: GLASS_VALUE },
+  args: { id: "story-ribbons-copy", theme: "ribbons", layout: "floating", defaultValue: FILLED },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('[class*="_image_"]')).toBeNull();
   },
@@ -638,7 +438,7 @@ export const NoBackdropCopyOnOpaqueThemes: Story = {
 export const GlassBackdropWiring: Story = {
   tags: ["!dev"],
   decorators: [onGlassBackdrop],
-  args: { id: "story-glass-wiring", theme: "glass", layout: "floating", defaultValue: GLASS_VALUE },
+  args: { id: "story-glass-wiring", theme: "glass", layout: "floating", defaultValue: FILLED },
   play: async ({ canvasElement }) => {
     const faces = [...canvasElement.querySelectorAll('[class*="face"]')].filter(
       (element) => getComputedStyle(element).backdropFilter !== "none",
@@ -695,7 +495,7 @@ export const MaskedFieldUsesSystemFonts: Story = {
       ))}
     </>
   ),
-  args: { layout: "floating", defaultValue: GLASS_VALUE },
+  args: { layout: "floating", defaultValue: FILLED },
   play: async ({ canvasElement }) => {
     const fields = [...canvasElement.querySelectorAll<HTMLInputElement>('input[type="password"]')];
     await expect(fields).toHaveLength(Object.keys(INCREDICARD_THEMES).length);
@@ -1054,7 +854,7 @@ export const DeviceTilt: Story = {
 // layout. Hidden from the sidebar (`!dev`); they exist for
 // `npm run test:storybook`.
 //
-// Overlay pins the card to the page's top-left corner, where an unfitted
+// Floating pins the card to the page's top-left corner, where an unfitted
 // 1.5x would run off the top and the left. Stacked leaves room above the
 // card but none to spare below, where its field sits, so the fit has to
 // shift the card up rather than down over the field.
@@ -1105,7 +905,7 @@ async function expectZoomFits(canvasElement: HTMLElement) {
     }
   }
 
-  // Overlay, at the corner: only the width and height limit it.
+  // Floating, at the corner: only the width and height limit it.
   if (target.contains(input)) {
     const restWidth = target.offsetWidth + (badge ? 18 : 0);
     const room = Math.min(1.5, (width - 2 * inset) / restWidth);
@@ -1128,10 +928,10 @@ const zoomFitArgs = {
   },
 } satisfies Partial<IncrediCardStoryArgs>;
 
-export const ZoomFitOverlay: Story = {
+export const ZoomFitFloating: Story = {
   tags: ["!dev"],
   parameters: { layout: "fullscreen" },
-  args: { ...zoomFitArgs, id: "story-zoom-fit-overlay" },
+  args: { ...zoomFitArgs, id: "story-zoom-fit-floating" },
   play: ({ canvasElement }) => expectZoomFits(canvasElement),
 };
 
@@ -1222,16 +1022,16 @@ const narrowest = (args: IncrediCardStoryArgs) => (
   </div>
 );
 
-export const LongNumberOverlay: Story = {
+export const LongNumberFloating: Story = {
   tags: ["!dev"],
-  args: { id: "story-long-number-overlay" },
+  args: { id: "story-long-number-floating" },
   render: narrowest,
   play: ({ canvasElement }) => expectLongNumber(canvasElement),
 };
 
-export const LongNumberOverlayVintage: Story = {
+export const LongNumberFloatingVintage: Story = {
   tags: ["!dev"],
-  args: { id: "story-long-number-overlay-vintage", theme: "vintage" },
+  args: { id: "story-long-number-floating-vintage", theme: "vintage" },
   render: narrowest,
   play: ({ canvasElement }) => expectLongNumber(canvasElement),
 };
@@ -1308,9 +1108,9 @@ async function expectNetworkMarks(canvasElement: HTMLElement) {
   await waitFor(() => expect(name).toHaveStyle({ opacity: "0" }));
 }
 
-export const NetworkMarksOverlay: Story = {
+export const NetworkMarksFloating: Story = {
   tags: ["!dev"],
-  args: { id: "story-network-marks-overlay", acceptanceMarks: { visa: demoAcceptanceMarks.visa } },
+  args: { id: "story-network-marks-floating", acceptanceMarks: { visa: demoAcceptanceMarks.visa } },
   play: ({ canvasElement }) => expectNetworkMarks(canvasElement),
 };
 
