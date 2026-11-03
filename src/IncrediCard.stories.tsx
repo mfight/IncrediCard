@@ -1179,3 +1179,77 @@ export const NetworkNamesFit: Story = {
     expect(overflowing).toEqual([]);
   },
 };
+
+// A network's name in text sits on the cardholder name's baseline, in both
+// fonts and both layouts, at the narrowest and the full card width. Each
+// baseline is found directly: an empty inline-block at the end of a line sits
+// on it, and the floating name, an input, centers its line in its content
+// box. Within 1.5px, since the browser rounds each line to the pixel grid on
+// its own.
+function baselineOf(element: HTMLElement) {
+  if (element instanceof HTMLInputElement) {
+    const style = getComputedStyle(element);
+    const context = document.createElement("canvas").getContext("2d")!;
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const metrics = context.measureText(element.value);
+    const box = element.getBoundingClientRect();
+    const top = box.top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
+    const height = parseFloat(style.height) - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) -
+      (style.boxSizing === "border-box" ? parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth) : 0);
+    const content = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+    return top + (height - content) / 2 + metrics.fontBoundingBoxAscent;
+  }
+  const text = [...element.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).pop()!;
+  const host = document.createElement("span");
+  const probe = document.createElement("span");
+  probe.style.cssText = "display: inline-block; width: 0; height: 0";
+  element.insertBefore(host, text);
+  host.append(text, probe);
+  const baseline = probe.getBoundingClientRect().top;
+  host.replaceWith(...host.childNodes);
+  probe.remove();
+  return baseline;
+}
+
+export const NetworkNameOnNameBaseline: Story = {
+  tags: ["!dev"],
+  args: { id: "story-network-baseline", acceptanceMarks: {} },
+  render: (args) => (
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, auto)", alignItems: "start" }}>
+      {(["ribbons", "vintage"] as const).flatMap((theme) =>
+        (["floating", "stacked"] as const).flatMap((layout) =>
+          (["17.4375rem", "21.25rem"] as const).map((width) => (
+            <div key={`${theme}-${layout}-${width}`} style={{ width }}>
+              <IncrediCard
+                {...cardProps(args)}
+                id={`${args.id}-${theme}-${layout}-${width.replace(".", "_")}`}
+                theme={theme}
+                layout={layout}
+                defaultValue={{ ...FILLED, cardNumber: "378282246310005", cvc: "1234" }}
+              />
+            </div>
+          )),
+        ),
+      )}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await document.fonts.ready;
+    const off: string[] = [];
+    for (const card of canvasElement.querySelectorAll<HTMLElement>("fieldset")) {
+      const face = card.querySelector<HTMLElement>("[data-face-layout]")!;
+      const name =
+        face.querySelector<HTMLInputElement>('input[autocomplete="cc-name"]') ??
+        [...face.querySelectorAll<HTMLElement>("span")].find(
+          (span) => span.textContent === "ALEX RIVERA" && span.children.length === 0,
+        )!;
+      const network = [...face.querySelectorAll<HTMLElement>("span")].find(
+        (span) => span.textContent === "American Express",
+      )!;
+      const gap = baselineOf(network) - baselineOf(name);
+      if (Math.abs(gap) > 1.5) off.push(`${card.id}: ${gap.toFixed(2)}px`);
+    }
+    expect(off).toEqual([]);
+  },
+};
+

@@ -496,6 +496,9 @@
   font-family: var(--incredicard-name-font);
   text-shadow: var(--incredicard-face-emboss);
   text-rendering: geometricPrecision;
+  // Onto the cardholder name's baseline; see the identical rule in
+  // IncrediCardFace.module.scss.
+  padding-block-end: calc(1rem + 0.32 * clamp(0.625rem, 4.12cqw, 0.875rem) - 3.08cqw - 0.28em);
 }
 
 .cvcSlot {

@@ -462,6 +462,15 @@
   // a whole pixel, which adds 2.8px across "MASTERCARD" in OCR-A at this size
   // and runs it out of the box.
   text-rendering: geometricPrecision;
+  // Lifts the name's last line onto the cardholder name's baseline, leaving
+  // the box itself where the mark's box is. The cardholder name is the face's
+  // last row, so its baseline sits the face's 1rem padding plus about 0.32 of
+  // its own font size above the card's bottom edge; this box's bottom is
+  // 3.08cqw above it, and its own baseline about 0.28em above that. Measured
+  // within a pixel of the cardholder name's baseline in both layouts and
+  // both fonts, across the card's widths; the rest is each line's own
+  // rounding to the pixel grid.
+  padding-block-end: calc(1rem + 0.32 * clamp(0.625rem, 4.12cqw, 0.875rem) - 3.08cqw - 0.28em);
 }
 
 .magstripe {
