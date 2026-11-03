@@ -1,4 +1,4 @@
-// The "atlas" theme's line art: an engraved globe, drawn from
+// The "globe" theme's line art: an engraved globe, drawn from
 // globe-source.svg.
 //
 // The source is a globe on a 1600x1000 card. Only its geometry is used: the

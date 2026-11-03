@@ -94,7 +94,8 @@ createRoot(document.getElementById("root")!).render(
   <>
     <IncrediCard id="plain-card" />
     <IncrediCard id="marked-card" acceptanceMarks={marks} />
-    <IncrediCard id="atlas-card" theme="atlas" holographic />
+    <IncrediCard id="globe-card" theme="globe" holographic />
+    <IncrediCard id="vintage-card" theme="vintage" holographic />
     <IncrediCard id="custom-card" theme={customTheme} />
     <IncrediCard id="glass-card" theme="glass" />
     <IncrediCard id="copy-card" theme="glass" glassBackdrop={{ element: { current: document.body }, background: "linear-gradient(#123, #456)" }} />
@@ -175,7 +176,7 @@ createRoot(document.getElementById("root")!).render(
         theme: customRoot.getAttribute("data-theme"),
       };
       const ribbons = lineArt("#plain-card");
-      const globe = lineArt("#atlas-card");
+      const globe = lineArt("#globe-card");
       const plain = document.querySelector("#plain-card");
       const mark = document.querySelector("#marked-card")?.querySelector('img[src*="visa"]');
       return {
@@ -200,6 +201,7 @@ createRoot(document.getElementById("root")!).render(
         },
         ribbons: { ...ribbons, status: await status(ribbons.printed) },
         globe: { ...globe, status: await status(globe.printed), maskStatus: await status(globe.mask) },
+        vintageMask: lineArt("#vintage-card").mask,
       };
     });
     await browser.close();
@@ -211,8 +213,9 @@ createRoot(document.getElementById("root")!).render(
     check(/incredicard-lines-ribbons-[^/]*\.svg$/.test(facts.ribbons.printed ?? "") && facts.ribbons.status === 200, `the default theme prints the ribbons, loaded as a file (${facts.ribbons.printed}, ${facts.ribbons.status})`);
     check(
       /incredicard-lines-globe-[^/]*\.svg$/.test(facts.globe.printed ?? "") && facts.globe.status === 200 && /incredicard-lines-globe-a-[^/]*\.svg$/.test(facts.globe.mask ?? "") && facts.globe.maskStatus === 200,
-      `theme="atlas" prints the globe and masks its glare with it, both loaded as files (${facts.globe.printed}, ${facts.globe.status}; ${facts.globe.mask}, ${facts.globe.maskStatus})`,
+      `theme="globe" prints the globe and masks its glare with it, both loaded as files (${facts.globe.printed}, ${facts.globe.status}; ${facts.globe.mask}, ${facts.globe.maskStatus})`,
     );
+    check(facts.vintageMask === null, `theme="vintage" has no foil, so holographic adds no glare to it (${facts.vintageMask})`);
     // This Chromium run has to get both. An app's minifier is what can lose
     // either one, which is why this is checked on a real, minified build.
     check(facts.custom?.background.includes("rgb(1 2 3)") && facts.custom.color.includes("#05131a") && facts.custom.theme === null, `a theme extended from glass, with dark text, renders as its own (${JSON.stringify(facts.custom)})`);

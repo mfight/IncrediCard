@@ -170,7 +170,7 @@ describe("fitIncrediCardZoom", () => {
   });
 
   it("ignores a field that overlaps the card at rest", () => {
-    // Overlay: the fields are on the card.
+    // Floating: the fields are on the card.
     const c = card(400, 300);
     const field = { left: 420, top: 380, right: 720, bottom: 420 };
     expect(fitIncrediCardZoom({ ...c, viewport: viewport(1280, 900), inset: INSET, keepClear: field })).toEqual({

@@ -6,7 +6,7 @@ import styles from "./IncrediCardGloss.module.scss";
 // the card read as glass.
 //
 // Last in each face so it sits above the printed content, as gloss would,
-// and transparent to the pointer, since an overlay card's real fields are
+// and transparent to the pointer, since a floating card's real fields are
 // under it. From the surface out to the edge:
 //
 // - a soft highlight on the surface, following the light;

@@ -90,7 +90,7 @@ const meta = {
     },
     layout: {
       control: "select",
-      options: ["overlay", "stacked"],
+      options: ["floating", "stacked"],
     },
     reducedMotion: {
       control: "boolean",
@@ -108,7 +108,7 @@ export default meta;
 // declared to satisfy.
 type Story = StoryObj<IncrediCardStoryArgs>;
 
-// The default layout: "overlay", where the real fields live directly on
+// The default layout: "floating", where the real fields live directly on
 // the card itself (IncrediCardEmbeddedFace), positioned where a physical
 // card's embossed text sits, instead of a separate decorative card above
 // a normal field list. No `layout` arg here on purpose: this story shows
@@ -126,7 +126,7 @@ export const Default: Story = {
 
 // The other layout: a purely decorative card (IncrediCardFace) above a
 // normal, fully labeled field list. Passed explicitly, as every story
-// that wants it must, since the component's default is "overlay".
+// that wants it must, since the component's default is "floating".
 export const StackedDefault: Story = {
   name: "Stacked: Default",
   args: { id: "story-stacked", layout: "stacked" },
@@ -378,7 +378,7 @@ export const VintageStacked: Story = {
   },
 };
 
-// The same "vintage" theme with layout="overlay": the embossed OCR fonts
+// The same "vintage" theme with layout="floating": the embossed OCR fonts
 // apply identically to the real on-card fields, not just to the
 // "stacked" layout's decorative mirror.
 export const VintageOverlay: Story = {
@@ -386,7 +386,7 @@ export const VintageOverlay: Story = {
   args: {
     id: "story-vintage-overlay",
     theme: "vintage",
-    layout: "overlay",
+    layout: "floating",
     defaultValue: {
       cardholderName: "Alex Rivera",
       cardNumber: "4242424242424242",
@@ -397,17 +397,17 @@ export const VintageOverlay: Story = {
   },
 };
 
-// theme="atlas": "modern"'s card and type, printed with an engraved globe
-// instead of ribbons (see the "atlas" theme in themes.ts and its art in
+// theme="globe": "ribbons"'s card and type, printed with an engraved globe
+// instead of ribbons (see the "globe" theme in themes.ts and its art in
 // lineArt.ts). Holographic, since the foil is what the line art is for:
 // move the pointer across the card to light the land and the sphere's
 // rings separately.
 export const AtlasOverlay: Story = {
-  name: "Atlas: Overlay",
+  name: "Globe: Overlay",
   args: {
-    id: "story-atlas-overlay",
-    theme: "atlas",
-    layout: "overlay",
+    id: "story-globe-overlay",
+    theme: "globe",
+    layout: "floating",
     holographic: true,
     defaultValue: {
       cardholderName: "Alex Rivera",
@@ -420,10 +420,10 @@ export const AtlasOverlay: Story = {
 };
 
 export const AtlasStacked: Story = {
-  name: "Atlas: Stacked",
+  name: "Globe: Stacked",
   args: {
-    id: "story-atlas",
-    theme: "atlas",
+    id: "story-globe",
+    theme: "globe",
     layout: "stacked",
     holographic: true,
     defaultValue: {
@@ -457,7 +457,7 @@ const GLASS_VALUE = {
 export const GlassOverlay: Story = {
   name: "Glass: Overlay",
   decorators: [onGlassBackdrop],
-  args: { id: "story-glass-overlay", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+  args: { id: "story-glass-overlay", theme: "glass", layout: "floating", defaultValue: GLASS_VALUE },
 };
 
 export const GlassStacked: Story = {
@@ -466,20 +466,20 @@ export const GlassStacked: Story = {
   args: { id: "story-glass", theme: "glass", layout: "stacked", defaultValue: GLASS_VALUE },
 };
 
-// An app's own theme: `modern` with a different material and its own line art,
+// An app's own theme: `ribbons` with a different material and its own line art,
 // passed as files rather than a name.
 export const CustomTheme: Story = {
   name: "Custom Theme",
   args: {
     id: "story-custom-theme",
-    theme: extendIncrediCardTheme("modern", {
+    theme: extendIncrediCardTheme("ribbons", {
       face: {
         background: "linear-gradient(135deg, #0b3b3c, #14532d)",
         linesOpacity: 0.16,
       },
       lineArt: { foil: globeFoil, maskA: globeMaskA, maskB: globeMaskB },
     }),
-    layout: "overlay",
+    layout: "floating",
     holographic: true,
     defaultValue: {
       cardholderName: "Alex Rivera",
@@ -509,7 +509,7 @@ export const CustomThemeEngravedCard: Story = {
     // The demo's marks are white, for dark cards. An app would pass dark ones
     // here; without any, the network's name prints in the theme's dark text.
     acceptanceMarks: undefined,
-    layout: "overlay",
+    layout: "floating",
     defaultValue: {
       cardholderName: "Alex Rivera",
       cardNumber: "378282246310005",
@@ -524,7 +524,7 @@ export const CustomThemeEngravedCard: Story = {
 // the faintest text it has.
 export const GlassDarkText: Story = {
   name: "Glass: Dark Text on a White Page",
-  args: { id: "story-glass-white", theme: "glass", textTone: "dark", layout: "overlay" },
+  args: { id: "story-glass-white", theme: "glass", textTone: "dark", layout: "floating" },
 };
 
 // Dark text, filled in, on a page with color in it. The demo's marks are white,
@@ -541,7 +541,7 @@ export const GlassDarkTextFilled: Story = {
     id: "story-glass-dark-filled",
     theme: "glass",
     textTone: "dark",
-    layout: "overlay",
+    layout: "floating",
     acceptanceMarks: {},
     defaultValue: GLASS_VALUE,
   },
@@ -596,7 +596,7 @@ export const GlassKnownBackdrop: Story = {
   args: {
     id: "story-glass-known",
     theme: "glass",
-    layout: "overlay",
+    layout: "floating",
     defaultValue: GLASS_VALUE,
     tilt: true,
     chipReflection: true,
@@ -608,7 +608,7 @@ export const GlassKnownBackdrop: Story = {
 export const GlassBackdropCopyWiring: Story = {
   tags: ["!dev"],
   render: (args) => <OnKnownBackdrop {...args} />,
-  args: { id: "story-glass-copy", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+  args: { id: "story-glass-copy", theme: "glass", layout: "floating", defaultValue: GLASS_VALUE },
   play: async ({ canvasElement }) => {
     const page = within(canvasElement).getByTestId("known-backdrop").getBoundingClientRect();
     const images = [...canvasElement.querySelectorAll<HTMLElement>('[class*="_image_"]')];
@@ -626,7 +626,7 @@ export const GlassBackdropCopyWiring: Story = {
 export const NoBackdropCopyOnOpaqueThemes: Story = {
   tags: ["!dev"],
   render: (args) => <OnKnownBackdrop {...args} />,
-  args: { id: "story-modern-copy", theme: "modern", layout: "overlay", defaultValue: GLASS_VALUE },
+  args: { id: "story-modern-copy", theme: "ribbons", layout: "floating", defaultValue: GLASS_VALUE },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('[class*="_image_"]')).toBeNull();
   },
@@ -638,7 +638,7 @@ export const NoBackdropCopyOnOpaqueThemes: Story = {
 export const GlassBackdropWiring: Story = {
   tags: ["!dev"],
   decorators: [onGlassBackdrop],
-  args: { id: "story-glass-wiring", theme: "glass", layout: "overlay", defaultValue: GLASS_VALUE },
+  args: { id: "story-glass-wiring", theme: "glass", layout: "floating", defaultValue: GLASS_VALUE },
   play: async ({ canvasElement }) => {
     const faces = [...canvasElement.querySelectorAll('[class*="face"]')].filter(
       (element) => getComputedStyle(element).backdropFilter !== "none",
@@ -668,7 +668,7 @@ export const GlassBackdropWiring: Story = {
 
 export const NoBackdropOnOpaqueThemes: Story = {
   tags: ["!dev"],
-  args: { id: "story-no-backdrop", theme: "modern", layout: "overlay" },
+  args: { id: "story-no-backdrop", theme: "ribbons", layout: "floating" },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector("feDisplacementMap")).toBeNull();
     await expect(canvasElement.querySelector('[class*="rim"]')).toBeNull();
@@ -695,7 +695,7 @@ export const MaskedFieldUsesSystemFonts: Story = {
       ))}
     </>
   ),
-  args: { layout: "overlay", defaultValue: GLASS_VALUE },
+  args: { layout: "floating", defaultValue: GLASS_VALUE },
   play: async ({ canvasElement }) => {
     const fields = [...canvasElement.querySelectorAll<HTMLInputElement>('input[type="password"]')];
     await expect(fields).toHaveLength(Object.keys(INCREDICARD_THEMES).length);
@@ -1199,7 +1199,7 @@ async function expectLongNumber(canvasElement: HTMLElement) {
   const wrapper = canvasElement.querySelector("[data-face-layout]")!;
   expect(wrapper).toHaveAttribute("data-long-number");
   if (wrapper.contains(input)) {
-    // "overlay": the input itself is the number row.
+    // "floating": the input itself is the number row.
     expect(input.scrollWidth).toBeLessThanOrEqual(input.clientWidth);
   } else {
     // "stacked": the face mirrors the number into a span; its text must
@@ -1339,8 +1339,8 @@ export const NetworkNamesFit: Story = {
   args: { id: "story-network-names-fit", acceptanceMarks: {} },
   render: (args) => (
     <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 17.4375rem)" }}>
-      {(["modern", "vintage"] as const).flatMap((theme) =>
-        (["overlay", "stacked"] as const).flatMap((layout) =>
+      {(["ribbons", "vintage"] as const).flatMap((theme) =>
+        (["floating", "stacked"] as const).flatMap((layout) =>
           NETWORK_NUMBERS.map((cardNumber) => (
             <IncrediCard
               key={`${theme}-${layout}-${cardNumber}`}

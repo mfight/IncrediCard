@@ -155,7 +155,7 @@ export type IncrediCardEmbeddedFaceProps = {
   flipToFrontLabel: string;
 };
 
-// The "overlay" layout's visual card. Here the real semantic fields ARE
+// The "floating" layout's visual card. Here the real semantic fields ARE
 // the card's content, positioned where a physical card's embossed text
 // would sit, rather than an aria-hidden mirror shown above a stacked
 // field list (IncrediCardFace.tsx, the "stacked" layout's entirely

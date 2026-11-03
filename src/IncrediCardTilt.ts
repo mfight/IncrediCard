@@ -293,7 +293,7 @@ export function useIncrediCardTilt(active: boolean, suppressed: boolean) {
     // the press landed rather than from how long it lasted.
     //
     // Same discrimination IncrediCardEmbeddedFace's own click handler
-    // uses, and for the same reason: in the "overlay" layout the real
+    // uses, and for the same reason: in the "floating" layout the real
     // fields are genuine descendants of `.faceWrapper`.
     function isInteractiveTarget(target: EventTarget | null) {
       if (!(target instanceof HTMLElement)) return false;

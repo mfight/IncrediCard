@@ -100,9 +100,11 @@ export type IncrediCardThemeDefinition = {
     /** How strong a highlight follows the light across the surface. Above
      * 0, the face also gets a lit rim (IncrediCardGloss); 0 for no gloss. */
     specular: number;
-    /** The number field's placeholder, on an overlay card. */
+    /** The number field's placeholder, on a floating card. */
     placeholder: string;
   };
+  /** The foil `holographic` turns on. `null` for a card with no foil, where
+   * `holographic` does nothing. */
   hologram: {
     blend: IncrediCardHologramBlend;
     opacity: number;
@@ -110,7 +112,7 @@ export type IncrediCardThemeDefinition = {
     restingSaturation: number;
     glareStrength: number;
     colorRadius: string;
-  };
+  } | null;
   /** `null` keeps the component's own font and no shadow. */
   type: {
     /** The cardholder name, on the card and in its field. */
@@ -122,9 +124,9 @@ export type IncrediCardThemeDefinition = {
     faceEmboss: string | null;
     /** The same, tuned for the fields' light background. */
     fieldEmboss: string | null;
-    /** The shadow on a field sitting on the card, in the overlay layout.
+    /** The shadow on a field sitting on the card, in the floating layout.
      * `null` uses `fieldEmboss` there too. */
-    overlayFieldEmboss: string | null;
+    floatingFieldEmboss: string | null;
   };
   /** Knobs this theme pins, ignoring any `--theme-*` override. */
   fixed: readonly IncrediCardThemeKnob[];
@@ -133,22 +135,26 @@ export type IncrediCardThemeDefinition = {
 /** What `extendIncrediCardTheme` takes: any part of a definition. */
 export type IncrediCardThemeOverrides = Partial<Pick<IncrediCardThemeDefinition, "faceLayout" | "lineArt" | "fixed">> & {
   face?: Partial<IncrediCardThemeDefinition["face"]>;
-  hologram?: Partial<IncrediCardThemeDefinition["hologram"]>;
+  /** `null` takes the foil away. Tuning given for a base with no foil starts
+   * from the default theme's. */
+  hologram?: Partial<IncrediCardHologram> | null;
   type?: Partial<IncrediCardThemeDefinition["type"]>;
 };
+
+type IncrediCardHologram = NonNullable<IncrediCardThemeDefinition["hologram"]>;
 
 // A built-in theme can also carry what `textTone="dark"` changes.
 type BuiltInTheme = IncrediCardThemeDefinition & {
   darkText?: {
     face: Pick<IncrediCardThemeDefinition["face"], "color" | "invalidColor" | "placeholder" | "linesOpacity">;
-    hologram: IncrediCardThemeDefinition["hologram"];
-    type: Pick<IncrediCardThemeDefinition["type"], "faceEmboss" | "overlayFieldEmboss">;
+    hologram: IncrediCardHologram;
+    type: Pick<IncrediCardThemeDefinition["type"], "faceEmboss" | "floatingFieldEmboss">;
   };
 };
 
 export const INCREDICARD_THEMES = {
   // The Figtree-set, dark-material card, with the ribbon foil.
-  modern: {
+  ribbons: {
     faceLayout: "printed",
     lineArt: "ribbons",
     face: {
@@ -183,14 +189,15 @@ export const INCREDICARD_THEMES = {
       printFont: null,
       faceEmboss: null,
       fieldEmboss: null,
-      overlayFieldEmboss: null,
+      floatingFieldEmboss: null,
     },
     fixed: [],
   },
 
   // An homage to an embossed plastic card: OCR-A for the engraved name,
   // OCR-B for the three characters an embosser treats as printed (number,
-  // expiration, security code), on aged ivory. Two layered text-shadows (a
+  // expiration, security code), on aged ivory, with no foil: cards like this
+  // one predate holograms. Two layered text-shadows (a
   // light highlight, a dark counter-shadow) stand in for raised
   // characters; a real bevel would need 3D geometry per glyph, which CSS
   // can't produce for live-typed text. Both fonts are self-hosted under
@@ -206,24 +213,14 @@ export const INCREDICARD_THEMES = {
       shadow: "0 0.5rem 1.25rem rgb(0 0 0 / 20%), inset 0 0.0625rem 0 rgb(255 255 255 / 40%)",
       invalidColor: "#dc2626",
       // No printed lines on a plain ivory face; still overridable, so an
-      // app that wants the lines can have them. The hologram still lights
-      // the ribbons.
+      // app that wants the lines can have them.
       linesOpacity: 0,
       backdrop: "none",
       refraction: false,
       specular: 0,
       placeholder: "rgb(255 255 255 / 60%)",
     },
-    hologram: {
-      // `color-dodge`'s mirror: darkens rather than brightens, which is
-      // what shows color against a light face instead of washing out.
-      blend: "color-burn",
-      opacity: 0.35,
-      // The silver resting treatment suits near-black material only.
-      restingSaturation: 1,
-      glareStrength: 1,
-      colorRadius: "72%",
-    },
+    hologram: null,
     type: {
       nameFont: '"IncrediCard OCR-A", ui-monospace, monospace',
       printFont: '"IncrediCard OCR-B", ui-monospace, monospace',
@@ -232,15 +229,15 @@ export const INCREDICARD_THEMES = {
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%), 0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%)",
       fieldEmboss:
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 90%), 0.0625rem 0.0625rem 0.0625rem rgb(0 0 0 / 25%)",
-      overlayFieldEmboss: null,
+      floatingFieldEmboss: null,
     },
     fixed: [],
   },
 
-  // "modern"'s dark card and type, printed with an engraved globe instead
-  // of ribbons: North America on the card's right side, the sphere's
-  // limb and graticule to its left.
-  atlas: {
+  // The "ribbons" theme's dark card and type, printed with an engraved
+  // globe instead of ribbons: North America on the card's right side, the
+  // sphere's limb and graticule to its left.
+  globe: {
     faceLayout: "printed",
     lineArt: "globe",
     face: {
@@ -267,13 +264,13 @@ export const INCREDICARD_THEMES = {
       printFont: null,
       faceEmboss: null,
       fieldEmboss: null,
-      overlayFieldEmboss: null,
+      floatingFieldEmboss: null,
     },
     fixed: [],
   },
 
-  // "modern"'s type on mostly clear glass: the page behind the card shows
-  // through, softened and, where the browser can, bent at the edge
+  // The "ribbons" theme's type on mostly clear glass: the page behind the
+  // card shows through, softened and, where the browser can, bent at the edge
   // (IncrediCardRefraction), with a rim lit at two opposite corners and a
   // highlight that follows the light (IncrediCardGloss). Clear glass can't
   // keep its text readable on every page, so the app chooses the text that
@@ -308,7 +305,7 @@ export const INCREDICARD_THEMES = {
       printFont: null,
       faceEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
       fieldEmboss: null,
-      overlayFieldEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
+      floatingFieldEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
     },
     darkText: {
       face: {
@@ -326,7 +323,7 @@ export const INCREDICARD_THEMES = {
       },
       type: {
         faceEmboss: "0 0 0.25rem rgb(255 255 255 / 60%)",
-        overlayFieldEmboss: "0 0 0.25rem rgb(255 255 255 / 60%)",
+        floatingFieldEmboss: "0 0 0.25rem rgb(255 255 255 / 60%)",
       },
     },
     fixed: [],
@@ -335,7 +332,7 @@ export const INCREDICARD_THEMES = {
 
 export type IncrediCardTheme = keyof typeof INCREDICARD_THEMES;
 
-/** A built-in theme by name, falling back to "modern" for a name it doesn't
+/** A built-in theme by name, falling back to "ribbons" for a name it doesn't
  * know (only reachable from untyped code), with its dark text if asked for
  * and it has any. An app's own definition comes back as it is: it's one fixed
  * look, so `textTone` doesn't apply to it. */
@@ -346,7 +343,7 @@ export function getIncrediCardTheme(
   if (typeof theme === "object" && theme !== null) return theme;
   const builtIn: BuiltInTheme = Object.hasOwn(INCREDICARD_THEMES, theme ?? "")
     ? INCREDICARD_THEMES[theme as IncrediCardTheme]
-    : INCREDICARD_THEMES.modern;
+    : INCREDICARD_THEMES.ribbons;
   if (textTone !== "dark" || !builtIn.darkText) return builtIn;
   return {
     ...builtIn,
@@ -358,7 +355,8 @@ export function getIncrediCardTheme(
 
 /** A definition of your own, starting from a built-in theme. Each of `face`,
  * `hologram` and `type` merges with the base's, so you only name what changes;
- * `fixed` and `lineArt` replace the base's whole. The result is one fixed look,
+ * `fixed` and `lineArt` replace the base's whole, and a `hologram` of `null`
+ * takes the foil away. The result is one fixed look,
  * so a tone is chosen here: `textTone` on the card doesn't apply to it. */
 export function extendIncrediCardTheme(
   base: IncrediCardTheme,
@@ -370,7 +368,12 @@ export function extendIncrediCardTheme(
     faceLayout: overrides.faceLayout ?? faceLayout,
     lineArt: overrides.lineArt ?? lineArt,
     face: { ...face, ...overrides.face },
-    hologram: { ...hologram, ...overrides.hologram },
+    hologram:
+      overrides.hologram === null
+        ? null
+        : overrides.hologram
+          ? { ...(hologram ?? INCREDICARD_THEMES.ribbons.hologram), ...overrides.hologram }
+          : hologram,
     type: { ...type, ...overrides.type },
     fixed: overrides.fixed ?? fixed,
   };
@@ -393,15 +396,20 @@ function cssUrl(url: string) {
  * a theme with `refraction` (see IncrediCardRefraction.tsx).
  */
 export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refractionFilterId?: string): CSSProperties {
-  const knobs: Record<IncrediCardThemeKnob, string | number> = {
+  const { hologram } = theme;
+  // A card with no foil writes none of the foil's values: nothing reads them.
+  const knobs: Partial<Record<IncrediCardThemeKnob, string | number>> = {
     ...theme.face,
-    restingSaturation: theme.hologram.restingSaturation,
-    glareStrength: theme.hologram.glareStrength,
-    colorRadius: theme.hologram.colorRadius,
-    falloffColor: INCREDICARD_HOLOGRAM_BLENDS[theme.hologram.blend].falloffColor,
+    ...(hologram && {
+      restingSaturation: hologram.restingSaturation,
+      glareStrength: hologram.glareStrength,
+      colorRadius: hologram.colorRadius,
+      falloffColor: INCREDICARD_HOLOGRAM_BLENDS[hologram.blend].falloffColor,
+    }),
   };
   const style: Record<string, string> = {};
   for (const [knob, name] of Object.entries(KNOBS) as Array<[IncrediCardThemeKnob, string]>) {
+    if (knobs[knob] === undefined) continue;
     const value = String(knobs[knob]);
     style[`--incredicard-${name}`] = theme.fixed.includes(knob)
       ? value
@@ -409,8 +417,10 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
   }
   // Internal: these let each theme tune the hologram for its own face, and
   // are not an override point.
-  style["--incredicard-holo-blend-mode"] = theme.hologram.blend;
-  style["--incredicard-holo-opacity"] = String(theme.hologram.opacity);
+  if (hologram) {
+    style["--incredicard-holo-blend-mode"] = hologram.blend;
+    style["--incredicard-holo-opacity"] = String(hologram.opacity);
+  }
   if (theme.face.refraction && refractionFilterId) {
     style["--incredicard-refraction-filter"] = `url(#${refractionFilterId})`;
     style["--incredicard-face-backdrop-refracted"] = `url(#${refractionFilterId}) var(--incredicard-face-backdrop)`;
@@ -426,7 +436,7 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
     "--incredicard-print-font": theme.type.printFont,
     "--incredicard-face-emboss": theme.type.faceEmboss,
     "--incredicard-field-emboss": theme.type.fieldEmboss,
-    "--incredicard-overlay-field-emboss": theme.type.overlayFieldEmboss,
+    "--incredicard-floating-field-emboss": theme.type.floatingFieldEmboss,
   };
   for (const [name, value] of Object.entries(type)) {
     if (value !== null) style[name] = value;

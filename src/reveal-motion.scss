@@ -3,7 +3,7 @@
 // reveals them, and the acceptance mark once a network is detected.
 // These are mixins rather than classes because both faces
 // (IncrediCardFace, the decorative mirror, and IncrediCardEmbeddedFace,
-// the real-field overlay) need the identical motion, but each attaches
+// the real-field floating layout) need the identical motion, but each attaches
 // it to elements that already carry their own unrelated rules.
 //
 // **Literal values, no tokens.** IncrediCard is self-contained (see

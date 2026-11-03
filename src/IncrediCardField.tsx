@@ -12,7 +12,7 @@ type IncrediCardFieldOwnProps = {
   label: React.ReactNode;
   /** Visually hides the label while keeping it in the accessibility
    * tree (still a real `<label htmlFor>`, just visually collapsed). Used
-   * by the "overlay" layout, where the field's position on the card
+   * by the "floating" layout, where the field's position on the card
    * conveys what it means. */
   hideLabel?: boolean;
   size?: IncrediCardFieldSize;

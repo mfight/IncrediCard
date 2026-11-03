@@ -105,7 +105,7 @@ const UNTOUCHED: IncrediCardTouched = {
   cvc: false,
 };
 
-export type IncrediCardLayout = "stacked" | "overlay";
+export type IncrediCardLayout = "stacked" | "floating";
 
 // The visual themes; each is one object in themes.ts, whose keys are the
 // valid names.
@@ -130,7 +130,7 @@ export type IncrediCardLabels = {
   expirationInvalidError: string;
   expirationExpiredError: string;
   cvcError: string;
-  /** The overlay layout's card-number field placeholder. Deliberately
+  /** The floating layout's card-number field placeholder. Deliberately
    * plain words rather than a formatting hint: numbers group differently
    * by network (4-4-4-4, Amex's 4-6-5), so any single dotted template
    * would be wrong for some networks before one is detected. The
@@ -177,7 +177,7 @@ type IncrediCardOwnProps = {
   /** Base id. Each real field derives its own from this (`${id}-name`,
    * etc.). */
   id: string;
-  /** Default "overlay": the real fields are embedded directly into the
+  /** Default "floating": the real fields are embedded directly into the
    * card itself (`IncrediCardEmbeddedFace`), positioned where a physical
    * card's embossed text sits. Each field's visible label is hidden
    * (still real, still in the accessibility tree via `hideLabel`), since
@@ -188,7 +188,7 @@ type IncrediCardOwnProps = {
    * "stacked": a purely decorative card (`IncrediCardFace`) above a
    * normal, fully labeled list of real fields. */
   layout?: IncrediCardLayout;
-  /** Default "modern". A built-in theme's name (see themes.ts for what each
+  /** Default "ribbons". A built-in theme's name (see themes.ts for what each
    * is), or a definition of your own (see `extendIncrediCardTheme`). */
   theme?: IncrediCardTheme | IncrediCardThemeDefinition;
   /** Default true. Forwarded to whichever card face is active; see the
@@ -196,7 +196,8 @@ type IncrediCardOwnProps = {
   chipReflection?: boolean;
   /** Default false. An optional, restrained holographic foil effect on
    * the card's front background, behind the real content. See
-   * `IncrediCardHologram`'s header comment. */
+   * `IncrediCardHologram`'s header comment. A theme with no foil, such as
+   * "vintage", ignores it. */
   holographic?: boolean;
   /** Default "light". Whether the "glass" theme's text is light or dark, for
    * what's behind the card: light on a dark page, dark on a bright one. The
@@ -302,7 +303,7 @@ function mergeRefs<T>(
 //
 // Two layouts share every field's wiring (validation, network detection,
 // the flip state) and differ only in where the card and the fields
-// visually live. "overlay" (default) renders IncrediCardEmbeddedFace,
+// visually live. "floating" (default) renders IncrediCardEmbeddedFace,
 // embedding the real fields directly into the card, positioned where a
 // physical card's embossed text sits; there is no separate decorative
 // mirror in this mode, since the fields are the card's visible content.
@@ -342,8 +343,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
   function IncrediCard(
     {
       id,
-      layout = "overlay",
-      theme = "modern",
+      layout = "floating",
+      theme = "ribbons",
       chipReflection = true,
       holographic = false,
       textTone = "light",
@@ -672,13 +673,15 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       "•".repeat(networkInfo.numberLengths[0]),
       cardNumberPattern(networkInfo, 0),
     );
-    const isOverlay = layout === "overlay";
+    const isFloating = layout === "floating";
     const themeDefinition = getIncrediCardTheme(theme, textTone);
+    // A theme with no foil ("vintage") has nothing for `holographic` to show.
+    const showsFoil = holographic && themeDefinition.hologram !== null;
     const refractionFilterId = useId();
-    // Fits the "stacked" zoom to the viewport; "overlay" fits its own in
+    // Fits the "stacked" zoom to the viewport; "floating" fits its own in
     // IncrediCardEmbeddedFace. See IncrediCardZoomFit.ts.
     const zoomFitRef = useIncrediCardZoomFit<HTMLDivElement>(
-      !isOverlay && scale && cardZoomed,
+      !isFloating && scale && cardZoomed,
     );
 
     // Arrow-key navigation between fields, alongside native Tab. Refs to
@@ -705,14 +708,14 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // must agree with this array on which field comes first, since an
     // inbound Tab from outside the component lands wherever the DOM puts
     // first, before this array's Tab interception can run. The layouts
-    // differ: the "overlay" card puts Expiration between Number and Name
+    // differ: the "floating" card puts Expiration between Number and Name
     // (see the front-face JSX in IncrediCardEmbeddedFace.tsx; it matches a
     // physical card's "Valid Thru" placement), while the "stacked" field
     // list below the decorative card puts Name before an Expiration+CVC
     // row. A single shared order would put one layout's Tab order out of
     // step with what it shows on screen.
     const activeFieldOrder: FieldKey[] = isRevealed
-      ? isOverlay
+      ? isFloating
         ? ["number", "expiration", "name", "cvc"]
         : ["number", "name", "expiration", "cvc"]
       : ["number"];
@@ -730,7 +733,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       // (Amex's CVC prints on the front; see the `cvcOnFront` prop below).
       const targetNeedsBack = target === "cvc" && !isAmex;
       if (targetNeedsBack !== flipped) {
-        // Crossing sides. In the "overlay" layout, the field on whichever
+        // Crossing sides. In the "floating" layout, the field on whichever
         // side ISN'T showing is `inert` (the `useInert` hook in
         // IncrediCardEmbeddedFace.tsx), and a browser refuses to focus
         // anything inert, or anything inside an inert container. Calling
@@ -809,7 +812,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // turning the card over, it moves focus to the first field on the side
     // being revealed, reusing the flip-then-deferred-focus mechanism
     // `focusAdjacentField` needs for the same reason (the target field may
-    // be `inert` in "overlay" until the flip's re-render clears it).
+    // be `inert` in "floating" until the flip's re-render clears it).
     function flipAndFocusFirstField() {
       const next = !flipped;
       // CVC is the only field ever on the back. The flip control is never
@@ -845,7 +848,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // caret left from the middle of a name toward its start without
     // jumping to a different field entirely.
     //
-    // Tab/Shift+Tab are intercepted here too, for the "overlay" layout:
+    // Tab/Shift+Tab are intercepted here too, for the "floating" layout:
     // un-intercepted Tab never reaches CVC there, because the browser's
     // native Tab order skips anything `inert` (the `useInert` hook in
     // IncrediCardEmbeddedFace.tsx), and CVC stays `inert` until something
@@ -909,7 +912,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     }
 
     // Built once and rendered into whichever layout is active below.
-    // Every prop except `hideLabel`/`placeholder` (both "overlay"-only:
+    // Every prop except `hideLabel`/`placeholder` (both "floating"-only:
     // a hidden real label and physical-card-style placeholder text) is
     // identical either way, so there's exactly one place that owns each
     // field's wiring rather than two copies that could drift apart.
@@ -917,8 +920,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       <IncrediCardField
         id={nameFieldId}
         label={labels.cardholderNameLabel}
-        hideLabel={isOverlay}
-        placeholder={isOverlay ? labels.cardholderNamePlaceholder : undefined}
+        hideLabel={isFloating}
+        placeholder={isFloating ? labels.cardholderNamePlaceholder : undefined}
         size={fieldSize}
         // The theme's name font, distinct from the printed characters'
         // below; see `.nameField` in IncrediCard.module.scss.
@@ -943,8 +946,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       <IncrediCardMaskedField
         id={numberFieldId}
         label={labels.cardNumberLabel}
-        hideLabel={isOverlay}
-        placeholder={isOverlay ? labels.cardNumberPlaceholder : undefined}
+        hideLabel={isFloating}
+        placeholder={isFloating ? labels.cardNumberPlaceholder : undefined}
         size={fieldSize}
         // The theme's printed-character font; see `.printField`.
         containerClassName={styles.printField}
@@ -977,8 +980,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       <IncrediCardMaskedField
         id={expirationFieldId}
         label={labels.expirationLabel}
-        hideLabel={isOverlay}
-        placeholder={isOverlay ? labels.expirationPlaceholder : undefined}
+        hideLabel={isFloating}
+        placeholder={isFloating ? labels.expirationPlaceholder : undefined}
         size={fieldSize}
         // The theme's printed-character font; see `.printField`.
         containerClassName={styles.printField}
@@ -1010,8 +1013,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       <IncrediCardMaskedField
         id={cvcFieldId}
         label={labels.cvcLabel}
-        hideLabel={isOverlay}
-        placeholder={isOverlay ? labels.cvcPlaceholder : undefined}
+        hideLabel={isFloating}
+        placeholder={isFloating ? labels.cvcPlaceholder : undefined}
         size={fieldSize}
         // The theme's printed-character font; see `.printField`.
         containerClassName={styles.printField}
@@ -1084,12 +1087,12 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         // .faceContainer` rule in IncrediCard.module.scss reads this
         // directly, already fully resolved (`scale` enabled AND currently
         // zoomed, via real focus or the manual toggle), so CSS needs no
-        // separate check of either condition. The "overlay" layout doesn't
+        // separate check of either condition. The "floating" layout doesn't
         // use it here: its real fields sit inside IncrediCardEmbeddedFace's
         // `.faceWrapper`, which is also the scale target, so that
         // component carries the same attribute itself (see its
         // `cardZoomed`/`scale` props).
-        data-zoomed={!isOverlay && scale && cardZoomed ? "" : undefined}
+        data-zoomed={!isFloating && scale && cardZoomed ? "" : undefined}
         className={classNames(styles.incredicard, className)}
         onFocus={handleFieldsetFocus}
         onBlur={handleFieldsetBlur}
@@ -1097,13 +1100,13 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       >
         <legend className={styles.visuallyHidden}>{labels.legend}</legend>
         {themeDefinition.face.refraction ? <IncrediCardRefraction id={refractionFilterId} /> : null}
-        {isOverlay ? (
+        {isFloating ? (
           <IncrediCardEmbeddedFace
             flipped={flipped}
             flipAngleDeg={flipTurns * 180}
             faceLayout={themeDefinition.faceLayout}
             chipReflection={chipReflection}
-            holographic={holographic}
+            holographic={showsFoil}
             gloss={themeDefinition.face.specular > 0}
             glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
             tilt={tilt}
@@ -1135,7 +1138,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 flipAngleDeg={flipTurns * 180}
                 faceLayout={themeDefinition.faceLayout}
                 chipReflection={chipReflection}
-                holographic={holographic}
+                holographic={showsFoil}
                 gloss={themeDefinition.face.specular > 0}
                 glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
                 tilt={tilt}
@@ -1223,7 +1226,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
 // fields, exposed as a compound namespace rather than two more flat
 // top-level exports. They let you build an entirely custom arrangement
 // (your own layout, a subset of fields, a field this component doesn't
-// have) with the same look, the on-card "overlay" styling included, via
+// have) with the same look, the on-card "floating" styling included, via
 // the same --theme-incredicard-field-* properties this component's
 // fields read. Neither carries any of IncrediCard's state (validation,
 // network detection, the flip); when you compose them directly, you own

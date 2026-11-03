@@ -31,39 +31,40 @@ const OVERRIDABLE = [
   "holo-falloff-color",
 ];
 
-const modern = INCREDICARD_THEMES.modern;
+const ribbons = INCREDICARD_THEMES.ribbons;
 
-describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme) => {
+describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme: IncrediCardThemeDefinition) => {
   const style = incredicardThemeStyle(theme) as Record<string, string>;
+  const { hologram } = theme;
 
-  it("writes every overridable value behind its --theme-* override", () => {
-    for (const name of OVERRIDABLE) {
+  it("writes every overridable value it has behind its --theme-* override", () => {
+    for (const name of OVERRIDABLE.filter((name) => hologram || !name.startsWith("holo-"))) {
       expect(style[`--incredicard-${name}`]).toMatch(
         new RegExp(`^var\\(--theme-incredicard-${name}, .+\\)$`, "s"),
       );
     }
   });
 
-  it("pairs its falloff color with its blend mode", () => {
-    expect(style["--incredicard-holo-blend-mode"]).toBe(theme.hologram.blend);
+  it.runIf(hologram)("pairs its falloff color with its blend mode", () => {
+    expect(style["--incredicard-holo-blend-mode"]).toBe(hologram!.blend);
     expect(style["--incredicard-holo-falloff-color"]).toBe(
-      `var(--theme-incredicard-holo-falloff-color, ${INCREDICARD_HOLOGRAM_BLENDS[theme.hologram.blend].falloffColor})`,
+      `var(--theme-incredicard-holo-falloff-color, ${INCREDICARD_HOLOGRAM_BLENDS[hologram!.blend].falloffColor})`,
     );
   });
 
   it("writes its line art's three files, for the stylesheets that draw it", () => {
-    const art = INCREDICARD_LINE_ART[theme.lineArt];
+    const art = INCREDICARD_LINE_ART[theme.lineArt as keyof typeof INCREDICARD_LINE_ART];
     expect(style["--incredicard-lines"]).toBe(`url("${art.foil}")`);
     expect(style["--incredicard-lines-mask-a"]).toBe(`url("${art.maskA}")`);
     expect(style["--incredicard-lines-mask-b"]).toBe(`url("${art.maskB}")`);
   });
 
   it("writes only the type values it has", () => {
-    const written = ["nameFont", "printFont", "faceEmboss", "fieldEmboss", "overlayFieldEmboss"].filter(
+    const written = ["nameFont", "printFont", "faceEmboss", "fieldEmboss", "floatingFieldEmboss"].filter(
       (key) => theme.type[key as keyof typeof theme.type] !== null,
     ).length;
     const typeProps = Object.keys(style).filter((p) =>
-      /^--incredicard-(name-font|print-font|face-emboss|field-emboss|overlay-field-emboss)$/.test(p),
+      /^--incredicard-(name-font|print-font|face-emboss|field-emboss|floating-field-emboss)$/.test(p),
     );
     expect(typeProps).toHaveLength(written);
   });
@@ -71,17 +72,40 @@ describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme)
 
 describe("incredicardThemeStyle", () => {
   it("pins a knob a theme lists as fixed, ignoring overrides", () => {
-    const pinned: IncrediCardThemeDefinition = { ...modern, fixed: ["linesOpacity"] };
+    const pinned: IncrediCardThemeDefinition = { ...ribbons, fixed: ["linesOpacity"] };
     const style = incredicardThemeStyle(pinned) as Record<string, string>;
     expect(style["--incredicard-face-lines-opacity"]).toBe("0.08");
     expect(style["--incredicard-face-color"]).toBe("var(--theme-incredicard-face-color, #ffffff)");
   });
 
   it("leaves a null font unset, so the text inherits", () => {
-    const style = incredicardThemeStyle(modern) as Record<string, string>;
+    const style = incredicardThemeStyle(ribbons) as Record<string, string>;
     expect(style).not.toHaveProperty("--incredicard-name-font");
     const vintage = incredicardThemeStyle(INCREDICARD_THEMES.vintage) as Record<string, string>;
     expect(vintage["--incredicard-name-font"]).toContain("IncrediCard OCR-A");
+  });
+});
+
+describe("a theme with no foil", () => {
+  const vintage = INCREDICARD_THEMES.vintage;
+
+  it("is vintage, which writes none of the foil's values", () => {
+    expect(vintage.hologram).toBeNull();
+    const style = incredicardThemeStyle(vintage) as Record<string, string>;
+    expect(Object.keys(style).filter((name) => name.includes("holo"))).toEqual([]);
+  });
+
+  it("passes its lack of foil on to a theme made from it", () => {
+    expect(extendIncrediCardTheme("vintage", { face: { color: "#000000" } }).hologram).toBeNull();
+  });
+
+  it("can be made from a theme that has one", () => {
+    expect(extendIncrediCardTheme("ribbons", { hologram: null }).hologram).toBeNull();
+  });
+
+  it("gains one from tuning, starting from the default theme's", () => {
+    const foiled = extendIncrediCardTheme("vintage", { hologram: { blend: "color-burn" } });
+    expect(foiled.hologram).toEqual({ ...ribbons.hologram, blend: "color-burn" });
   });
 });
 
@@ -95,21 +119,21 @@ describe("the glass backdrop", () => {
     expect(glass.face.color).toBe("#ffffff");
     expect(glass.hologram.blend).toBe("color-dodge");
     expect(dark.face.color).toBe("#05131a");
-    expect(dark.hologram.blend).toBe("color-burn");
+    expect(dark.hologram?.blend).toBe("color-burn");
     expect(dark.face.backdrop).toBe(glass.face.backdrop);
     const style = incredicardThemeStyle(dark) as Record<string, string>;
     expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS["color-burn"].falloffColor);
   });
 
   it("leaves the other themes alone", () => {
-    expect(getIncrediCardTheme("modern", "dark")).toBe(modern);
+    expect(getIncrediCardTheme("ribbons", "dark")).toBe(ribbons);
     expect(getIncrediCardTheme("vintage", "dark")).toBe(INCREDICARD_THEMES.vintage);
   });
 
   it("refers to the card's own filter, ahead of the backdrop", () => {
     const style = incredicardThemeStyle(glass, "card-filter") as Record<string, string>;
     expect(style["--incredicard-face-backdrop-refracted"]).toBe("url(#card-filter) var(--incredicard-face-backdrop)");
-    expect(incredicardThemeStyle(modern, "card-filter")).not.toHaveProperty("--incredicard-face-backdrop-refracted");
+    expect(incredicardThemeStyle(ribbons, "card-filter")).not.toHaveProperty("--incredicard-face-backdrop-refracted");
   });
 
   // Safari discards the whole filter if it holds a `url()`, and an app's
@@ -151,11 +175,11 @@ describe("getIncrediCardTheme", () => {
     expect(getIncrediCardTheme("vintage")).toBe(INCREDICARD_THEMES.vintage);
   });
 
-  it("falls back to modern for a name it doesn't know, or none", () => {
-    expect(getIncrediCardTheme("paper")).toBe(modern);
-    expect(getIncrediCardTheme(undefined)).toBe(modern);
+  it("falls back to ribbons for a name it doesn't know, or none", () => {
+    expect(getIncrediCardTheme("paper")).toBe(ribbons);
+    expect(getIncrediCardTheme(undefined)).toBe(ribbons);
     // Not a theme, though every object has one.
-    expect(getIncrediCardTheme("toString")).toBe(modern);
+    expect(getIncrediCardTheme("toString")).toBe(ribbons);
   });
 });
 
@@ -163,36 +187,36 @@ describe("a custom theme", () => {
   const files = { foil: "/foil.svg", maskA: "/a.svg", maskB: "/b.svg" };
 
   it("comes back as it is, whatever the text tone", () => {
-    const custom: IncrediCardThemeDefinition = { ...modern, lineArt: files };
+    const custom: IncrediCardThemeDefinition = { ...ribbons, lineArt: files };
     expect(getIncrediCardTheme(custom)).toBe(custom);
     expect(getIncrediCardTheme(custom, "dark")).toBe(custom);
   });
 
   it("merges each group with its base, and keeps the rest", () => {
-    const custom = extendIncrediCardTheme("modern", {
+    const custom = extendIncrediCardTheme("ribbons", {
       face: { background: "#123456" },
       hologram: { opacity: 0.5 },
       type: { printFont: "Example" },
     });
-    expect(custom.face).toEqual({ ...modern.face, background: "#123456" });
-    expect(custom.hologram).toEqual({ ...modern.hologram, opacity: 0.5 });
-    expect(custom.type).toEqual({ ...modern.type, printFont: "Example" });
-    expect(custom.lineArt).toBe(modern.lineArt);
-    expect(custom.faceLayout).toBe(modern.faceLayout);
+    expect(custom.face).toEqual({ ...ribbons.face, background: "#123456" });
+    expect(custom.hologram).toEqual({ ...ribbons.hologram, opacity: 0.5 });
+    expect(custom.type).toEqual({ ...ribbons.type, printFont: "Example" });
+    expect(custom.lineArt).toBe(ribbons.lineArt);
+    expect(custom.faceLayout).toBe(ribbons.faceLayout);
   });
 
   it("replaces fixed and line art whole, and leaves the built-in theme alone", () => {
-    const before = structuredClone(modern);
-    const custom = extendIncrediCardTheme("modern", { fixed: ["color"], lineArt: files });
+    const before = structuredClone(ribbons);
+    const custom = extendIncrediCardTheme("ribbons", { fixed: ["color"], lineArt: files });
     expect(custom.fixed).toEqual(["color"]);
     expect(custom.lineArt).toBe(files);
-    expect(modern).toEqual(before);
+    expect(ribbons).toEqual(before);
   });
 
   it("takes its tone once, when it's made, and keeps no tones of its own", () => {
     const dark = extendIncrediCardTheme("glass", { face: { background: "#ffffff1a" } }, { textTone: "dark" });
     expect(dark.face.color).toBe("#05131a");
-    expect(dark.hologram.blend).toBe("color-burn");
+    expect(dark.hologram?.blend).toBe("color-burn");
     expect(dark.face.background).toBe("#ffffff1a");
     expect(dark).not.toHaveProperty("darkText");
     expect(getIncrediCardTheme(dark, "light")).toBe(dark);
@@ -203,14 +227,14 @@ describe("a custom theme", () => {
   });
 
   it("gets the falloff color that goes with its blend mode", () => {
-    const custom = extendIncrediCardTheme("modern", { hologram: { blend: "color-burn" } });
+    const custom = extendIncrediCardTheme("ribbons", { hologram: { blend: "color-burn" } });
     const style = incredicardThemeStyle(custom) as Record<string, string>;
     expect(style["--incredicard-holo-falloff-color"]).toContain(INCREDICARD_HOLOGRAM_BLENDS["color-burn"].falloffColor);
   });
 
   it("writes its own line art, and can't break out of the URL's string", () => {
     const style = incredicardThemeStyle({
-      ...modern,
+      ...ribbons,
       lineArt: { foil: "/foil.svg", maskA: 'x"), url("/other', maskB: "a\\b\nc" },
     }) as Record<string, string>;
     expect(style["--incredicard-lines"]).toBe('url("/foil.svg")');
@@ -224,32 +248,32 @@ describe("a custom theme", () => {
 // directly, doesn't type-check.
 export const incompleteTheme = {
   faceLayout: "printed",
-  face: modern.face,
-  type: modern.type,
+  face: ribbons.face,
+  type: ribbons.type,
   fixed: [],
   // @ts-expect-error -- a theme without its hologram values is incomplete.
 } satisfies IncrediCardThemeDefinition;
 
 export const unpairedFalloff = {
-  ...modern,
+  ...ribbons,
   // @ts-expect-error -- the falloff color comes with the blend mode, never on its own.
-  hologram: { ...modern.hologram, falloffColor: "#000000" },
+  hologram: { ...ribbons.hologram, falloffColor: "#000000" },
 } satisfies IncrediCardThemeDefinition;
 
 export const incompleteLineArt = {
-  ...modern,
+  ...ribbons,
   // @ts-expect-error -- custom line art needs all three of its files.
   lineArt: { foil: "/foil.svg", maskA: "/a.svg" },
 } satisfies IncrediCardThemeDefinition;
 
 export const customLayout = {
-  ...modern,
+  ...ribbons,
   // @ts-expect-error -- a layout is a CSS block, so only the built-in ones exist.
   faceLayout: "sideways",
 } satisfies IncrediCardThemeDefinition;
 
 export const publicToneVariants = {
-  ...modern,
+  ...ribbons,
   // @ts-expect-error -- a custom theme is one fixed look, with no tone variants.
   darkText: INCREDICARD_THEMES.glass.darkText,
 } satisfies IncrediCardThemeDefinition;

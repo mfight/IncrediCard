@@ -274,10 +274,10 @@ export function IncrediCardFace({
 
               Rendered UNCONDITIONALLY, with an invisible placeholder
               standing in for the CVC row when there is no front-printed
-              one, exactly as the overlay layout does. Only Amex prints
+              one, exactly as the floating layout does. Only Amex prints
               its code on the front; if every other network skipped this
               row, the number would sit higher up the card and this
-              decorative face would disagree with the overlay face about
+              decorative face would disagree with the floating face about
               where the number, expiration and name belong. Reserving the
               row always is what makes one set of positions serve both
               layouts. */}
@@ -329,7 +329,7 @@ export function IncrediCardFace({
             </span>
           ) : (
             // An invisible stand-in before reveal, for the same reason
-            // as the overlay layout's placeholder rows. Without it this
+            // as the floating layout's placeholder rows. Without it this
             // row would be absent, leaving the decorative face with two
             // flex items instead of four and dropping the number to the
             // bottom of the card.

@@ -140,7 +140,7 @@
 // field takes the theme's name font, and the number, expiration and
 // security code its printed-character font. Both layouts share the same
 // field elements, so this covers the "stacked" field list and the
-// "overlay" on-card slots alike.
+// "floating" on-card slots alike.
 //
 // `--incredicard-field-font-family` is read by `.container` in
 // IncrediCardField.module.scss, the same cross-module technique used
@@ -200,7 +200,7 @@
 }
 
 // `data-zoomed` is set on the fieldset by IncrediCard.tsx for the
-// "stacked" layout only (the "overlay" layout carries the same attribute
+// "stacked" layout only (the "floating" layout carries the same attribute
 // on IncrediCardEmbeddedFace's `.faceWrapper` instead; see the comment in
 // IncrediCard.tsx). It arrives fully resolved: `scale` enabled AND
 // currently zoomed, via a real field's focus or a click on the card's
@@ -240,7 +240,7 @@
 }
 
 // Half on, half off the card's top-right corner. The same badge as the
-// "overlay" layout's flip control (see IncrediCardEmbeddedFace.module.scss
+// "floating" layout's flip control (see IncrediCardEmbeddedFace.module.scss
 // for the full reasoning), styled identically, for the "stacked"
 // layout's decorative card.
 .flipBadge {

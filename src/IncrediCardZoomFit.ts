@@ -204,7 +204,7 @@ function measure(el: HTMLElement, view: Window): IncrediCardZoomFit {
 
 // The real field being typed into, with its label, when it lives outside
 // the scale target: "stacked" puts the fields beside or below the
-// decorative card. In "overlay" they're on the card, inside the target,
+// decorative card. In "floating" they're on the card, inside the target,
 // and there's nothing to keep clear.
 function focusedFieldOutside(el: HTMLElement): IncrediCardZoomRect | undefined {
   const active = el.ownerDocument.activeElement;

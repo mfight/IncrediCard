@@ -320,7 +320,7 @@
 
 .number {
   // +2px of height, so this decorative row is exactly as tall as the
-  // equivalent REAL field row in the overlay layout. Those fields carry
+  // equivalent REAL field row in the floating layout. Those fields carry
   // a 1px top and bottom border on their inner container (transparent
   // until hover), which the mirrored text here has no reason to have --
   // but without it every row would be 2px shorter, the space-between
@@ -346,7 +346,7 @@
 
 .name {
   // Same +2px transparent border as `.number` above, for the same
-  // reason: it matches the real field rows in the overlay layout.
+  // reason: it matches the real field rows in the floating layout.
   border-block: 0.0625rem solid transparent;
   @include reveal-motion.incredicard-reveal-fade-in;
 
@@ -383,7 +383,7 @@
 
 .expiration {
   // Same +2px transparent border as `.number` above, for the same
-  // reason: it matches the real field rows in the overlay layout.
+  // reason: it matches the real field rows in the floating layout.
   border-block: 0.0625rem solid transparent;
   @include reveal-motion.incredicard-reveal-fade-in;
 
@@ -475,7 +475,7 @@
 // These two reserve a row's height without drawing it,
 // so this decorative face keeps four rows in `.face`'s space-between
 // rhythm no matter which of them have real content. That is what lets it
-// share one set of field positions with the overlay layout -- for every
+// share one set of field positions with the floating layout -- for every
 // network (only Amex prints a CVC on the front) and before reveal (when
 // expiration and name have nothing to show).
 //

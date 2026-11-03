@@ -2,7 +2,7 @@
 // It declares the same --incredicard-face-* variable names as
 // IncrediCardFace.module.scss (not a second, differently named set), so
 // a consumer re-skinning the card surface gets one override vocabulary
-// that works no matter which layout (`stacked`/`overlay`) is active.
+// that works no matter which layout (`stacked`/`floating`) is active.
 //
 // The `@use`s below are this component's own partials. See
 // reveal-motion.scss's header for why its fade is written as literal
@@ -88,7 +88,7 @@
   }
 }
 
-// The `scale` emphasis effect for the "overlay" layout. See the `scale`
+// The `scale` emphasis effect for the "floating" layout. See the `scale`
 // prop comment in IncrediCard.tsx, and the identical rule for "stacked"
 // in IncrediCard.module.scss, including its comment on why this is a
 // plain `data-zoomed` attribute rather than `:focus-within` or
@@ -341,7 +341,7 @@
   // falling back to an opaque #f3f4f6, so setting only the base
   // background above would leave an on-card field painting a solid gray
   // bar across the card art the moment it goes read-only. That happens
-  // in any overlay card while `processing`, which sets readOnly on every
+  // in any floating card while `processing`, which sets readOnly on every
   // field. (In the "stacked" layout the fields sit below the card in an
   // ordinary list, where a gray read-only background is exactly right.)
   --theme-incredicard-field-background-readonly: transparent;
@@ -351,7 +351,7 @@
   --theme-incredicard-field-color: var(--incredicard-face-color);
   // Read by the input's text-shadow in IncrediCard.module.scss. Unset in a
   // theme without one, which leaves that rule its `fieldEmboss`.
-  --incredicard-on-card-emboss: var(--incredicard-overlay-field-emboss);
+  --incredicard-on-card-emboss: var(--incredicard-floating-field-emboss);
   --theme-incredicard-field-radius: 0.125rem;
   --theme-incredicard-field-padding: 0;
 
@@ -384,7 +384,7 @@
   // vertical: `flex-grow` here would mean "take the remaining *height*",
   // not width. The slot would grow far past its field, eat every pixel
   // of free space, and leave `.face`'s `justify-content: space-between`
-  // with nothing to distribute, packing the overlay layout's fields
+  // with nothing to distribute, packing the floating layout's fields
   // toward the top of the card instead of spreading them evenly like
   // IncrediCardFace.module.scss's identical structure.
   //

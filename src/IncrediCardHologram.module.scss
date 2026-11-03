@@ -62,12 +62,12 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
   // color sits beneath it) rather than a rainbow sticker pasted on top.
   //
   // Themeable through a custom property, because no single blend mode
-  // serves both of this component's themes. `color-dodge` (the default,
-  // tuned for "modern"'s dark gradient) only ever brightens, so it washes
-  // out to almost nothing against "vintage"'s light cream/gold
-  // background; `overlay` splits the difference but reads as
-  // underwhelming on both rather than good on either. Each theme in
-  // themes.ts sets both this and the opacity below, tuned for its own
+  // serves every face. `color-dodge` (the default, tuned for the "ribbons"
+  // theme's dark card) only ever brightens, so it washes out to almost
+  // nothing against a light face, such as dark-text glass on a bright page,
+  // which takes `color-burn` instead; `overlay` splits the difference but
+  // reads as underwhelming on both rather than good on either. Each theme
+  // in themes.ts sets both this and the opacity below, tuned for its own
   // face.
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   // The foil AT REST. It shows whether or not a pointer is anywhere near
@@ -386,8 +386,8 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
 // visible everywhere, and the COLOR concentrates where the light is.
 //
 // It is also the one value that must change per theme. `color-burn` is
-// `color-dodge`'s mirror and its no-op color is WHITE, so "vintage"
-// overrides this to #e0e0e0 -- the same 12% offset, reflected. Left at
+// `color-dodge`'s mirror and its no-op color is WHITE, so dark-text
+// "glass" overrides this to #e0e0e0 -- the same 12% offset, reflected. Left at
 // #1f1f1f, that theme would paint the far half of the card solid black
 // on hover, an inversion rather than a softening. So a theme doesn't set
 // this color at all: it names its blend mode, and the color comes paired
