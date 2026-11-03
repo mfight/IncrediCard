@@ -46,9 +46,31 @@ export type IncrediCardTextTone = "light" | "dark";
 // Not pure black and white: 12% off each, so the far side of the card
 // keeps its ribbons lit but drained rather than going dark (see the
 // falloff note in IncrediCardHologram.module.scss).
+//
+// The rest of the glare comes paired too. Its layers are built for
+// `color-dodge`, where dark means "leave the backdrop alone": a white
+// highlight over a dark rainbow texture. `color-burn` is dodge turned inside
+// out, so it gets everything turned inside out: a black highlight, the
+// texture's inverse, and screen where dodge multiplies. Burning with dodge's
+// own dark texture would draw the lit lines in near-black instead of color.
+// The texture cycles through every hue, so its inverse is still a rainbow.
+const GLARE_TEXTURE = ["#6e2159", "#6e4a35", "#62661f", "#1f6640", "#1c5c66", "#24276e", "#4a2166", "#6e2159"];
+
+const invertHex = (hex: string) => `#${(0xffffff ^ parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`;
+
+// One stop every 8%, repeating, at the foil's own 115deg grain.
+const glareTexture = (stops: string[]) =>
+  `repeating-linear-gradient(115deg, ${stops.map((color, index) => `${color} ${index * 8}%`).join(", ")})`;
+
 export const INCREDICARD_HOLOGRAM_BLENDS = {
-  "color-dodge": { falloffColor: "#1f1f1f" },
-  "color-burn": { falloffColor: "#e0e0e0" },
+  "color-dodge": {
+    falloffColor: "#1f1f1f",
+    glare: { light: "255 255 255", texture: glareTexture(GLARE_TEXTURE), layers: "color-dodge, multiply, normal" },
+  },
+  "color-burn": {
+    falloffColor: "#e0e0e0",
+    glare: { light: "0 0 0", texture: glareTexture(GLARE_TEXTURE.map(invertHex)), layers: "color-burn, screen, normal" },
+  },
 } as const;
 
 export type IncrediCardHologramBlend = keyof typeof INCREDICARD_HOLOGRAM_BLENDS;
@@ -317,7 +339,9 @@ export const INCREDICARD_THEMES = {
       hologram: {
         blend: "color-burn",
         opacity: 0.35,
-        restingSaturation: 1,
+        // Silver at rest, like the light text's foil: the color comes with
+        // the light.
+        restingSaturation: 0.35,
         glareStrength: 1,
         colorRadius: "72%",
       },
@@ -418,8 +442,12 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
   // Internal: these let each theme tune the hologram for its own face, and
   // are not an override point.
   if (hologram) {
+    const { glare } = INCREDICARD_HOLOGRAM_BLENDS[hologram.blend];
     style["--incredicard-holo-blend-mode"] = hologram.blend;
     style["--incredicard-holo-opacity"] = String(hologram.opacity);
+    style["--incredicard-holo-glare-light"] = glare.light;
+    style["--incredicard-holo-glare-texture"] = glare.texture;
+    style["--incredicard-holo-glare-layers"] = glare.layers;
   }
   if (theme.face.refraction && refractionFilterId) {
     style["--incredicard-refraction-filter"] = `url(#${refractionFilterId})`;

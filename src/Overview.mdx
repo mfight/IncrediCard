@@ -393,7 +393,7 @@ To write every value yourself, type the object as `IncrediCardThemeDefinition`; 
 - **Face layout:** `"printed"` or `"embossed"`. A layout is a CSS block in this package, so a theme can't define a new one.
 - **Line art:** a built-in name (`"ribbons"`, `"globe"`) or your own three files. `foil` holds the lines, which the face prints faintly and the hologram lights. `maskA` and `maskB` each hold some of those lines, one for each pair of glare layers, at the same size as the foil. Browsers fetch masks with CORS, so both must be same-origin, CORS-enabled or inlined; otherwise the foil still shows, but the glare doesn't appear.
 - **Fonts:** `nameFont` and `printFont` take a `font-family` value. This package only loads its own fonts, so load yours yourself.
-- **Hologram blend:** `"color-dodge"` or `"color-burn"`. Each comes with the falloff color it needs, which isn't a value you set.
+- **Hologram blend:** `"color-dodge"` for a dark face, `"color-burn"` for a light one. Each comes with the falloff color and glare it needs, which aren't values you set: burn's glare is dodge's turned inside out, so the foil lights in color on a light face too.
 - **No foil:** `hologram: null` makes a card with no hologram, where `holographic` does nothing. `"vintage"` is one, so a theme extended from it starts with none; giving it `hologram` tuning adds a foil, starting from the default theme's.
 - **Text tone:** a custom theme ignores the `textTone` prop. To start from `glass` with dark text, choose the tone when you make the theme: `extendIncrediCardTheme("glass", overrides, { textTone: "dark" })`.
 - **Refraction:** `face.refraction` bends the backdrop, and `glassBackdrop` only applies when it's on.

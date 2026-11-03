@@ -86,6 +86,40 @@ describe("incredicardThemeStyle", () => {
   });
 });
 
+describe("the glare's blends", () => {
+  const { "color-dodge": dodge, "color-burn": burn } = INCREDICARD_HOLOGRAM_BLENDS;
+  const stops = (texture: string) => texture.match(/#[0-9a-f]{6}/g)!;
+
+  // Burn is dodge turned inside out, so its glare is too. Dodge's own dark
+  // texture under burn draws the lit lines in near-black.
+  it("turns the whole glare inside out for color-burn", () => {
+    expect(dodge.glare.light).toBe("255 255 255");
+    expect(burn.glare.light).toBe("0 0 0");
+    expect(dodge.glare.layers).toBe("color-dodge, multiply, normal");
+    expect(burn.glare.layers).toBe("color-burn, screen, normal");
+    const inverse = stops(dodge.glare.texture).map(
+      (hex) => `#${(0xffffff - parseInt(hex.slice(1), 16)).toString(16).padStart(6, "0")}`,
+    );
+    expect(stops(burn.glare.texture)).toEqual(inverse);
+  });
+
+  it("writes the glare that goes with the theme's blend mode", () => {
+    const style = incredicardThemeStyle(getIncrediCardTheme("glass", "dark")) as Record<string, string>;
+    expect(style["--incredicard-holo-glare-light"]).toBe(burn.glare.light);
+    expect(style["--incredicard-holo-glare-texture"]).toBe(burn.glare.texture);
+    expect(style["--incredicard-holo-glare-layers"]).toBe(burn.glare.layers);
+  });
+
+  it("is what every glare layer reads, not a fixed highlight or texture", () => {
+    const css = readFileSync(new URL("IncrediCardHologram.module.scss", import.meta.url), "utf8");
+    const rules = css.replace(/^\s*\/\/.*$/gm, "");
+    expect(rules).not.toMatch(/rgb\(255 255 255/);
+    expect(rules.match(/var\(--incredicard-holo-glare-texture,/g)).toHaveLength(4);
+    expect(rules.match(/var\(--incredicard-holo-glare-layers,/g)).toHaveLength(4);
+    expect(rules.match(/var\(--incredicard-holo-glare-light,/g)).toHaveLength(8);
+  });
+});
+
 describe("a theme with no foil", () => {
   const vintage = INCREDICARD_THEMES.vintage;
 

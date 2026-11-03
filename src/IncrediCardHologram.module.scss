@@ -22,6 +22,21 @@
 // and so nobody would catch.
 $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
 
+// The glare's rainbow texture as `color-dodge` uses it: the artwork's seven
+// hues, darkened. The fallback for `--incredicard-holo-glare-texture`, which
+// themes.ts writes per blend mode.
+$glare-texture: repeating-linear-gradient(
+  115deg,
+  #6e2159 0%,
+  #6e4a35 8%,
+  #62661f 16%,
+  #1f6640 24%,
+  #1c5c66 32%,
+  #24276e 40%,
+  #4a2166 48%,
+  #6e2159 56%
+);
+
 .hologramWrapper {
   position: absolute;
   inset: 0;
@@ -393,6 +408,15 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
 // this color at all: it names its blend mode, and the color comes paired
 // with it (`INCREDICARD_HOLOGRAM_BLENDS` in themes.ts).
 //
+// The same goes for everything else these layers are made of. Under
+// `color-burn` a white highlight and a dark texture are backwards too: the
+// highlight does nothing and the texture burns the lit lines nearly black.
+// So the highlight's color, the texture and the layers' own blend modes
+// come from the same table (`--incredicard-holo-glare-light`, `-texture`,
+// `-layers`): for burn, a black highlight, the texture's inverse, and
+// screen in place of multiply, the whole stack mirrored. The values below
+// are dodge's, as fallbacks.
+//
 // Shared positioning/masking/fade-in-on-hover rules are duplicated
 // across all four classes below rather than factored into a shared
 // placeholder, following this component's preference for small,
@@ -441,27 +465,17 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
   background-image:
     radial-gradient(
       circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
-      rgb(255 255 255 / 55%) 0%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255) / 55%) 0%,
       transparent 60%
     ),
-    repeating-linear-gradient(
-      115deg,
-      #6e2159 0%,
-      #6e4a35 8%,
-      #62661f 16%,
-      #1f6640 24%,
-      #1c5c66 32%,
-      #24276e 40%,
-      #4a2166 48%,
-      #6e2159 56%
-    ),
+    var(--incredicard-holo-glare-texture, $glare-texture),
     radial-gradient(
       circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
-      #ffffff 0%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255)) 0%,
       var(--incredicard-holo-falloff-color, #1f1f1f)
         var(--incredicard-holo-color-radius, 72%)
     );
-  background-blend-mode: color-dodge, multiply, normal;
+  background-blend-mode: var(--incredicard-holo-glare-layers, color-dodge, multiply, normal);
   // Punches up contrast and saturation on the blended result, so the
   // foil reads as more vivid than a plain gradient would. The values are
   // this high because the translucent highlight above leaves real color
@@ -571,27 +585,17 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
     radial-gradient(
       circle at calc(100% - var(--incredicard-chip-light-x, 50%))
         calc(100% - var(--incredicard-chip-light-y, 50%)),
-      rgb(255 255 255 / 45%) 0%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255) / 45%) 0%,
       transparent 72%
     ),
-    repeating-linear-gradient(
-      115deg,
-      #6e2159 0%,
-      #6e4a35 8%,
-      #62661f 16%,
-      #1f6640 24%,
-      #1c5c66 32%,
-      #24276e 40%,
-      #4a2166 48%,
-      #6e2159 56%
-    ),
+    var(--incredicard-holo-glare-texture, $glare-texture),
     radial-gradient(
       circle at calc(100% - var(--incredicard-chip-light-x, 50%)) calc(100% - var(--incredicard-chip-light-y, 50%)),
-      #ffffff 0%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255)) 0%,
       var(--incredicard-holo-falloff-color, #1f1f1f)
         var(--incredicard-holo-color-radius, 72%)
     );
-  background-blend-mode: color-dodge, multiply, normal;
+  background-blend-mode: var(--incredicard-holo-glare-layers, color-dodge, multiply, normal);
   filter: contrast(1.75) saturate(2.2);
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   opacity: calc(
@@ -695,23 +699,13 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
     linear-gradient(
       calc(115deg + var(--incredicard-chip-light-rotate, 0deg)),
       transparent 46%,
-      rgb(255 255 255 / 55%) 50%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255) / 55%) 50%,
       transparent 54%
     ),
-    repeating-linear-gradient(
-      115deg,
-      #6e2159 0%,
-      #6e4a35 8%,
-      #62661f 16%,
-      #1f6640 24%,
-      #1c5c66 32%,
-      #24276e 40%,
-      #4a2166 48%,
-      #6e2159 56%
-    ),
+    var(--incredicard-holo-glare-texture, $glare-texture),
     radial-gradient(
       circle at var(--incredicard-chip-light-x, 50%) var(--incredicard-chip-light-y, 50%),
-      #ffffff 0%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255)) 0%,
       var(--incredicard-holo-falloff-color, #1f1f1f)
         var(--incredicard-holo-color-radius, 72%)
     );
@@ -723,7 +717,7 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
     calc(50% - (var(--incredicard-chip-light-x, 50%) - 50%) * 0.6) 50%,
     0 0,
     0 0;
-  background-blend-mode: color-dodge, multiply, normal;
+  background-blend-mode: var(--incredicard-holo-glare-layers, color-dodge, multiply, normal);
   // The same contrast/saturation boost as `.glareRadial`. This layer's
   // damped, inverted tracking (see this rule's header comment) already
   // moves less and renders at a lower opacity than `.glareRadial`, so it
@@ -819,23 +813,13 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
     linear-gradient(
       calc(115deg - var(--incredicard-chip-light-rotate, 0deg)),
       transparent 46%,
-      rgb(255 255 255 / 45%) 50%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255) / 45%) 50%,
       transparent 54%
     ),
-    repeating-linear-gradient(
-      115deg,
-      #6e2159 0%,
-      #6e4a35 8%,
-      #62661f 16%,
-      #1f6640 24%,
-      #1c5c66 32%,
-      #24276e 40%,
-      #4a2166 48%,
-      #6e2159 56%
-    ),
+    var(--incredicard-holo-glare-texture, $glare-texture),
     radial-gradient(
       circle at calc(100% - var(--incredicard-chip-light-x, 50%)) calc(100% - var(--incredicard-chip-light-y, 50%)),
-      #ffffff 0%,
+      rgb(var(--incredicard-holo-glare-light, 255 255 255)) 0%,
       var(--incredicard-holo-falloff-color, #1f1f1f)
         var(--incredicard-holo-color-radius, 72%)
     );
@@ -847,7 +831,7 @@ $holo-shift: incredicardHoloShift 10s ease-in-out infinite;
     calc(50% + (var(--incredicard-chip-light-x, 50%) - 50%) * 0.6) 50%,
     0 0,
     0 0;
-  background-blend-mode: color-dodge, multiply, normal;
+  background-blend-mode: var(--incredicard-holo-glare-layers, color-dodge, multiply, normal);
   filter: contrast(1.75) saturate(2.2);
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   opacity: calc(
