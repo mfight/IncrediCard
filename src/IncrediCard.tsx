@@ -1044,6 +1044,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       error: string | undefined,
     ) {
       const index = activeFieldOrder.indexOf(key);
+      // The security code is measured as the password field IncrediCard's
+      // own is, so the processor gets the same system font for its dots.
       return (
         <IncrediCardHostedFieldSlot
           id={fieldId}
@@ -1057,6 +1059,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
           invalid={Boolean(error)}
           errorText={error}
           field={field}
+          masked={key === "cvc"}
           guardBefore={index > 0}
           guardAfter={index < activeFieldOrder.length - 1}
           onLeave={(direction) => focusAdjacentField(key, direction)}

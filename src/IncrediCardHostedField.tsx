@@ -140,6 +140,9 @@ type IncrediCardHostedFieldSlotProps = {
   invalid: boolean;
   errorText?: string;
   field: IncrediCardHostedField;
+  /** The security code: measured as a password field, the way IncrediCard's
+   * own is rendered, so its masking dots get the same system font. */
+  masked?: boolean;
   /** Which invisible guards to render around the field. See below. */
   guardBefore: boolean;
   guardAfter: boolean;
@@ -175,6 +178,7 @@ export function IncrediCardHostedFieldSlot({
   invalid,
   errorText,
   field,
+  masked = false,
   guardBefore,
   guardAfter,
   onLeave,
@@ -261,6 +265,7 @@ export function IncrediCardHostedFieldSlot({
         <input
           ref={probeRef}
           className={classNames(styles.input, styles.styleProbe)}
+          type={masked ? "password" : "text"}
           placeholder={placeholder ?? " "}
           aria-hidden="true"
           disabled

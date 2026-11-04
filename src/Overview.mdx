@@ -151,7 +151,7 @@ const numberField = useRef<ProcessorFieldHandle>(null);
 
 `ProcessorField` is your wrapper around the processor's field: it mounts the field into an element it renders, updates the field's style when `context` changes, and turns the processor's change, focus and blur events into the state above. The **Hosted Fields** story does this with a mock processor in a sandboxed frame; its `MockHostedField` (in this repository's `demo/hostedFields/`) is a working example of the shape. The README maps the state to Stripe's and Braintree's events.
 
-The fonts are the one part of the style a processor can't take from a name: its frame doesn't have **IncrediCard**'s self-hosted fonts. Give the processor the font files under the family names `style.fontFamily` lists: "IncrediCard Figtree" for every built-in theme's printed type, and "IncrediCard OCR-B" for `"vintage"`'s. They ship in the package's `dist/assets/` as `.woff2` files; Figtree is also on Google Fonts. Without them, the field falls back to the system font in the same list.
+The security code's `style` names the system font, as **IncrediCard**'s own security-code field uses for its masking dots. The fonts are the one part of the style a processor can't take from a name: its frame doesn't have **IncrediCard**'s self-hosted fonts. Give the processor the font files under the family names `style.fontFamily` lists: "IncrediCard Figtree" for every built-in theme's printed type, and "IncrediCard OCR-B" for `"vintage"`'s. They ship in the package's `dist/assets/` as `.woff2` files; Figtree is also on Google Fonts. Without them, the field falls back to the system font in the same list.
 
 ### Overriding the Default (English) Strings
 

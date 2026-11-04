@@ -1481,6 +1481,10 @@ export const HostedFieldsAmex: Story = {
       expect(canvas.getByLabelText("Name on card")).toBeInTheDocument(),
     );
     expect(canvas.queryByRole("button", { name: "Show back of card" })).toBeNull();
+    // Measured as a password field, like IncrediCard's own: the system font.
+    const cvcProbe = hostedBox(canvasElement, "cvc").querySelector<HTMLInputElement>("input[aria-hidden]")!;
+    expect(cvcProbe.type).toBe("password");
+    expect(getComputedStyle(cvcProbe).fontFamily).toMatch(/^system-ui/);
     const cvc = hostedFrame(canvasElement, "cvc");
     expect(cvc.closest("[inert]")).toBeNull();
     await focusHosted(canvasElement, "cvc");
