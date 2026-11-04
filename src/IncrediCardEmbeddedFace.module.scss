@@ -529,6 +529,14 @@
     letter-spacing: 0.025em;
     text-align: center;
   }
+
+  // The light signature panel's own placeholder, not the face's, which the
+  // shared slot rule above gives every other field: on most themes that's a
+  // translucent white, which vanishes on this panel. A mid gray, lighter
+  // than the entered dots, so an empty code doesn't read as a filled one.
+  :global(input)::placeholder {
+    color: #6b7280;
+  }
 }
 
 // Half on, half off the card's top-right corner, a nod to the original

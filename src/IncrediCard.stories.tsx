@@ -1491,3 +1491,34 @@ export const HostedFieldsAmex: Story = {
     expect(flippedFace(canvasElement)).toBeNull();
   },
 };
+
+// An empty security code on a floating card shows its placeholder in the
+// signature panel's own gray, on every theme, not the face's placeholder,
+// which is a translucent white on most themes and vanishes on the light
+// panel. A hosted security code is handed the same color through its slot.
+export const CvcPlaceholderOnPanel: Story = {
+  tags: ["!dev"],
+  render: (args) => (
+    <div className={themedStyles.examples}>
+      {(Object.keys(INCREDICARD_THEMES) as Array<keyof typeof INCREDICARD_THEMES>).map((theme) => (
+        <IncrediCard
+          {...cardProps(args)}
+          key={theme}
+          id={`${args.id}-${theme}`}
+          theme={theme}
+          layout="floating"
+          defaultValue={{ ...FILLED, cvc: "" }}
+        />
+      ))}
+    </div>
+  ),
+  args: { id: "story-cvc-placeholder" },
+  play: async ({ canvasElement }) => {
+    const fields = [...canvasElement.querySelectorAll<HTMLInputElement>('input[autocomplete="cc-csc"]')];
+    expect(fields.length).toBe(Object.keys(INCREDICARD_THEMES).length);
+    for (const field of fields) {
+      expect(field.value).toBe("");
+      expect(getComputedStyle(field, "::placeholder").color).toBe("rgb(107, 114, 128)");
+    }
+  },
+};
