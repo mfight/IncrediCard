@@ -6,6 +6,11 @@ import {
   type IncrediCardFieldSize,
 } from "./IncrediCardField";
 import { IncrediCardMaskedField } from "./IncrediCardMaskedField";
+import {
+  IncrediCardHostedFieldSlot,
+  type IncrediCardHostedField,
+  type IncrediCardHostedFields,
+} from "./IncrediCardHostedField";
 import { IncrediCardFace } from "./IncrediCardFace";
 import { IncrediCardEmbeddedFace } from "./IncrediCardEmbeddedFace";
 import type { IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
@@ -59,6 +64,8 @@ function FlipIcon() {
   );
 }
 
+/** With `hostedFields`, only `cardholderName` is ever filled in: the
+ * processor's fields hold the rest, and never reveal it. */
 export type IncrediCardValue = {
   cardholderName: string;
   /** Canonical digits only, no grouping: the same "canonical value never
@@ -79,6 +86,18 @@ export type IncrediCardValue = {
    * header comment. */
   cvc: string;
 };
+
+// The masked number with its last four dots replaced by `last4`, for the
+// "stacked" face with hosted fields: "•••• •••• •••• 4242".
+function withLast4(masked: string, last4: string) {
+  const digits = last4.replace(/\D/g, "").slice(-4).split("");
+  let result = "";
+  for (let index = masked.length - 1; index >= 0; index -= 1) {
+    const char = masked[index];
+    result = (char === "•" && digits.length > 0 ? digits.pop() : char) + result;
+  }
+  return result;
+}
 
 // See the processing flip loop in IncrediCardBase below.
 const PROCESSING_FLIP_INTERVAL_MS = 2000;
@@ -248,6 +267,13 @@ type IncrediCardOwnProps = {
   /** Overrides any subset of the default (English) strings; see
    * `IncrediCardLabels`'s header comment. */
   labels?: Partial<IncrediCardLabels>;
+  /** A payment processor's own fields in place of the card number,
+   * expiration and security code, so the card data never touches your page.
+   * You render each one into its slot and report its state; IncrediCard
+   * places it on the card (or in the list) and keeps the flip, the reveal,
+   * the errors and Tab order working around it. See `IncrediCardHostedFields`
+   * and the Overview's Hosted Fields section. */
+  hostedFields?: IncrediCardHostedFields;
   value?: IncrediCardValue;
   defaultValue?: IncrediCardValue;
   onChange?: (value: IncrediCardValue) => void;
@@ -262,7 +288,9 @@ type IncrediCardOwnProps = {
    * Overview.mdx. Only real payment validation (does the card exist, have
    * funds, isn't reported lost) can answer that, and only a payment
    * processor can tell you. This component has no way to, and this
-   * callback makes no claim otherwise. */
+   * callback makes no claim otherwise. With `hostedFields`, the number,
+   * expiration and security code count as passing when their `complete`
+   * says so. */
   onCompletionChange?: (complete: boolean) => void;
   className?: string;
 };
@@ -358,6 +386,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       required = true,
       processing = false,
       labels: labelsProp,
+      hostedFields,
       value,
       defaultValue = EMPTY_VALUE,
       onChange,
@@ -430,14 +459,28 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // scale-up, so a focused field and a manually toggled card read as the
     // same state everywhere else in this file.
     const [manuallyZoomed, setManuallyZoomed] = useState(false);
-    const cardZoomed = fieldsFocused || manuallyZoomed;
+    // A hosted field's focus, which this page's focus events mostly never
+    // see: Tab or a click into another origin's frame fires nothing here at
+    // all. Only the processor's own report says so.
+    const hostedFocused = Boolean(
+      hostedFields &&
+        (hostedFields.cardNumber.focused || hostedFields.expiration.focused || hostedFields.cvc.focused),
+    );
+    const cardZoomed = fieldsFocused || hostedFocused || manuallyZoomed;
     // Snapshot of `cardZoomed` taken on `pointerdown`, BEFORE the
     // browser's default focus shift for that same click runs; see
     // `handlePointerDown` below for why a click handler can't just read
     // the live `cardZoomed` value instead.
     const wasZoomedRef = useRef(false);
+    // A hosted field's frame counts as a field. Focus moved into one by
+    // script (its `focus()`, which IncrediCard calls for Tab and the flip)
+    // does reach this page, as focus on the `<iframe>` element, and counting
+    // it closes the gap before the processor's own report arrives.
+    function isField(node: EventTarget | null) {
+      return node instanceof HTMLInputElement || node instanceof HTMLIFrameElement;
+    }
     function handleFieldsetFocus(event: React.FocusEvent<HTMLFieldSetElement>) {
-      setFieldsFocused(event.target instanceof HTMLInputElement);
+      setFieldsFocused(isField(event.target));
     }
     function handleFieldsetBlur(event: React.FocusEvent<HTMLFieldSetElement>) {
       const next = event.relatedTarget;
@@ -468,7 +511,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         // focused to justify staying zoomed.
         setManuallyZoomed(false);
       }
-      setFieldsFocused(next instanceof HTMLInputElement);
+      setFieldsFocused(staysWithin && isField(next));
     }
 
     // Captured on every `pointerdown` anywhere in the card (fields, the
@@ -522,9 +565,14 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // deliberately not a backdrop or scrim element: a full-page dimming
     // treatment would apply to every zoom, including a plain field-focus
     // one, a much heavier visual change than this effect calls for.
+    //
+    // Focus landing outside closes it too. Leaving one of your own fields
+    // already does, through `handleFieldsetBlur`, but focus can leave a
+    // hosted field's frame without this page seeing it go: the first it
+    // hears is the focus arriving somewhere else.
     useEffect(() => {
       if (!manuallyZoomed) return;
-      function handleDocumentPointerDown(event: PointerEvent) {
+      function handleDocumentOutside(event: Event) {
         const node = fieldsetRef.current;
         if (
           node &&
@@ -534,12 +582,11 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
           setManuallyZoomed(false);
         }
       }
-      document.addEventListener("pointerdown", handleDocumentPointerDown);
+      document.addEventListener("pointerdown", handleDocumentOutside);
+      document.addEventListener("focusin", handleDocumentOutside);
       return () => {
-        document.removeEventListener(
-          "pointerdown",
-          handleDocumentPointerDown,
-        );
+        document.removeEventListener("pointerdown", handleDocumentOutside);
+        document.removeEventListener("focusin", handleDocumentOutside);
       };
     }, [manuallyZoomed]);
 
@@ -553,7 +600,11 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
     }
 
-    const network = detectCardNetwork(committedValue.cardNumber);
+    // With hosted fields, the processor detects the network; IncrediCard
+    // never sees the digits to detect it from.
+    const network = hostedFields
+      ? (hostedFields.network ?? "unknown")
+      : detectCardNetwork(committedValue.cardNumber);
     const networkInfo = getCardNetworkInfo(network);
     // Amex's security code prints on the FRONT (top-right, above the
     // number) and is 4 digits, not 3. The card never flips in that case,
@@ -565,6 +616,37 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // detected. Deliberately not gated on `isRevealed`: it appears as soon
     // as the prefix identifies the network, before the number is complete.
     const networkMark = getNetworkMark(network, networkInfo.displayName, acceptanceMarks);
+
+    // A hosted field's focus, reported by the processor, does what focus on
+    // IncrediCard's own fields does (see their `onFocus`/`onBlur` below):
+    // gaining it shows the side the field prints on, and losing it marks the
+    // field touched, so its error can show. Compared against the last
+    // report, during render, the same supported pattern `revealed` uses
+    // below.
+    const hostedFocus = hostedFields
+      ? {
+          cardNumber: hostedFields.cardNumber.focused,
+          expiration: hostedFields.expiration.focused,
+          cvc: hostedFields.cvc.focused,
+        }
+      : null;
+    const [lastHostedFocus, setLastHostedFocus] = useState(hostedFocus);
+    if (
+      hostedFocus?.cardNumber !== lastHostedFocus?.cardNumber ||
+      hostedFocus?.expiration !== lastHostedFocus?.expiration ||
+      hostedFocus?.cvc !== lastHostedFocus?.cvc
+    ) {
+      setLastHostedFocus(hostedFocus);
+      if (hostedFocus) {
+        const gained = (key: keyof typeof hostedFocus) => hostedFocus[key] && !lastHostedFocus?.[key];
+        const lost = (key: keyof typeof hostedFocus) => !hostedFocus[key] && Boolean(lastHostedFocus?.[key]);
+        if (gained("cvc")) setFlipped(!isAmex);
+        else if (gained("cardNumber") || gained("expiration")) setFlipped(false);
+        if (lost("cardNumber")) markTouched("cardNumber");
+        if (lost("expiration")) markTouched("expiration");
+        if (lost("cvc")) markTouched("cvc");
+      }
+    }
 
     // "Partial" (still typing, not yet complete) is deliberately never
     // flagged invalid; only a field the user has left (`touched`) with a
@@ -583,15 +665,29 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // card is finished: a 19-digit Visa whose first 16 digits happen to
     // pass the checksum reads as complete at 16. Nothing moves focus on
     // completion, so typing simply carries on to 19.
-    const numberValid = isCardNumberComplete(networkInfo, committedValue.cardNumber);
+    //
+    // A hosted field is valid when the processor says it's complete. Its
+    // error follows the same rule as IncrediCard's own: shown once the field
+    // has been left incomplete, as the processor's message where it gave one
+    // (an empty field left behind usually has none) and IncrediCard's
+    // otherwise.
+    function hostedError(field: IncrediCardHostedField, wasTouched: boolean, fallback: string) {
+      return wasTouched && !field.complete ? (field.error ?? fallback) : undefined;
+    }
+    const numberValid = hostedFields
+      ? hostedFields.cardNumber.complete
+      : isCardNumberComplete(networkInfo, committedValue.cardNumber);
     // Grouped for the length the number is heading for, so it regroups as
     // it grows (see `cardNumberPattern`).
     const numberPattern = cardNumberPattern(networkInfo, committedValue.cardNumber.length);
     // Past 16 digits the grouped number can outgrow the card face's number
     // row; the "embossed" layout sets it smaller (see `data-long-number`).
     const longNumber = committedValue.cardNumber.length > 16;
-    const numberError =
-      touched.cardNumber && !numberValid ? labels.cardNumberError : undefined;
+    const numberError = hostedFields
+      ? hostedError(hostedFields.cardNumber, touched.cardNumber, labels.cardNumberError)
+      : touched.cardNumber && !numberValid
+        ? labels.cardNumberError
+        : undefined;
 
     // Sticky, not a plain `numberValid` read. The initial state shows only
     // the card number field; once it's valid (a complete, correct number
@@ -628,16 +724,27 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       expirationFormatValid &&
       (expirationYearNum < currentYear2Digit ||
         (expirationYearNum === currentYear2Digit && monthNum < currentMonth));
-    const expirationError = touched.expiration
-      ? !expirationFormatValid
-        ? labels.expirationInvalidError
-        : expirationExpired
-          ? labels.expirationExpiredError
-          : undefined
-      : undefined;
+    const expirationValid = hostedFields
+      ? hostedFields.expiration.complete
+      : expirationFormatValid && !expirationExpired;
+    const expirationError = hostedFields
+      ? hostedError(hostedFields.expiration, touched.expiration, labels.expirationInvalidError)
+      : touched.expiration
+        ? !expirationFormatValid
+          ? labels.expirationInvalidError
+          : expirationExpired
+            ? labels.expirationExpiredError
+            : undefined
+        : undefined;
 
-    const cvcValid = committedValue.cvc.length === networkInfo.cvcLength;
-    const cvcError = touched.cvc && !cvcValid ? labels.cvcError : undefined;
+    const cvcValid = hostedFields
+      ? hostedFields.cvc.complete
+      : committedValue.cvc.length === networkInfo.cvcLength;
+    const cvcError = hostedFields
+      ? hostedError(hostedFields.cvc, touched.cvc, labels.cvcError)
+      : touched.cvc && !cvcValid
+        ? labels.cvcError
+        : undefined;
 
     // "Complete" (see `onCompletionChange`'s doc comment) is every field's
     // already-computed validity combined, not a new check. It is
@@ -646,12 +753,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // user touching a field, still becomes complete the moment its values
     // are valid. Format-level only; never a claim about whether the card
     // is real, funded, or chargeable.
-    const isComplete =
-      nameValid &&
-      numberValid &&
-      expirationFormatValid &&
-      !expirationExpired &&
-      cvcValid;
+    const isComplete = nameValid && numberValid && expirationValid && cvcValid;
     // Fires on every change, including the first render (a prefilled
     // `defaultValue`/`value` can already be complete on mount, and a caller
     // setting up an "enable submit" state needs to know). An effect, not a
@@ -720,6 +822,17 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         : ["number", "name", "expiration", "cvc"]
       : ["number"];
 
+    // Focuses one field, IncrediCard's own or a hosted one, through the
+    // processor's `focus()`, which IncrediCard can't do for it.
+    function focusField(target: FieldKey) {
+      const hosted =
+        hostedFields && target !== "name"
+          ? hostedFields[target === "number" ? "cardNumber" : target]
+          : undefined;
+      if (hosted) hosted.focus();
+      else fieldRefs[target].current?.focus();
+    }
+
     // Set instead of focusing directly whenever the move crosses sides
     // (front to back or back to front); see the comment in
     // `focusAdjacentField` for why, and the effect below that flushes it.
@@ -750,7 +863,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         setFlipped(targetNeedsBack);
         return;
       }
-      fieldRefs[target].current?.focus();
+      focusField(target);
     }
 
     // Flushes `pendingFocusRef` once `flipped` has changed and committed;
@@ -763,7 +876,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       const target = pendingFocusRef.current;
       if (!target) return;
       pendingFocusRef.current = null;
-      fieldRefs[target].current?.focus();
+      focusField(target);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [flipped]);
 
@@ -916,6 +1029,41 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // a hidden real label and physical-card-style placeholder text) is
     // identical either way, so there's exactly one place that owns each
     // field's wiring rather than two copies that could drift apart.
+    //
+    // A hosted field takes its place in the same slot, with the same label,
+    // styling, placeholder and error text, the processor's element standing
+    // where the `<input>` would. Its guards follow the active order: none
+    // before the first field or after the last (see
+    // IncrediCardHostedFieldSlot).
+    function hostedSlot(
+      key: Exclude<FieldKey, "name">,
+      field: IncrediCardHostedField,
+      fieldId: string,
+      label: string,
+      placeholder: string,
+      error: string | undefined,
+    ) {
+      const index = activeFieldOrder.indexOf(key);
+      return (
+        <IncrediCardHostedFieldSlot
+          id={fieldId}
+          label={label}
+          hideLabel={isFloating}
+          placeholder={isFloating ? placeholder : undefined}
+          size={fieldSize}
+          containerClassName={styles.printField}
+          disabled={disabled}
+          readOnly={readOnly || processing}
+          invalid={Boolean(error)}
+          errorText={error}
+          field={field}
+          guardBefore={index > 0}
+          guardAfter={index < activeFieldOrder.length - 1}
+          onLeave={(direction) => focusAdjacentField(key, direction)}
+        />
+      );
+    }
+
     const nameField = (
       <IncrediCardField
         id={nameFieldId}
@@ -942,7 +1090,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       />
     );
 
-    const numberField = (
+    const numberField = hostedFields ? (
+      hostedSlot("number", hostedFields.cardNumber, numberFieldId, labels.cardNumberLabel, labels.cardNumberPlaceholder, numberError)
+    ) : (
       <IncrediCardMaskedField
         id={numberFieldId}
         label={labels.cardNumberLabel}
@@ -976,7 +1126,16 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       />
     );
 
-    const expirationField = (
+    const expirationField = hostedFields ? (
+      hostedSlot(
+        "expiration",
+        hostedFields.expiration,
+        expirationFieldId,
+        labels.expirationLabel,
+        labels.expirationPlaceholder,
+        expirationError,
+      )
+    ) : (
       <IncrediCardMaskedField
         id={expirationFieldId}
         label={labels.expirationLabel}
@@ -1009,7 +1168,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       />
     );
 
-    const cvcField = (
+    const cvcField = hostedFields ? (
+      hostedSlot("cvc", hostedFields.cvc, cvcFieldId, labels.cvcLabel, labels.cvcPlaceholder, cvcError)
+    ) : (
       <IncrediCardMaskedField
         id={cvcFieldId}
         label={labels.cvcLabel}
@@ -1121,6 +1282,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             longNumber={longNumber}
             expirationField={isRevealed ? expirationField : null}
             cvcField={isRevealed ? cvcField : null}
+            hostedFields={Boolean(hostedFields)}
             cvcOnFront={isAmex}
             onFlip={
               isRevealed && !isAmex && !processing
@@ -1152,13 +1314,21 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                     ? committedValue.cardholderName.toUpperCase()
                     : labels.cardholderNamePlaceholder
                 }
+                // With hosted fields there are no digits to mirror, so the
+                // face shows only what it knows: the masked shape of a
+                // number on the detected network, its last four if the
+                // processor gave them, and a full set of dots once the
+                // security code is complete. Nothing that implies digits
+                // it doesn't have. The values below are all empty then.
                 cardNumberDigits={committedValue.cardNumber}
                 numberPattern={numberPattern}
                 longNumber={longNumber}
-                numberPlaceholder={numberPlaceholder}
+                numberPlaceholder={
+                  hostedFields?.last4 ? withLast4(numberPlaceholder, hostedFields.last4) : numberPlaceholder
+                }
                 expirationDisplay={applyMask(expirationDigits, "XX/XX")}
                 expirationPlaceholder={labels.expirationPlaceholder}
-                cvcDigitCount={committedValue.cvc.length}
+                cvcDigitCount={hostedFields?.cvc.complete ? networkInfo.cvcLength : committedValue.cvc.length}
                 cvcPlaceholder={labels.cvcPlaceholder}
                 nameInvalid={Boolean(nameError)}
                 numberInvalid={Boolean(numberError)}

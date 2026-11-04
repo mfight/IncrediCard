@@ -7,9 +7,16 @@ import {
   IncrediCard,
   extendIncrediCardTheme,
   requestIncrediCardMotionAccess,
+  type IncrediCardHostedFields,
   type IncrediCardMotionAccess,
 } from ".";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
+import {
+  EMPTY_MOCK_REPORT,
+  MockHostedField,
+  type MockHostedFieldHandle,
+  type MockHostedFieldKind,
+} from "../demo/hostedFields/MockHostedField";
 import { engravedCardTheme } from "../demo/themes/engravedCard";
 import { tumblingBlocksTheme } from "../demo/themes/tumblingBlocks";
 import { ForceReducedMotion } from "./reducedMotion";
@@ -181,14 +188,17 @@ export const Globe: Story = {
 // the card for the highlight. Refraction shows in Chromium; Safari gets the
 // same glass without it. The demo's marks are white, so the dark-text cards
 // leave them out to show the network's name, which follows the text.
-function GlassTones(args: IncrediCardStoryArgs) {
+function GlassTones({
+  Layouts = BothLayouts,
+  ...args
+}: IncrediCardStoryArgs & { Layouts?: (args: IncrediCardStoryArgs) => React.ReactNode }) {
   return (
     <div className={themedStyles.tones}>
       <div className={`${themedStyles.glassBackdrop} ${themedStyles.onDark}`}>
-        <BothLayouts {...args} id={`${args.id}-light`} textTone="light" />
+        <Layouts {...args} id={`${args.id}-light`} textTone="light" />
       </div>
       <div className={themedStyles.brightBackdrop}>
-        <BothLayouts {...args} id={`${args.id}-dark`} textTone="dark" acceptanceMarks={{}} />
+        <Layouts {...args} id={`${args.id}-dark`} textTone="dark" acceptanceMarks={{}} />
       </div>
     </div>
   );
@@ -374,6 +384,84 @@ export const Networks: Story = {
     </div>
   ),
   args: { id: "story-networks" },
+};
+
+// A card whose number, expiration and security code are a payment
+// processor's own fields, each in a frame from another origin, so the card
+// data never touches this page. The processor here is a mock
+// (demo/hostedFields), a sandboxed frame that checks and reports the way a
+// real one does; MockHostedField is the shape of a wrapper an app would
+// write around Stripe Elements or Braintree's Hosted Fields. IncrediCard
+// hands each field its label, placeholder and the theme's text styling, and
+// places it where its own field would go.
+function HostedFieldsCard(args: IncrediCardStoryArgs) {
+  const [cardNumber, setCardNumber] = useState(EMPTY_MOCK_REPORT);
+  const [expiration, setExpiration] = useState(EMPTY_MOCK_REPORT);
+  const [cvc, setCvc] = useState(EMPTY_MOCK_REPORT);
+  const cardNumberRef = useRef<MockHostedFieldHandle>(null);
+  const expirationRef = useRef<MockHostedFieldHandle>(null);
+  const cvcRef = useRef<MockHostedFieldHandle>(null);
+  const hostedFields: IncrediCardHostedFields = {
+    cardNumber: {
+      ...cardNumber,
+      render: (context) => (
+        <MockHostedField ref={cardNumberRef} kind="cardNumber" context={context} onChange={setCardNumber} />
+      ),
+      focus: () => cardNumberRef.current?.focus(),
+    },
+    expiration: {
+      ...expiration,
+      render: (context) => (
+        <MockHostedField ref={expirationRef} kind="expiration" context={context} onChange={setExpiration} />
+      ),
+      focus: () => expirationRef.current?.focus(),
+    },
+    cvc: {
+      ...cvc,
+      render: (context) => (
+        <MockHostedField
+          ref={cvcRef}
+          kind="cvc"
+          context={context}
+          cvcLength={cardNumber.network === "amex" ? 4 : 3}
+          onChange={setCvc}
+        />
+      ),
+      focus: () => cvcRef.current?.focus(),
+    },
+    network: cardNumber.network ?? null,
+    last4: cardNumber.last4,
+  };
+  return <IncrediCard {...cardProps(args)} hostedFields={hostedFields} />;
+}
+
+function HostedFieldsBothLayouts(args: IncrediCardStoryArgs) {
+  return (
+    <div className={themedStyles.examples}>
+      {LAYOUTS.map(({ layout, caption }) => (
+        <figure key={layout} className={themedStyles.example}>
+          <figcaption className={themedStyles.exampleCaption}>{caption}</figcaption>
+          <HostedFieldsCard {...args} id={`${args.id}-${layout}`} layout={layout} />
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+export const HostedFields: Story = {
+  render: (args) => <HostedFieldsBothLayouts {...args} />,
+  argTypes: bothLayouts.argTypes,
+  args: { id: "story-hosted", holofoil: true },
+};
+
+// The hard case for styling a field IncrediCard can't reach: clear glass,
+// whose text color depends on the page behind it. The processor is handed
+// the right color for each `textTone`.
+export const HostedFieldsGlass: Story = {
+  name: "Hosted Fields on Glass",
+  render: (args) => <GlassTones {...args} Layouts={HostedFieldsBothLayouts} />,
+  argTypes: { ...bothLayouts.argTypes, textTone: { table: { disable: true } } },
+  args: { id: "story-hosted-glass", theme: "glass" },
 };
 
 export const Disabled: Story = {
@@ -1253,3 +1341,149 @@ export const NetworkNameOnNameBaseline: Story = {
   },
 };
 
+
+// The hosted-field tests below drive the mock processor the only way the page
+// outside its frame can: by message. They can't press keys inside the frame,
+// so they focus and fill it as a processor's own API would, and check what
+// IncrediCard does with what the frame reports. Tab between frames, which
+// only a real keyboard can press, is checked by hand in the browser.
+function hostedFrame(canvasElement: HTMLElement, kind: MockHostedFieldKind) {
+  const frame = canvasElement.querySelector<HTMLIFrameElement>(`iframe[data-mock-hosted-field="${kind}"]`);
+  if (!frame) throw new Error(`No ${kind} frame yet`);
+  return frame;
+}
+
+// The slot's bordered box, which carries `data-focused`.
+function hostedBox(canvasElement: HTMLElement, kind: MockHostedFieldKind) {
+  return hostedFrame(canvasElement, kind).parentElement!.parentElement!;
+}
+
+// Retried until `done`, since a message sent before the frame's page has
+// loaded is lost. Replacing the value is the same every time, so a repeat
+// changes nothing.
+async function fillHosted(canvasElement: HTMLElement, kind: MockHostedFieldKind, text: string, done: () => void) {
+  await waitFor(() => {
+    hostedFrame(canvasElement, kind).contentWindow!.postMessage({ type: "type", text }, "*");
+    done();
+  });
+}
+
+async function focusHosted(canvasElement: HTMLElement, kind: MockHostedFieldKind) {
+  await waitFor(() => {
+    const frame = hostedFrame(canvasElement, kind);
+    frame.focus();
+    frame.contentWindow!.postMessage({ type: "focus" }, "*");
+    expect(hostedBox(canvasElement, kind)).toHaveAttribute("data-focused");
+  });
+}
+
+const flippedFace = (canvasElement: HTMLElement) => canvasElement.querySelector("[data-flipped]");
+
+// Floating: the reveal, the flip to a hosted security code from Tab in the
+// name field, a guard handing Shift+Tab back across the card, an error from
+// the processor shown only after the field is left, completion from the
+// processor's flags, and no card data in IncrediCard's own value.
+export const HostedFieldsFloatingFlow: Story = {
+  tags: ["!dev"],
+  render: (args) => <HostedFieldsCard {...args} />,
+  args: { id: "story-hosted-floating-flow", layout: "floating", onChange: fn(), onCompletionChange: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const onChange = args.onChange as ReturnType<typeof fn>;
+    const onCompletionChange = args.onCompletionChange as ReturnType<typeof fn>;
+
+    await fillHosted(canvasElement, "cardNumber", "4242424242424242", () =>
+      expect(canvas.getByLabelText("Name on card")).toBeInTheDocument(),
+    );
+    const name = canvas.getByLabelText<HTMLInputElement>("Name on card");
+    await userEvent.type(name, "Alex Rivera");
+    expect(onChange).toHaveBeenLastCalledWith({
+      cardholderName: "Alex Rivera",
+      cardNumber: "",
+      expirationMonth: "",
+      expirationYear: "",
+      cvc: "",
+    });
+
+    // Name is third in this layout's order and the security code last, on
+    // the back: Tab turns the card over and lands in the processor's field.
+    await userEvent.keyboard("{Tab}");
+    await waitFor(() => expect(flippedFace(canvasElement)).not.toBeNull());
+    await waitFor(() => expect(hostedBox(canvasElement, "cvc")).toHaveAttribute("data-focused"));
+
+    // Shift+Tab out of the frame lands on the guard before it, which hands
+    // focus back to the name field, on the front.
+    const guardBefore = hostedFrame(canvasElement, "cvc").parentElement!.previousElementSibling as HTMLElement;
+    guardBefore.focus();
+    await waitFor(() => expect(name).toHaveFocus());
+    expect(flippedFace(canvasElement)).toBeNull();
+
+    // An invalid number: the processor's message, but only once the field
+    // has been left.
+    await focusHosted(canvasElement, "cardNumber");
+    hostedFrame(canvasElement, "cardNumber").contentWindow!.postMessage({ type: "type", text: "4242424242424241" }, "*");
+    // Nothing shows the report while the field has focus, so there's nothing
+    // to wait for: give it time to arrive, then check it changed nothing.
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(canvas.queryByText("Your card number is invalid.", { selector: "p:not([id])" })).toBeNull();
+    expect(hostedBox(canvasElement, "cardNumber").parentElement).not.toHaveAttribute("data-invalid");
+    name.focus();
+    await waitFor(() =>
+      expect(canvas.getByText("Your card number is invalid.", { selector: "p:not([id])" })).toBeInTheDocument(),
+    );
+
+    await fillHosted(canvasElement, "cardNumber", "4242424242424242", () =>
+      expect(canvas.queryByText("Your card number is invalid.", { selector: "p:not([id])" })).toBeNull(),
+    );
+    await fillHosted(canvasElement, "expiration", "1249", () =>
+      expect(onCompletionChange).toHaveBeenLastCalledWith(false),
+    );
+    await fillHosted(canvasElement, "cvc", "123", () => expect(onCompletionChange).toHaveBeenLastCalledWith(true));
+  },
+};
+
+// Stacked: focusing a hosted security code shows the back and focusing the
+// number shows the front, the flip control lands in the processor's field,
+// and the decorative face shows the last four digits and nothing else.
+export const HostedFieldsStackedFlow: Story = {
+  tags: ["!dev"],
+  render: (args) => <HostedFieldsCard {...args} />,
+  args: { id: "story-hosted-stacked-flow", layout: "stacked" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await fillHosted(canvasElement, "cardNumber", "5555555555554444", () =>
+      expect(canvas.getByLabelText("Name on card")).toBeInTheDocument(),
+    );
+    const face = canvasElement.querySelector<HTMLElement>("[data-face-layout]")!;
+    await waitFor(() => expect(face.textContent).toContain("•••• •••• •••• 4444"));
+    expect(face.textContent).not.toContain("5555");
+
+    await focusHosted(canvasElement, "cvc");
+    await waitFor(() => expect(flippedFace(canvasElement)).not.toBeNull());
+    await focusHosted(canvasElement, "cardNumber");
+    await waitFor(() => expect(flippedFace(canvasElement)).toBeNull());
+
+    await userEvent.click(canvas.getByRole("button", { name: "Show back of card" }));
+    await waitFor(() => expect(hostedBox(canvasElement, "cvc")).toHaveAttribute("data-focused"));
+    expect(flippedFace(canvasElement)).not.toBeNull();
+  },
+};
+
+// Amex from the processor's network: the hosted security code moves to the
+// front, where it's reachable, and there's no flip control.
+export const HostedFieldsAmex: Story = {
+  tags: ["!dev"],
+  render: (args) => <HostedFieldsCard {...args} />,
+  args: { id: "story-hosted-amex", layout: "floating" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await fillHosted(canvasElement, "cardNumber", "378282246310005", () =>
+      expect(canvas.getByLabelText("Name on card")).toBeInTheDocument(),
+    );
+    expect(canvas.queryByRole("button", { name: "Show back of card" })).toBeNull();
+    const cvc = hostedFrame(canvasElement, "cvc");
+    expect(cvc.closest("[inert]")).toBeNull();
+    await focusHosted(canvasElement, "cvc");
+    expect(flippedFace(canvasElement)).toBeNull();
+  },
+};

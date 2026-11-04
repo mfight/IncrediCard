@@ -12,7 +12,8 @@
 //      load, and the card artwork loads as a file. Typing a Visa number
 //      into a card given no acceptance marks names the network in text;
 //      into a card given the app's own Visa mark, it shows that mark,
-//      loaded as a file too.
+//      loaded as a file too. A card given hosted fields places them, hands
+//      them the theme's text styles, and isn't frosted.
 //
 // Before installing, it checks the tarball itself carries no acceptance
 // marks: those are the app's to supply.
@@ -84,11 +85,33 @@ console.log(JSON.stringify({ html, label: DEFAULT_INCREDICARD_LABELS.cardNumberL
     join(app, "src/main.tsx"),
     `import "incredicard/styles.css";
 import { createRoot } from "react-dom/client";
-import { IncrediCard, extendIncrediCardTheme, type IncrediCardAcceptanceMarks } from "incredicard";
+import {
+  IncrediCard,
+  extendIncrediCardTheme,
+  type IncrediCardAcceptanceMarks,
+  type IncrediCardHostedField,
+  type IncrediCardHostedFieldStyle,
+} from "incredicard";
 import visaMark from "./visa-mark.svg";
 
 const marks: IncrediCardAcceptanceMarks = { visa: visaMark };
 const customTheme = extendIncrediCardTheme("glass", { face: { background: "rgb(1 2 3)" } }, { textTone: "dark" });
+
+// A processor's fields, reduced to what IncrediCard sees of them: an element
+// to place and a reported state. The styles each one is handed are kept for
+// the checks.
+const hostedStyles: Record<string, IncrediCardHostedFieldStyle | null> = {};
+(window as unknown as { hostedStyles: typeof hostedStyles }).hostedStyles = hostedStyles;
+const hostedField = (key: string, complete: boolean): IncrediCardHostedField => ({
+  empty: !complete,
+  complete,
+  focused: false,
+  render: (context) => {
+    hostedStyles[key] = context.style;
+    return <div data-consumer-hosted={key} />;
+  },
+  focus: () => {},
+});
 
 createRoot(document.getElementById("root")!).render(
   <>
@@ -99,6 +122,17 @@ createRoot(document.getElementById("root")!).render(
     <IncrediCard id="custom-card" theme={customTheme} />
     <IncrediCard id="glass-card" theme="glass" />
     <IncrediCard id="copy-card" theme="glass" glassBackdrop={{ element: { current: document.body }, background: "linear-gradient(#123, #456)" }} />
+    <IncrediCard
+      id="hosted-card"
+      theme="glass"
+      hostedFields={{
+        cardNumber: hostedField("cardNumber", true),
+        expiration: hostedField("expiration", false),
+        cvc: hostedField("cvc", false),
+        network: "visa",
+        last4: "4242",
+      }}
+    />
   </>,
 );
 `,
@@ -160,9 +194,19 @@ createRoot(document.getElementById("root")!).render(
       // The base rule alone, as a browser outside the `@supports` block
       // reads it: the standard property has to survive minifying, since
       // Firefox has no other. Same-origin here, so the rules are readable.
+      // Not the rule that takes the frost off for hosted fields, which sets
+      // it to `none`.
       const baseRules = [...document.styleSheets]
         .flatMap((sheet) => [...sheet.cssRules])
-        .filter((rule) => rule.selectorText && rule.style?.getPropertyValue("backdrop-filter"));
+        .filter((rule) => {
+          const value = rule.selectorText && rule.style?.getPropertyValue("backdrop-filter");
+          return Boolean(value) && value !== "none";
+        });
+      const hostedCard = document.querySelector("#hosted-card");
+      const hostedFaces = [...(hostedCard?.querySelectorAll("[data-hosted-fields] *") ?? [])].filter((element) =>
+        getComputedStyle(element).backdropFilter.includes("blur"),
+      );
+      const hostedStyles = window.hostedStyles ?? {};
       // Its rules matter only outside Chromium, so nothing visible here would
       // show a minifier dropping them. Read them from the computed styles.
       const copyImage = [...(document.querySelector("#copy-card")?.querySelectorAll("span") ?? [])].find((span) => span.style.background);
@@ -202,6 +246,12 @@ createRoot(document.getElementById("root")!).render(
         ribbons: { ...ribbons, status: await status(ribbons.printed) },
         globe: { ...globe, status: await status(globe.printed), maskStatus: await status(globe.mask) },
         vintageMask: lineArt("#vintage-card").mask,
+        hosted: {
+          slots: hostedCard?.querySelectorAll("[data-consumer-hosted]").length ?? -1,
+          inputs: [...(hostedCard?.querySelectorAll("input:not([disabled])") ?? [])].map((input) => input.autocomplete),
+          frostedFaces: hostedFaces.length,
+          numberStyle: hostedStyles.cardNumber ?? null,
+        },
       };
     });
     await browser.close();
@@ -222,6 +272,15 @@ createRoot(document.getElementById("root")!).render(
     check(facts.glassFilter?.includes("url(") && facts.glassFilter.includes("blur") && facts.lensInlined, `theme="glass" frosts and refracts the backdrop, with its lens map inlined (${facts.glassFilter}, inlined: ${facts.lensInlined})`);
     check(facts.glassBaseRules === 2, `both faces' base rules keep the standard backdrop-filter after minifying, for Firefox (${facts.glassBaseRules})`);
     check(facts.copy?.display === "none" && facts.copy.mask.includes("gradient") && facts.copy.filter.includes("url(") && facts.copy.filter.includes("blur"), `glassBackdrop's copy stays out of Chromium, with its mask and filter intact after minifying (${JSON.stringify(facts.copy)})`);
+    check(
+      facts.hosted.slots === 3 && facts.hosted.inputs.join() === "cc-name",
+      `hostedFields places the number, expiration and security code, leaving only the name as an input (${facts.hosted.slots} slots; inputs: ${facts.hosted.inputs.join() || "none"})`,
+    );
+    check(
+      facts.hosted.numberStyle?.fontFamily.includes("IncrediCard Figtree") && /px$/.test(facts.hosted.numberStyle.lineHeight) && facts.hosted.numberStyle.color.startsWith("rgb"),
+      `a hosted field is handed the theme's resolved text styles (${JSON.stringify(facts.hosted.numberStyle)})`,
+    );
+    check(facts.hosted.frostedFaces === 0, `a floating glass card with hosted fields isn't frosted, after minifying (${facts.hosted.frostedFaces} frosted)`);
     check(facts.plainName && facts.plainImages === 0, `with no marks given, a Visa number names the network in text (${facts.plainImages} images)`);
     check(facts.markLoaded && !facts.markUrl.startsWith("data:") && facts.markStatus === 200 && !facts.markedName, `with the app's own Visa mark, a Visa number shows it, loaded as a file (${facts.markUrl}, ${facts.markStatus})`);
   } finally {

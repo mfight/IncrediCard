@@ -47,6 +47,15 @@ export type {
 // their prop types, for typing your own wrapper around them in a custom
 // layout.
 export type { IncrediCardFieldProps, IncrediCardFieldSize } from "./IncrediCardField";
+// The `hostedFields` prop's types: a payment processor's fields in place of
+// the card number, expiration and security code.
+export type {
+  IncrediCardHostedField,
+  IncrediCardHostedFieldContext,
+  IncrediCardHostedFields,
+  IncrediCardHostedFieldState,
+  IncrediCardHostedFieldStyle,
+} from "./IncrediCardHostedField";
 export type { IncrediCardMaskedFieldProps } from "./IncrediCardMaskedField";
 export type { MaskCharacterClass } from "./maskEngine";
 // The `acceptanceMarks` prop's types, keyed by network. Detection itself

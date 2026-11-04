@@ -143,6 +143,11 @@ export type IncrediCardEmbeddedFaceProps = {
   longNumber?: boolean;
   expirationField?: React.ReactNode;
   cvcField?: React.ReactNode;
+  /** The number, expiration and security code are a processor's frames
+   * (IncrediCard's `hostedFields`). Rendered as `data-hosted-fields`, which
+   * takes the frost off the faces; see `.face` in
+   * IncrediCardEmbeddedFace.module.scss for why. */
+  hostedFields?: boolean;
   /** Amex's security code prints on the FRONT (top-right, above the
    * number), not the back. */
   cvcOnFront?: boolean;
@@ -196,6 +201,7 @@ export function IncrediCardEmbeddedFace({
   longNumber = false,
   expirationField,
   cvcField,
+  hostedFields = false,
   cvcOnFront,
   onFlip,
   flipToBackLabel,
@@ -264,6 +270,7 @@ export function IncrediCardEmbeddedFace({
       data-flipped={flipped || undefined}
       data-face-layout={faceLayout}
       data-long-number={longNumber || undefined}
+      data-hosted-fields={hostedFields || undefined}
       data-zoomed={scale && cardZoomed ? "" : undefined}
       onClick={onCardClick ? handleFaceClick : undefined}
       ref={mergeRefs(chipLightRef, tiltRef, zoomFitRef)}

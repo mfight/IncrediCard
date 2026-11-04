@@ -5,7 +5,7 @@ import * as IncrediCardStories from "./IncrediCard.stories";
 
 # IncrediCard
 
-**IncrediCard** is a credit-card entry form with a synchronized, dimensional visual card that mirrors what's typed in real time: cardholder name, number, and expiration on the front; the security code on the back (except Amex; see Progressive Reveal), revealed by an explicit flip control sitting half on, half off the card's top-right corner (a nod to the original Skeuocard's bubble-shaped flip control). It covers the common case (typing, pasting, autofill, basic format validation), with network-aware number grouping, the detected network shown on the card (your acceptance mark, or the network's name), and optional material effects (a holographic foil, a light-catching chip, a 3D tilt). Processor-hosted fields are not supported; see Design Rationale for how the component is structured to allow them.
+**IncrediCard** is a credit-card entry form with a synchronized, dimensional visual card that mirrors what's typed in real time: cardholder name, number, and expiration on the front; the security code on the back (except Amex; see Progressive Reveal), revealed by an explicit flip control sitting half on, half off the card's top-right corner (a nod to the original Skeuocard's bubble-shaped flip control). It covers the common case (typing, pasting, autofill, basic format validation), with network-aware number grouping, the detected network shown on the card (your acceptance mark, or the network's name), and optional material effects (a holographic foil, a light-catching chip, a 3D tilt). A payment processor's own hosted fields can stand in for the number, expiration and security code (`hostedFields`), so the card data never touches your page; see A Payment Processor's Hosted Fields.
 
 Ships in two layouts (the `layout` prop): **`"floating"`** (default) embeds the real fields directly into the card itself, positioned where a physical card's embossed text sits. There's no separate mirror in this mode, since the fields themselves are the card's visible content. **`"stacked"`** instead renders a purely decorative card above a normal, fully labeled field list.
 
@@ -113,6 +113,45 @@ Under `prefers-reduced-motion` the loop is skipped entirely rather than merely u
 <IncrediCard id="payment" onCompletionChange={setComplete} />
 <button type="button" disabled={!complete}>Continue</button>`}
 />
+
+### A Payment Processor's Hosted Fields
+
+With **IncrediCard**'s own fields, raw card numbers pass through your page, which puts it in scope for PCI requirements. A processor's hosted fields (Stripe Elements, Braintree Hosted Fields, Adyen's secured fields, and the like) keep the data inside a frame from the processor's own origin instead. `hostedFields` puts those fields where **IncrediCard**'s would go. **IncrediCard** loads no processor and depends on none: you render each field and report what it tells you.
+
+All three go together: the card number, expiration and security code. The cardholder name stays **IncrediCard**'s own field, and with hosted fields it's the only value `onChange` ever carries. For each field you pass:
+
+- `render(context)`: the element the processor mounts its field into. `context` carries the field's `label` and `placeholder` (from `labels`), whether it should be `disabled`, and its `style`: the font family, size, weight, letter spacing, line height, text, placeholder and error colors, text shadow, alignment and numeric variant a real **IncrediCard** field would have in that slot, for the current theme, `textTone`, `fieldSize` and card width. Pass them into the processor's own style options, since your page's CSS can't reach inside its frame. Return the same component on every render, or React remounts it.
+- `focus()`: the processor's own (Stripe's `element.focus()`, for one). **IncrediCard** calls it to move between fields with Tab and to land in a field after a flip.
+- `empty`, `complete`, `error` and `focused`: what the processor last reported. `focused` matters most: focus inside another origin's frame never reaches your page, so it's the only way **IncrediCard** knows to flip to the security code or to show a focus ring.
+
+And for the card, the `network` the processor detected and, if it gives them, the number's `last4`.
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`const [number, setNumber] = useState({ empty: true, complete: false, focused: false });
+const numberField = useRef<ProcessorFieldHandle>(null);
+// ...the same for expiration and the security code
+
+<IncrediCard
+  id="payment"
+  hostedFields={{
+    cardNumber: {
+      ...number,
+      render: (context) => <ProcessorField ref={numberField} kind="number" context={context} onChange={setNumber} />,
+      focus: () => numberField.current?.focus(),
+    },
+    expiration: { /* ... */ },
+    cvc: { /* ... */ },
+    network: number.network ?? null,
+  }}
+/>`}
+/>
+
+`ProcessorField` is your wrapper around the processor's field: it mounts the field into an element it renders, updates the field's style when `context` changes, and turns the processor's change, focus and blur events into the state above. The **Hosted Fields** story does this with a mock processor in a sandboxed frame; its `MockHostedField` (in this repository's `demo/hostedFields/`) is a working example of the shape. The README maps the state to Stripe's and Braintree's events.
+
+The fonts are the one part of the style a processor can't take from a name: its frame doesn't have **IncrediCard**'s self-hosted fonts. Give the processor the font files under the family names `style.fontFamily` lists: "IncrediCard Figtree" for every built-in theme's printed type, and "IncrediCard OCR-B" for `"vintage"`'s. They ship in the package's `dist/assets/` as `.woff2` files; Figtree is also on Google Fonts. Without them, the field falls back to the system font in the same list.
 
 ### Overriding the Default (English) Strings
 
@@ -313,6 +352,15 @@ This is why the flip control never counts as "a field is focused." Under plain `
 
 The same failure mode applies in the opposite direction when the card is *already* zoomed. Clicking the flip button focuses it, which blurs whatever field held focus, so `fieldsFocused` briefly drops to `false` before the deferred focus lands on the new side's first field. Correcting this inside the click handler is too late: `mousedown` (which focuses the button and blurs the field) fires and fully re-renders *before* the browser's `click` event, so by the time the click handler runs, the card has already shrunk and the button has already moved, which can drop the click entirely. So `handleFieldsetBlur` latches `manuallyZoomed` to `true` in the *same* state update as `fieldsFocused` going `false`, whenever focus is only moving to something else *within* the component (most often the flip control) and the card was already zoomed. `cardZoomed` therefore never goes `false` in between: no shrink, no moved button, no dropped click. The result: flipping while zoomed stays zoomed; flipping while zoomed out zooms in and flips, matching what focusing the new field would have done anyway.
 
+### Hosted Fields Behave Like IncrediCard's Own, With Four Differences
+
+A hosted field reveals, flips, shows its error after you leave it, and counts toward `onCompletionChange` the same way **IncrediCard**'s own field would, from what the processor reports. Its error message is the processor's where it gave one, and **IncrediCard**'s from `labels` where it didn't (an empty field left behind, usually). What differs comes from the frame:
+
+- **The "stacked" card face shows no digits.** There are none to show: the number reads as dots in the detected network's grouping, with the last four if you pass `last4`; the expiration stays a placeholder; the security code shows a full row of dots once it's complete. The face never implies digits it doesn't have.
+- **Arrow keys don't move between fields from inside a hosted field.** Keys pressed inside another origin's frame never reach your page. Tab and Shift+Tab still follow the layout's order, flips included: an invisible guard on either side of each frame catches focus as it leaves and passes it on.
+- **On `"glass"`, a floating card with hosted fields isn't frosted.** In Chromium, a frame from another origin inside a backdrop-filtered element blurs everything that element draws before the frame: the frame itself, the chip, the lines and the other fields. So that card's faces drop the backdrop filter. They're still tinted, rimmed and lit, but the page behind them shows sharp. A stacked card's face holds no frames and keeps its frost.
+- **A field's frame can remount, and lose what's typed.** The name, expiration and security code mount when the number reveals them, so mount the processor's field inside the element you render, not ahead of time. The security code also moves between the front and the back when the network changes to or from Amex, which remounts it; its length changes then anyway.
+
 ### Vintage Is an Approximation, Not a Real Bevel
 
 CSS has no way to actually emboss arbitrary, live-typed text: a genuine bevel needs real 3D geometry per glyph, which doesn't exist for an `<input>`'s rendered characters. The `"vintage"` theme's raised look is a standard flat substitute: two layered `text-shadow`s (a light highlight, a dark counter-shadow) on top of the self-hosted OCR-A and OCR-B fonts. It reads as "embossed" at a glance, the same way most CSS letterpress and emboss effects do, but it's not a faithful physical simulation; don't rely on it for anything beyond decoration.
@@ -322,6 +370,7 @@ CSS has no way to actually emboss arbitrary, live-typed text: a genuine bevel ne
 - **Do pair IncrediCard with your payment processor's validation.** Run your processor's client-side tokenization and validation as well. **IncrediCard** checks format only, never whether a card is real or chargeable.
 - **Do set `processing` while your submission is in flight.** Turn it on during your own submission, so the fields lock and the card face shows that it's waiting.
 - **Do use each network's official acceptance mark.** Pass the networks' own artwork through `acceptanceMarks`, under their usage rules, rather than a redrawn copy.
+- **Do use `hostedFields` when your processor offers hosted fields.** Keep card data off your page entirely, rather than handling raw values from `onChange`.
 - **Don't persist, log or send raw card values.** Use the `cardNumber` and `cvc` values from `onChange` only as far as your active submission needs them.
 - **Don't rely on the detected card network beyond display.** Treat it as a best-effort guess from the number's prefix, not a validated fact about the card.
 - **Don't assume every user reaches the revealed fields the same way.** Expect a pasted, complete number to reveal every field in one step, just like typing it digit by digit. There's no separate step to confirm the network.
@@ -338,11 +387,13 @@ To check reduced-motion behavior without touching your OS settings, open the **R
 
 The real OS-level setting (macOS: Accessibility > Display; Windows: Settings > Accessibility > Visual effects) is what actual users hit, and it drives the same rules.
 
+**With `hostedFields`**: **IncrediCard** can't label an input inside another origin's frame, so pass each field's `context.label` to the processor as its label or `aria-label`. The visible label beside a stacked hosted field is plain text, not a `<label>`, since one can't point into the frame. Focus rings come from the `focused` you report, since `:focus-visible` never sees inside the frame.
+
 Each field's `errorText` is still real and still associated via `aria-describedby`, visually hidden (not removed), the same technique this component uses for a suppressed helper text. A screen-reader user reaching an invalid field still hears its specific error the moment they focus it; the plain, non-`aria-live` block of consolidated error text below the card is an *additional* affordance for sighted users, not a replacement for that per-field association.
 
 ## Design Rationale
 
-`layout="stacked"` is split into two pieces on purpose: an internal, presentation-only card face, and the real semantic fields that are **IncrediCard**'s only actual input surface. That boundary is what would let a processor-hosted field integration replace the field layer (an iframe a payment processor controls, standing in for the number and security-code inputs) without touching the card face at all: the face only ever receives already-resolved display strings, never the fields themselves. `layout="floating"` keeps the same boundary from the other direction: its card component only ever receives already-built field elements to position, never their internal wiring, so such an integration could swap in just as cleanly regardless of which layout you chose.
+`layout="stacked"` is split into two pieces on purpose: an internal, presentation-only card face, and the real semantic fields that are **IncrediCard**'s only actual input surface. That boundary is what lets `hostedFields` replace the field layer (frames a payment processor controls, standing in for the number, expiration and security-code inputs) without touching the card face at all: the face only ever receives already-resolved display strings, never the fields themselves. `layout="floating"` keeps the same boundary from the other direction: its card component only ever receives already-built field elements to position, never their internal wiring, so a hosted field takes a slot as cleanly as **IncrediCard**'s own.
 
 Every field (**IncrediCard.Field** and **IncrediCard.MaskedField**), the masking engine, the card-network detection, and the card-face chrome are this component's own self-contained code, not composed from another component library. **IncrediCard.Field** and **IncrediCard.MaskedField** are public, stable API (a compound namespace on **IncrediCard** itself, not separate top-level exports); the masking engine and card-network detection are internal implementation details, free to change without notice.
 

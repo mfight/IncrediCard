@@ -200,6 +200,19 @@
     backdrop-filter: var(--incredicard-face-backdrop-refracted, var(--incredicard-face-backdrop));
   }
 
+  // No frost at all with hosted fields. A processor's field is a frame from
+  // another origin, and with one inside a backdrop-filtered element,
+  // Chromium filters everything the element paints before the frame along
+  // with the page behind it: the frame, the chip, the lines and the other
+  // fields all come out blurred. Neither layer promotion nor a filter of the
+  // frame's own avoids it, and a frost layer inside the face sees only the
+  // card, not the page. So that face stays clear: still tinted, rimmed and
+  // lit, with the page behind it sharp.
+  .faceWrapper[data-hosted-fields] & {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
   box-shadow: var(--incredicard-face-shadow);
   // Clips IncrediCardHologram to this element's rounded corners; see
   // IncrediCardFace.module.scss's identical comment. Safe here too:

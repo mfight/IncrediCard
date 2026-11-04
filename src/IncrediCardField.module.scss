@@ -81,10 +81,56 @@
     border-color: var(--theme-incredicard-field-border-color-hover, #9ca3af);
   }
 
-  &:has(:focus-visible) {
+  // `[data-focused]` is a hosted field's focus (IncrediCardHostedField.tsx),
+  // which `:focus-visible` never sees inside another origin's frame.
+  &:has(:focus-visible),
+  &[data-focused] {
     border-color: var(--theme-incredicard-field-focus-color, #2563eb);
     box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-focus-shadow, rgb(37 99 235 / 35%));
   }
+}
+
+// A hosted field's slot: the processor's element in place of `.input`,
+// with a hidden probe input beside it (see IncrediCardHostedField.tsx).
+.hostedContainer {
+  position: relative;
+}
+
+.hostedElement {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+
+  // A processor's frame is usually an `<iframe>` in a `<div>`; both fill
+  // the slot's width, and the frame sizes its own height.
+  > *,
+  :global(iframe) {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    display: block;
+  }
+}
+
+// Takes up no room and is never seen; it exists only to be measured.
+.styleProbe {
+  position: absolute;
+  inset-inline-start: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+// Focusable but invisible; focus never rests on one (see
+// IncrediCardHostedField.tsx).
+.focusGuard {
+  position: absolute;
+  width: 0.0625rem;
+  height: 0.0625rem;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .input {
@@ -145,7 +191,8 @@
 // field is also focused--otherwise the two box-shadows would compete,
 // and a field a user is actively correcting would misleadingly stop
 // looking invalid the moment they click into it.
-.field[data-invalid] .container:has(:focus-visible) {
+.field[data-invalid] .container:has(:focus-visible),
+.field[data-invalid] .container[data-focused] {
   border-color: var(--theme-incredicard-field-error-color, #dc2626);
   box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow-focus, rgb(220 38 38 / 35%));
 }
