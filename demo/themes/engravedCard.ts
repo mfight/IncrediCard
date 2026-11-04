@@ -9,7 +9,6 @@ export const engravedCardTheme = extendIncrediCardTheme("vintage", {
   face: {
     background: `url("${artwork}") 0 0 / 100% 100% no-repeat`,
     color: "#10231a",
-    invalidColor: "#991b1b",
     placeholder: "rgb(16 35 26 / 80%)",
     shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 25%)",
     // The artwork is the whole face, so no line art prints over it.

@@ -1522,3 +1522,77 @@ export const CvcPlaceholderOnPanel: Story = {
     }
   },
 };
+
+// An invalid field looks the same on both layouts' cards: the stacked card's
+// decorative row gets the floating field's red border and glow, from the
+// same properties, on the same box. Every field is left invalid here: a
+// number one digit short, no name, month 13 and a one-digit security code.
+export const InvalidRegionsMatchFloating: Story = {
+  tags: ["!dev"],
+  render: (args) => (
+    <div className={themedStyles.examples}>
+      {LAYOUTS.map(({ layout }) => (
+        <IncrediCard
+          {...cardProps(args)}
+          key={layout}
+          id={`${args.id}-${layout}`}
+          layout={layout}
+          defaultValue={{ ...FILLED, cardholderName: "", expirationMonth: "13", cvc: "1" }}
+        />
+      ))}
+    </div>
+  ),
+  args: { id: "story-invalid-regions", theme: "glass" },
+  play: async ({ args, canvasElement }) => {
+    for (const { layout } of LAYOUTS) {
+      const id = `${args.id}-${layout}`;
+      const number = document.getElementById(`${id}-number`) as HTMLInputElement;
+      await userEvent.type(number, "{Backspace}");
+      // The security code first: focusing it turns the card over, and the
+      // others turn it back, so the front faces up to be measured.
+      for (const field of ["cvc", "number", "name", "expiration"]) {
+        const input = document.getElementById(`${id}-${field}`) as HTMLInputElement;
+        input.focus();
+        input.blur();
+      }
+    }
+    const fieldset = (layout: string) => canvasElement.querySelector<HTMLElement>(`#${args.id}-${layout}`)!;
+    const card = (layout: string) => fieldset(layout).querySelector<HTMLElement>("[data-face-layout]")!;
+    const relative = (element: Element, layout: string) => {
+      const box = element.getBoundingClientRect();
+      const origin = card(layout).getBoundingClientRect();
+      return [box.left - origin.left, box.top - origin.top, box.width, box.height].map((n) => Math.round(n * 2) / 2);
+    };
+    const look = (element: Element) => {
+      const style = getComputedStyle(element);
+      return { border: style.borderTopColor, glow: style.boxShadow, radius: style.borderRadius };
+    };
+
+    await waitFor(() => expect(fieldset("stacked").querySelectorAll('[class*="invalidRegion"]').length).toBe(4));
+    // The front's rows, in the face's order, and the floating fields' boxes.
+    const stackedRows = [...card("stacked").querySelectorAll('[class*="invalidRegion"]')].filter(
+      (row) => !row.closest('[class*="signatureRow"]'),
+    );
+    const floatingBoxes = ["number", "expiration", "name"].map(
+      (field) => document.getElementById(`${args.id}-floating-${field}`)!.parentElement!,
+    );
+    expect(stackedRows.length).toBe(3);
+    // Retried: a field's border color eases for 120ms after it loses focus.
+    await waitFor(() =>
+      stackedRows.forEach((row, index) => {
+        expect(look(row)).toEqual(look(floatingBoxes[index]));
+        expect(relative(row, "stacked")).toEqual(relative(floatingBoxes[index], "floating"));
+      }),
+    );
+
+    // The security code's panel draws its line inside its edge, in the same
+    // red, with the same glow outside it.
+    const stackedCvc = card("stacked").querySelector('[class*="signatureRow"] [class*="invalidRegion"]')!;
+    // The floating card's own security code is on its inert back, out of
+    // reach of focus here, so its number field stands in for the red.
+    const floatingCvc = look(floatingBoxes[0]);
+    const cvcGlow = getComputedStyle(stackedCvc).boxShadow;
+    expect(cvcGlow).toContain(`${floatingCvc.border} 0px 0px 0px 1px inset`);
+    expect(cvcGlow).toContain(floatingCvc.glow);
+  },
+};

@@ -20,7 +20,6 @@ const OVERRIDABLE = [
   "face-background",
   "face-color",
   "face-shadow",
-  "face-invalid-color",
   "face-lines-opacity",
   "face-backdrop",
   "face-specular",

@@ -97,7 +97,6 @@ const KNOBS = {
   background: "face-background",
   color: "face-color",
   shadow: "face-shadow",
-  invalidColor: "face-invalid-color",
   linesOpacity: "face-lines-opacity",
   backdrop: "face-backdrop",
   specular: "face-specular",
@@ -122,7 +121,6 @@ export type IncrediCardThemeDefinition = {
     background: string;
     color: string;
     shadow: string;
-    invalidColor: string;
     /** How strongly the line art is printed before any light hits it.
      * 0 for a face with no printed lines. */
     linesOpacity: number;
@@ -181,7 +179,7 @@ type IncrediCardHologram = NonNullable<IncrediCardThemeDefinition["hologram"]>;
 // A built-in theme can also carry what `textTone="dark"` changes.
 type BuiltInTheme = IncrediCardThemeDefinition & {
   darkText?: {
-    face: Pick<IncrediCardThemeDefinition["face"], "color" | "invalidColor" | "placeholder" | "linesOpacity">;
+    face: Pick<IncrediCardThemeDefinition["face"], "color" | "placeholder" | "linesOpacity">;
     hologram: IncrediCardHologram;
     type: Pick<IncrediCardThemeDefinition["type"], "faceEmboss" | "floatingFieldEmboss">;
   };
@@ -202,7 +200,6 @@ export const INCREDICARD_THEMES = {
       background: `url("${frontBlackArtwork}") 0 0 / 100% 100% no-repeat`,
       color: "#ffffff",
       shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%)",
-      invalidColor: "#dc2626",
       // Faint: the glare layers are tuned to compensate.
       linesOpacity: 0.08,
       backdrop: "none",
@@ -246,7 +243,6 @@ export const INCREDICARD_THEMES = {
       background: "linear-gradient(160deg, #f1e7d0 0%, #dbc999 55%, #c3aa73 100%)",
       color: "#43331d",
       shadow: "0 0.5rem 1.25rem rgb(0 0 0 / 20%), inset 0 0.0625rem 0 rgb(255 255 255 / 40%)",
-      invalidColor: "#dc2626",
       // No printed lines on a plain ivory face; still overridable, so an
       // app that wants the lines can have them.
       linesOpacity: 0,
@@ -280,7 +276,6 @@ export const INCREDICARD_THEMES = {
       background: `url("${frontBlackArtwork}") 0 0 / 100% 100% no-repeat`,
       color: "#ffffff",
       shadow: "0 0.5rem 1.5rem rgb(0 0 0 / 30%)",
-      invalidColor: "#dc2626",
       linesOpacity: 0.08,
       backdrop: "none",
       refraction: false,
@@ -321,7 +316,6 @@ export const INCREDICARD_THEMES = {
       background: "rgb(232 247 251 / 10%)",
       color: "#ffffff",
       shadow: "0 0.75rem 1.5rem rgb(0 0 0 / 35%)",
-      invalidColor: "#fecaca",
       linesOpacity: 0.2,
       backdrop: "blur(0.15625rem) saturate(1.2)",
       refraction: true,
@@ -345,7 +339,6 @@ export const INCREDICARD_THEMES = {
     darkText: {
       face: {
         color: "#05131a",
-        invalidColor: "#7f1d1d",
         placeholder: "rgb(5 19 26 / 85%)",
         linesOpacity: 0.3,
       },

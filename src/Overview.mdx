@@ -264,7 +264,7 @@ This component renders plain English by default and has no i18n hook or framewor
 
 Errors appear only once a field has been **left** (blurred) holding something invalid or incomplete, never while it is still being typed into. Note this also means an empty card can only ever show the card-number error: the other three fields do not exist until a valid number reveals them.
 
-An invalid field then gets a red border and a soft red glow, and nothing else next to it: no inline error message. Every active error's text instead renders once, consolidated, in a plain block below the whole card (both layouts). See Accessibility for how the per-field association survives this for screen-reader users even though the visible text sits elsewhere.
+An invalid field then gets a red border and a soft red glow, and nothing else next to it: no inline error message. In `layout="stacked"`, the card face marks the matching row the same way, from the same `--theme-incredicard-field-error-*` properties, so overriding them restyles both. Every active error's text instead renders once, consolidated, in a plain block below the whole card (both layouts). See Accessibility for how the per-field association survives this for screen-reader users even though the visible text sits elsewhere.
 
 ### Both Layouts Put the Same Things in the Same Places
 

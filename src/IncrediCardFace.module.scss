@@ -322,17 +322,23 @@
   justify-content: flex-end;
 }
 
+// The three printed rows are the same boxes as the REAL field rows in the
+// floating layout: a 1px border all around (transparent until a field is
+// invalid; see `.invalidRegion`), at the same radius. Without it every row
+// would be 2px shorter, the space-between rhythm would distribute more free
+// space, and the two layouts would disagree about where the number,
+// expiration and name sit by 2-3px; the side borders put the text where
+// the floating field's text sits too. A transparent border is the honest
+// way to reserve it: same mechanism, same amount, no magic number.
+.number,
+.name,
+.expiration {
+  box-sizing: border-box;
+  border: 0.0625rem solid transparent;
+  border-radius: 0.125rem;
+}
+
 .number {
-  // +2px of height, so this decorative row is exactly as tall as the
-  // equivalent REAL field row in the floating layout. Those fields carry
-  // a 1px top and bottom border on their inner container (transparent
-  // until hover), which the mirrored text here has no reason to have --
-  // but without it every row would be 2px shorter, the space-between
-  // rhythm would distribute more free space, and the two layouts would
-  // disagree about where the number, expiration and name sit by 2-3px.
-  // A transparent border is the honest way to reserve it: same
-  // mechanism, same amount, no magic number.
-  border-block: 0.0625rem solid transparent;
   // 20px at the 340px reference width, and no larger: at this
   // component's smallest supported width (see the `min-width` in
   // IncrediCard.module.scss), the longest number this component groups,
@@ -349,9 +355,6 @@
 }
 
 .name {
-  // Same +2px transparent border as `.number` above, for the same
-  // reason: it matches the real field rows in the floating layout.
-  border-block: 0.0625rem solid transparent;
   @include reveal-motion.incredicard-reveal-fade-in;
 
   // Same proportional scaling as `.number` above: 14px at the 340px
@@ -382,14 +385,18 @@
   // element is itself already inset 16px from the card's right edge, so
   // the real clearance between the name's last glyph and the badge
   // measures 24px, not 8px.
-  padding-inline-end: calc(25.85cqw + 0.5rem);
+  //
+  // A margin, not padding, so the row's box (and its border, when invalid)
+  // stops short of the mark, where the floating name field's box does.
+  margin-inline-end: calc(25.85cqw + 0.5rem);
 }
 
 .expiration {
-  // Same +2px transparent border as `.number` above, for the same
-  // reason: it matches the real field rows in the floating layout.
-  border-block: 0.0625rem solid transparent;
   @include reveal-motion.incredicard-reveal-fade-in;
+
+  // The floating expiration field's width, so its box matches.
+  width: 4.5rem;
+  max-width: 100%;
 
   // Same treatment, same 14px/340px ratio as `.name` above in the
   // "printed" face layout; smaller (12px) in "embossed", below.
@@ -586,10 +593,23 @@
 // accessible error lives on each semantic field's errorText
 // (IncrediCard.tsx), and this face is decorative like everything else in
 // this component.
+//
+// It's the floating card's invalid field, exactly: the same red border and
+// glow, from the same `--theme-incredicard-field-error-*` properties (see
+// `.field[data-invalid] .container` in IncrediCardField.module.scss), on a
+// row that's already the same box. Overriding them restyles both layouts.
 .invalidRegion {
-  outline: 0.125rem dashed var(--incredicard-face-invalid-color);
-  outline-offset: 0.125rem;
-  border-radius: 0.125rem;
+  border-color: var(--theme-incredicard-field-error-color, #dc2626);
+  box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow, rgb(220 38 38 / 20%));
+}
+
+// The security code's panel has no border to color (its height already
+// matches the floating panel's without one), so the line is drawn inside
+// its edge instead: where the floating panel's border sits.
+.cvc.invalidRegion {
+  box-shadow:
+    inset 0 0 0 0.0625rem var(--theme-incredicard-field-error-color, #dc2626),
+    0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow, rgb(220 38 38 / 20%));
 }
 
 // Applied while no network is detected--see reveal-motion.scss. The mark
