@@ -109,6 +109,10 @@ export type IncrediCardFaceProps = {
    * clear anywhere, matching the real CVC field's permanent obscuring
    * (see IncrediCard.tsx's header comment). */
   cvcDigitCount: number;
+  /** How many digits the card's security code has (3, or 4 for Amex). The
+   * panel is sized for a full code, not for what's been typed; see
+   * cvc-panel.scss. */
+  cvcLength: number;
   cvcPlaceholder: string;
   nameInvalid?: boolean;
   numberInvalid?: boolean;
@@ -170,6 +174,7 @@ export function IncrediCardFace({
   expirationDisplay,
   expirationPlaceholder,
   cvcDigitCount,
+  cvcLength,
   cvcPlaceholder,
   nameInvalid,
   numberInvalid,
@@ -182,7 +187,21 @@ export function IncrediCardFace({
 }: IncrediCardFaceProps) {
   const groupedNumber = applyMask(cardNumberDigits, numberPattern);
   const numberDisplay = groupedNumber || numberPlaceholder;
-  const cvcDots = "•".repeat(Math.max(cvcDigitCount, 0)) || cvcPlaceholder;
+  // The panel's contents: the floating card's field, drawn the same way.
+  // Typed digits show as the browser's password mask (`.cvcMask`), the
+  // placeholder as plain text, and the sizers hold the panel at the width
+  // of a full code; see cvc-panel.scss.
+  const cvcContents = (
+    <>
+      <span className={styles.cvcMaskSizer}>{"0".repeat(cvcLength)}</span>
+      <span className={styles.cvcPlaceholderSizer}>{cvcPlaceholder}</span>
+      {cvcDigitCount > 0 ? (
+        <span className={classNames(styles.cvcText, styles.cvcMask)}>{"•".repeat(cvcDigitCount)}</span>
+      ) : (
+        <span className={styles.cvcText}>{cvcPlaceholder}</span>
+      )}
+    </>
+  );
   const showCvcOnFront = revealed && cvcOnFront;
   const showCvcOnBack = revealed && !cvcOnFront;
   // `.faceWrapper` itself (the whole card, not just the chip's tiny box)
@@ -290,7 +309,7 @@ export function IncrediCardFace({
                     cvcInvalid && styles.invalidRegion,
                   )}
                 >
-                  {cvcDots}
+                  {cvcContents}
                 </span>
               ) : (
                 // The SAME element and the SAME content as the real one
@@ -303,7 +322,7 @@ export function IncrediCardFace({
                   className={classNames(styles.cvc, styles.cvcPlaceholder)}
                   aria-hidden="true"
                 >
-                  {cvcDots}
+                  {cvcContents}
                 </span>
               )}
             </div>
@@ -399,7 +418,7 @@ export function IncrediCardFace({
                   cvcInvalid && styles.invalidRegion,
                 )}
               >
-                {cvcDots}
+                {cvcContents}
               </span>
             </div>
           ) : null}

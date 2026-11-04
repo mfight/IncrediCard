@@ -1,0 +1,82 @@
+// The security code's light panel, defined once for both layouts: the
+// floating card's real field (`.cvcSlot` in IncrediCardEmbeddedFace.module.scss)
+// and the stacked card's mirror of it (`.cvc` in IncrediCardFace.module.scss).
+// Both read the values below, so the two boxes match by construction:
+// same text size, same padding, same 1px border, same width.
+//
+// The width comes from hidden sizers, not from what's been typed, so the
+// panel is the same size from the moment it appears until the code is
+// complete. It holds the wider of two things, each in the font the panel
+// actually draws it in:
+//
+//   * One masked character for every digit of the card's code (3, or 4 for
+//     Amex), drawn by the browser's own password mask through
+//     `-webkit-text-security`. Browsers draw that mask differently: WebKit's
+//     disc is about a third wider than Chromium's. Measuring the real mask
+//     keeps the panel only as wide as each browser needs. The masked text
+//     is zeros, so a browser without that property measures digits
+//     instead, which are wider than any mask: the panel errs wide rather
+//     than clipping.
+//   * The placeholder, which a field shows as text, not as a mask.
+//
+// Both panels draw their characters in the masked field's system font
+// (`.input[type="password"]` in IncrediCardField.module.scss), so the
+// stacked card's dots match the floating field's. The panel's HEIGHT
+// still follows the theme's printed-character font, the same way that
+// field's container holds it with an invisible digit, so the panel lines
+// up with the rows around it.
+//
+// Literal values, like the rest of IncrediCard; see reveal-motion.scss.
+
+$incredicard-cvc-font-size: 0.875rem;
+$incredicard-cvc-padding-block: 0.25rem;
+$incredicard-cvc-padding-inline: 0.75rem;
+$incredicard-cvc-border-width: 0.0625rem;
+$incredicard-cvc-radius: 0.25rem;
+$incredicard-cvc-background: rgb(255 255 255 / 80%);
+$incredicard-cvc-color: #111827;
+$incredicard-cvc-tracking: 0.025em;
+$incredicard-cvc-mask-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+// Room for the caret after a full code. WebKit sets aside 2px for it inside
+// a field's text, so a code exactly as wide as its mask would scroll.
+$incredicard-cvc-caret-room: 0.125rem;
+
+// What every sizer shares: it takes up the panel's one grid cell, adds its
+// width and none of its height, and is never seen.
+@mixin incredicard-cvc-sizer {
+  grid-area: 1 / 1;
+  block-size: 0;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: pre;
+  font-family: $incredicard-cvc-mask-font;
+}
+
+// The full code, masked.
+@mixin incredicard-cvc-mask-sizer {
+  @include incredicard-cvc-sizer;
+
+  letter-spacing: $incredicard-cvc-tracking;
+  -webkit-text-security: disc;
+  padding-inline-end: $incredicard-cvc-caret-room;
+}
+
+// The placeholder, unmasked and untracked, as a field's `::placeholder`
+// draws it.
+@mixin incredicard-cvc-placeholder-sizer {
+  @include incredicard-cvc-sizer;
+
+  letter-spacing: normal;
+}
+
+// An invisible character in the grid cell that sets a line's height but
+// none of its width. Holds the panel at the height a field in the given
+// font would have.
+@mixin incredicard-cvc-strut($font-family) {
+  content: "0";
+  grid-area: 1 / 1;
+  inline-size: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-family: $font-family;
+}

@@ -1585,14 +1585,89 @@ export const InvalidRegionsMatchFloating: Story = {
       }),
     );
 
-    // The security code's panel draws its line inside its edge, in the same
-    // red, with the same glow outside it.
+    // The security code's panel has the same red border and glow. The
+    // floating card's own security code is on its inert back, out of reach
+    // of focus here, so its number field stands in for the red; the panel's
+    // corners are its own.
     const stackedCvc = card("stacked").querySelector('[class*="signatureRow"] [class*="invalidRegion"]')!;
-    // The floating card's own security code is on its inert back, out of
-    // reach of focus here, so its number field stands in for the red.
-    const floatingCvc = look(floatingBoxes[0]);
-    const cvcGlow = getComputedStyle(stackedCvc).boxShadow;
-    expect(cvcGlow).toContain(`${floatingCvc.border} 0px 0px 0px 1px inset`);
-    expect(cvcGlow).toContain(floatingCvc.glow);
+    const { radius: _radius, ...floatingRed } = look(floatingBoxes[0]);
+    await waitFor(() => expect(look(stackedCvc)).toMatchObject(floatingRed));
+  },
+};
+
+// The security code's panel is the same box in both layouts: the same width
+// and height on the back (3 digits) and on Amex's front (4), on every theme,
+// at the component's narrowest width, and the floating field still fits a
+// full code with its caret. A card with a longer placeholder widens both
+// panels alike.
+const CVC_CASES = [
+  { network: "visa", cardNumber: "4242424242424242", cvc: "123" },
+  { network: "amex", cardNumber: "378282246310005", cvc: "1234" },
+  { network: "placeholder", cardNumber: "4242424242424242", cvc: "" },
+] as const;
+const CVC_THEMES = Object.keys(INCREDICARD_THEMES) as Array<keyof typeof INCREDICARD_THEMES>;
+
+export const CvcPanelsMatch: Story = {
+  tags: ["!dev"],
+  args: { id: "story-cvc-panels" },
+  render: (args) => (
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(6, 17.4375rem)" }}>
+      {CVC_THEMES.flatMap((theme) =>
+        CVC_CASES.flatMap(({ network, cardNumber, cvc }) =>
+          LAYOUTS.map(({ layout }) => (
+            <IncrediCard
+              key={`${theme}-${network}-${layout}`}
+              {...cardProps(args)}
+              id={`${args.id}-${theme}-${network}-${layout}`}
+              theme={theme}
+              layout={layout}
+              labels={network === "placeholder" ? { cvcPlaceholder: "Security" } : undefined}
+              defaultValue={{ ...FILLED, cardNumber, cvc }}
+            />
+          )),
+        ),
+      )}
+    </div>
+  ),
+  play: async ({ args }) => {
+    await document.fonts.ready;
+    const card = (id: string) => document.getElementById(id)!.querySelector<HTMLElement>("[data-face-layout]")!;
+    // Layout sizes, which the back's turn doesn't change; positions only on
+    // the front, which faces up: the panel's, and the top of its text.
+    const box = (element: HTMLElement, text: Element, id: string, front: boolean) => {
+      const size = [element.offsetWidth, element.offsetHeight];
+      if (!front) return size;
+      const rect = element.getBoundingClientRect();
+      const origin = card(id).getBoundingClientRect();
+      const textTop = text.getBoundingClientRect().top;
+      return [...size, rect.left - origin.left, rect.top - origin.top, textTop - origin.top].map(
+        (n) => Math.round(n * 2) / 2,
+      );
+    };
+    const mismatched: string[] = [];
+    for (const theme of CVC_THEMES) {
+      for (const { network, cvc } of CVC_CASES) {
+        const id = `${args.id}-${theme}-${network}`;
+        const front = network === "amex";
+        const input = document.getElementById(`${id}-floating-cvc`) as HTMLInputElement;
+        const floating = box(input.parentElement!, input, `${id}-floating`, front);
+        const row = front ? '[class*="frontCvcRow"]' : '[class*="signatureRow"]';
+        const panel = card(`${id}-stacked`).querySelector<HTMLElement>(`${row} > :not([class*="cvcPlaceholder"])`)!;
+        const stacked = box(panel, panel.querySelector('[class*="cvcText"]')!, `${id}-stacked`, front);
+        if (JSON.stringify(floating) !== JSON.stringify(stacked)) {
+          mismatched.push(`${id}: floating ${floating.join(",")}, stacked ${stacked.join(",")}`);
+        }
+        expect(input.value).toBe(cvc);
+        if (input.scrollWidth > input.clientWidth) {
+          mismatched.push(`${id}: the code scrolls, ${input.scrollWidth} in ${input.clientWidth}`);
+        }
+      }
+    }
+    expect(mismatched).toEqual([]);
+    // The longer placeholder made room for itself.
+    const [visa, longer] = ["visa", "placeholder"].map(
+      (network) => document.getElementById(`${args.id}-ribbons-${network}-floating-cvc`)!.parentElement!.offsetWidth,
+    );
+    expect(longer).toBeGreaterThan(visa);
   },
 };

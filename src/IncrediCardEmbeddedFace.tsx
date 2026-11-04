@@ -143,6 +143,13 @@ export type IncrediCardEmbeddedFaceProps = {
   longNumber?: boolean;
   expirationField?: React.ReactNode;
   cvcField?: React.ReactNode;
+  /** How many digits the card's security code has (3, or 4 for Amex). The
+   * panel is sized for a full code, not for what's been typed; see
+   * cvc-panel.scss. */
+  cvcLength: number;
+  /** The security code field's placeholder, which the panel also has room
+   * for. */
+  cvcPlaceholder: string;
   /** The number, expiration and security code are a processor's frames
    * (IncrediCard's `hostedFields`). Rendered as `data-hosted-fields`, which
    * takes the frost off the faces; see `.face` in
@@ -201,6 +208,8 @@ export function IncrediCardEmbeddedFace({
   longNumber = false,
   expirationField,
   cvcField,
+  cvcLength,
+  cvcPlaceholder,
   hostedFields = false,
   cvcOnFront,
   onFlip,
@@ -210,6 +219,17 @@ export function IncrediCardEmbeddedFace({
   const frontRef = useInert(flipped);
   const backRef = useInert(!flipped);
   const revealed = Boolean(nameField);
+  // Set the panel's width beside the field; see `.cvcSlot`.
+  const cvcSizers = (
+    <>
+      <span className={styles.cvcMaskSizer} aria-hidden="true">
+        {"0".repeat(cvcLength)}
+      </span>
+      <span className={styles.cvcPlaceholderSizer} aria-hidden="true">
+        {cvcPlaceholder}
+      </span>
+    </>
+  );
 
   // The acceptance mark tracks the DETECTED NETWORK, not the monotonic
   // reveal latch, so clearing the card number genuinely takes it away
@@ -329,6 +349,7 @@ export function IncrediCardEmbeddedFace({
             <div className={styles.frontCvcRow}>
               {revealed && cvcOnFront ? (
                 <div className={classNames(styles.cvcSlot, styles.slotRevealed)}>
+                  {cvcSizers}
                   {cvcField}
                 </div>
               ) : (
@@ -422,7 +443,10 @@ export function IncrediCardEmbeddedFace({
           <div className={styles.magstripe} aria-hidden="true" />
           {revealed && !cvcOnFront ? (
             <div className={styles.signatureRow}>
-              <div className={styles.cvcSlot}>{cvcField}</div>
+              <div className={styles.cvcSlot}>
+                {cvcSizers}
+                {cvcField}
+              </div>
             </div>
           ) : null}
           {gloss ? <IncrediCardGloss /> : null}

@@ -9,6 +9,7 @@
 // values.
 @use "./reveal-motion";
 @use "./reducedMotion/reduced-motion";
+@use "./cvc-panel";
 
 
 .faceWrapper {
@@ -509,15 +510,50 @@
   visibility: hidden;
 }
 
+// The security code's panel: the same box as the floating card's field
+// (`.cvcSlot` in IncrediCardEmbeddedFace.module.scss), from the same values;
+// see cvc-panel.scss. Its one grid cell holds the sizers, the text, and an
+// invisible digit in the theme's printed font that sets the height, the
+// way the field's container does.
 .cvc {
   @include reveal-motion.incredicard-reveal-fade-in;
 
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-  background: rgb(255 255 255 / 80%);
-  color: #111827;
+  display: inline-grid;
+  box-sizing: border-box;
+  padding: cvc-panel.$incredicard-cvc-padding-block cvc-panel.$incredicard-cvc-padding-inline;
+  border: cvc-panel.$incredicard-cvc-border-width solid transparent;
+  border-radius: cvc-panel.$incredicard-cvc-radius;
+  background: cvc-panel.$incredicard-cvc-background;
+  color: cvc-panel.$incredicard-cvc-color;
+  font-size: cvc-panel.$incredicard-cvc-font-size;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.025em;
+
+  &::before {
+    @include cvc-panel.incredicard-cvc-strut(inherit);
+  }
+}
+
+.cvcMaskSizer {
+  @include cvc-panel.incredicard-cvc-mask-sizer;
+}
+
+.cvcPlaceholderSizer {
+  @include cvc-panel.incredicard-cvc-placeholder-sizer;
+}
+
+// Centered both ways, as the field centers its text: across the panel, and
+// down it when the theme's printed font makes the panel taller than the
+// text.
+.cvcText {
+  grid-area: 1 / 1;
+  place-self: center;
+  font-family: cvc-panel.$incredicard-cvc-mask-font;
+  letter-spacing: normal;
+}
+
+.cvcMask {
+  letter-spacing: cvc-panel.$incredicard-cvc-tracking;
+  -webkit-text-security: disc;
 }
 
 // The theme's printed-character font and raised-character shadow (see
@@ -545,19 +581,20 @@
     --incredicard-number-fit: 0.84;
   }
 
-  // Embossed characters sit further apart than printed ones.
+  // Embossed characters sit further apart than printed ones. The security
+  // code is drawn as a field's mask, not embossed, so it keeps the panel's
+  // own tracking.
   .name,
   .number,
-  .expiration,
-  .cvc {
+  .expiration {
     letter-spacing: 0.06em;
   }
 
   // Smaller than "printed"'s 20px/14px caps (the card number maxes out at
   // about 18px, the expiration at about 12px), with the same `cqw`-based
   // proportional scaling as the base rules above, just a lower ceiling.
-  // `.cvc` is deliberately untouched and keeps whatever size it inherits
-  // in either layout.
+  // `.cvc` is deliberately untouched: its panel is the same in either
+  // layout.
   //
   // The number runs as close to full width as "XXXX XXXX XXXX XXXX" can
   // get without wrapping or truncating. At the 325x204 reference the
@@ -601,15 +638,6 @@
 .invalidRegion {
   border-color: var(--theme-incredicard-field-error-color, #dc2626);
   box-shadow: 0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow, rgb(220 38 38 / 20%));
-}
-
-// The security code's panel has no border to color (its height already
-// matches the floating panel's without one), so the line is drawn inside
-// its edge instead: where the floating panel's border sits.
-.cvc.invalidRegion {
-  box-shadow:
-    inset 0 0 0 0.0625rem var(--theme-incredicard-field-error-color, #dc2626),
-    0 0 0 0.1875rem var(--theme-incredicard-field-error-shadow, rgb(220 38 38 / 20%));
 }
 
 // Applied while no network is detected--see reveal-motion.scss. The mark

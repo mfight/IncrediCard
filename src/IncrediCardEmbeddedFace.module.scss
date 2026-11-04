@@ -9,6 +9,7 @@
 // values.
 @use "./reveal-motion";
 @use "./reducedMotion/reduced-motion";
+@use "./cvc-panel";
 
 
 .faceWrapper {
@@ -514,19 +515,30 @@
   padding-block-end: calc(1rem + 0.32 * clamp(0.625rem, 4.12cqw, 0.875rem) - 3.08cqw - 0.28em);
 }
 
+// The panel's box and width are shared with the stacked card's `.cvc`; see
+// cvc-panel.scss. The field fills the slot's one grid cell, and the sizers
+// beside it set that cell's width. `contain: inline-size` stops the field's
+// own width (an input's default 20 characters) from widening the cell.
 .cvcSlot {
   @include reveal-motion.incredicard-reveal-fade-in;
 
-  --theme-incredicard-field-background: rgb(255 255 255 / 80%);
-  --theme-incredicard-field-color: #111827;
-  --theme-incredicard-field-radius: 0.25rem;
-  --theme-incredicard-field-padding: 0.25rem 0.75rem;
-  --theme-incredicard-field-font-size: 0.875rem;
-  width: 5em;
+  --theme-incredicard-field-background: #{cvc-panel.$incredicard-cvc-background};
+  --theme-incredicard-field-color: #{cvc-panel.$incredicard-cvc-color};
+  --theme-incredicard-field-radius: #{cvc-panel.$incredicard-cvc-radius};
+  --theme-incredicard-field-padding: #{cvc-panel.$incredicard-cvc-padding-block} #{cvc-panel.$incredicard-cvc-padding-inline};
+  --theme-incredicard-field-border-width: #{cvc-panel.$incredicard-cvc-border-width};
+  --theme-incredicard-field-font-size: #{cvc-panel.$incredicard-cvc-font-size};
+  display: grid;
+  font-size: cvc-panel.$incredicard-cvc-font-size;
+
+  > :not(.cvcMaskSizer, .cvcPlaceholderSizer) {
+    grid-area: 1 / 1;
+    contain: inline-size;
+  }
 
   :global(input) {
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.025em;
+    letter-spacing: cvc-panel.$incredicard-cvc-tracking;
     text-align: center;
   }
 
@@ -536,6 +548,40 @@
   // than the entered dots, so an empty code doesn't read as a filled one.
   :global(input)::placeholder {
     color: #6b7280;
+  }
+}
+
+// Outside the field's container, so each adds back the padding and border
+// that container has; the stacked card's sizers sit inside its padded box
+// and need neither.
+$cvc-slot-edge: cvc-panel.$incredicard-cvc-padding-inline + cvc-panel.$incredicard-cvc-border-width;
+
+.cvcMaskSizer {
+  @include cvc-panel.incredicard-cvc-mask-sizer;
+
+  padding-inline: $cvc-slot-edge ($cvc-slot-edge + cvc-panel.$incredicard-cvc-caret-room);
+}
+
+.cvcPlaceholderSizer {
+  @include cvc-panel.incredicard-cvc-placeholder-sizer;
+
+  padding-inline: $cvc-slot-edge;
+}
+
+// Before a front-printed code is revealed, the reserved row is as tall as
+// the panel will be: the field's container holds the theme's printed digit
+// (see IncrediCardField.module.scss) beside the masked field's system-font
+// text, and takes the taller. One invisible digit in each font does the
+// same here.
+.cvcSlot.slotPlaceholder {
+  font-family: var(--incredicard-print-font);
+
+  &::before {
+    @include cvc-panel.incredicard-cvc-strut(inherit);
+  }
+
+  &::after {
+    @include cvc-panel.incredicard-cvc-strut(cvc-panel.$incredicard-cvc-mask-font);
   }
 }
 
