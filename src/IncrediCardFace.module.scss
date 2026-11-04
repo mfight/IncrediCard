@@ -527,6 +527,10 @@
   color: cvc-panel.$incredicard-cvc-color;
   font-size: cvc-panel.$incredicard-cvc-font-size;
   font-variant-numeric: tabular-nums;
+  // The printed font sets only the height (the invisible digit below); the
+  // code itself is printed flat, so no theme's shadow reaches it.
+  font-family: var(--incredicard-print-font);
+  text-shadow: none;
 
   &::before {
     @include cvc-panel.incredicard-cvc-strut(inherit);
@@ -549,19 +553,20 @@
   place-self: center;
   font-family: cvc-panel.$incredicard-cvc-mask-font;
   letter-spacing: normal;
+  color: cvc-panel.$incredicard-cvc-placeholder-color;
 }
 
 .cvcMask {
-  letter-spacing: cvc-panel.$incredicard-cvc-tracking;
+  color: inherit;
   -webkit-text-security: disc;
 }
 
 // The theme's printed-character font and raised-character shadow (see
-// themes.ts), for the three an embosser treats as printed. Unset in a
-// theme that has neither, which leaves both inherited.
+// themes.ts), for the two an embosser raises. Unset in a theme that has
+// neither, which leaves both inherited. The security code is printed flat;
+// see `.cvc`.
 .number,
-.expiration,
-.cvc {
+.expiration {
   font-family: var(--incredicard-print-font);
   text-shadow: var(--incredicard-face-emboss);
 }

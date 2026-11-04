@@ -1053,7 +1053,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
           hideLabel={isFloating}
           placeholder={isFloating ? placeholder : undefined}
           size={fieldSize}
-          containerClassName={styles.printField}
+          containerClassName={key === "cvc" ? styles.securityCodeField : styles.printField}
           disabled={disabled}
           readOnly={readOnly || processing}
           invalid={Boolean(error)}
@@ -1180,8 +1180,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isFloating}
         placeholder={isFloating ? labels.cvcPlaceholder : undefined}
         size={fieldSize}
-        // The theme's printed-character font; see `.printField`.
-        containerClassName={styles.printField}
+        // Printed flat, never embossed; see `.securityCodeField`.
+        containerClassName={styles.securityCodeField}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}

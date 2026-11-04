@@ -19,12 +19,14 @@
 //     than clipping.
 //   * The placeholder, which a field shows as text, not as a mask.
 //
-// Both panels draw their characters in the masked field's system font
-// (`.input[type="password"]` in IncrediCardField.module.scss), so the
-// stacked card's dots match the floating field's. The panel's HEIGHT
-// still follows the theme's printed-character font, the same way that
-// field's container holds it with an invisible digit, so the panel lines
-// up with the rows around it.
+// The code is printed, never embossed: a real card prints its security
+// code flat, in a sans-serif, whatever its other characters do. So the
+// card's two panels and the field in the stacked layout's list all draw it
+// the one way: the masked field's system font (`.input[type="password"]`
+// in IncrediCardField.module.scss), at normal spacing, with no shadow on
+// any theme. The panel's HEIGHT still follows the theme's printed-character
+// font, the same way that field's container holds it with an invisible
+// digit, so the panel lines up with the rows around it.
 //
 // Literal values, like the rest of IncrediCard; see reveal-motion.scss.
 
@@ -35,7 +37,7 @@ $incredicard-cvc-border-width: 0.0625rem;
 $incredicard-cvc-radius: 0.25rem;
 $incredicard-cvc-background: rgb(255 255 255 / 80%);
 $incredicard-cvc-color: #111827;
-$incredicard-cvc-tracking: 0.025em;
+$incredicard-cvc-placeholder-color: #6b7280;
 $incredicard-cvc-mask-font: system-ui, -apple-system, "Segoe UI", sans-serif;
 // Room for the caret after a full code. WebKit sets aside 2px for it inside
 // a field's text, so a code exactly as wide as its mask would scroll.
@@ -56,13 +58,12 @@ $incredicard-cvc-caret-room: 0.125rem;
 @mixin incredicard-cvc-mask-sizer {
   @include incredicard-cvc-sizer;
 
-  letter-spacing: $incredicard-cvc-tracking;
+  letter-spacing: normal;
   -webkit-text-security: disc;
   padding-inline-end: $incredicard-cvc-caret-room;
 }
 
-// The placeholder, unmasked and untracked, as a field's `::placeholder`
-// draws it.
+// The placeholder, unmasked.
 @mixin incredicard-cvc-placeholder-sizer {
   @include incredicard-cvc-sizer;
 

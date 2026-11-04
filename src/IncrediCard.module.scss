@@ -137,8 +137,9 @@
 // The real fields' theme typography (see themes.ts), applied by
 // IncrediCard.tsx through `containerClassName` (which reaches
 // IncrediCardField's `.container` div) to every field it builds: the name
-// field takes the theme's name font, and the number, expiration and
-// security code its printed-character font. Both layouts share the same
+// field takes the theme's name font, and the number and expiration its
+// printed-character font (the security code has its own rule, below). Both
+// layouts share the same
 // field elements, so this covers the "stacked" field list and the
 // "floating" on-card slots alike.
 //
@@ -157,6 +158,23 @@
 .printField {
   :global(input) {
     text-shadow: var(--incredicard-on-card-emboss, var(--incredicard-field-emboss));
+  }
+}
+
+// The security code: printed flat on a real card, in a sans-serif, so it
+// takes none of the theme's raised-character shadow, on the card or in the
+// stacked layout's list (see cvc-panel.scss). The printed font is still set,
+// but only to hold the field's height: the masked text is always the system
+// font (see `.input[type="password"]` in IncrediCardField.module.scss).
+.securityCodeField {
+  --incredicard-field-font-family: var(
+    --theme-incredicard-field-font-family,
+    var(--incredicard-print-font)
+  );
+
+  :global(input) {
+    text-shadow: none;
+    letter-spacing: normal;
   }
 }
 

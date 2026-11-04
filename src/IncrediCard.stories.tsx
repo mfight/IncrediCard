@@ -1664,6 +1664,33 @@ export const CvcPanelsMatch: Story = {
       }
     }
     expect(mismatched).toEqual([]);
+
+    // One printed style for the code wherever it's drawn: the stacked face,
+    // the floating field and the stacked layout's list field. Flat, never
+    // embossed, on every theme, and the card's placeholder in one gray.
+    const type = (element: Element, pseudo?: string) => {
+      const style = getComputedStyle(element, pseudo);
+      return [style.fontFamily, style.fontSize, style.fontWeight, style.letterSpacing, style.textShadow].join(" | ");
+    };
+    const styles: Record<string, string[]> = {};
+    for (const theme of CVC_THEMES) {
+      const id = `${args.id}-${theme}-visa`;
+      const faceText = card(`${id}-stacked`).querySelector('[class*="signatureRow"] [class*="cvcText"]')!;
+      const floating = document.getElementById(`${id}-floating-cvc`)!;
+      const list = document.getElementById(`${id}-stacked-cvc`)!;
+      styles[theme] = [type(faceText), type(floating), type(list)];
+      expect(getComputedStyle(faceText).color).toBe(getComputedStyle(floating).color);
+
+      const empty = `${args.id}-${theme}-placeholder`;
+      const facePlaceholder = card(`${empty}-stacked`).querySelector('[class*="signatureRow"] [class*="cvcText"]')!;
+      const floatingPlaceholder = document.getElementById(`${empty}-floating-cvc`)!;
+      expect(getComputedStyle(facePlaceholder).color).toBe(getComputedStyle(floatingPlaceholder, "::placeholder").color);
+    }
+    const reference = styles[CVC_THEMES[0]][0];
+    expect(reference).toContain("system-ui");
+    expect(reference).toMatch(/ \| none$/);
+    for (const theme of CVC_THEMES) expect(styles[theme]).toEqual([reference, reference, reference]);
+
     // The longer placeholder made room for itself.
     const [visa, longer] = ["visa", "placeholder"].map(
       (network) => document.getElementById(`${args.id}-ribbons-${network}-floating-cvc`)!.parentElement!.offsetWidth,

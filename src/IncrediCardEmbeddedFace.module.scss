@@ -538,7 +538,7 @@
 
   :global(input) {
     font-variant-numeric: tabular-nums;
-    letter-spacing: cvc-panel.$incredicard-cvc-tracking;
+    letter-spacing: normal;
     text-align: center;
   }
 
@@ -547,7 +547,7 @@
   // translucent white, which vanishes on this panel. A mid gray, lighter
   // than the entered dots, so an empty code doesn't read as a filled one.
   :global(input)::placeholder {
-    color: #6b7280;
+    color: cvc-panel.$incredicard-cvc-placeholder-color;
   }
 }
 
