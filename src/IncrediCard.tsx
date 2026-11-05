@@ -1026,8 +1026,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
 
     // Built once and rendered into whichever layout is active below.
     // Every prop except `hideLabel`/`placeholder` (both "floating"-only:
-    // a hidden real label and physical-card-style placeholder text) is
-    // identical either way, so there's exactly one place that owns each
+    // a hidden real label and physical-card-style placeholder text) and the
+    // type (`fieldType`) is identical either way, so there's exactly one place that owns each
     // field's wiring rather than two copies that could drift apart.
     //
     // A hosted field takes its place in the same slot, with the same label,
@@ -1035,6 +1035,14 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // where the `<input>` would. Its guards follow the active order: none
     // before the first field or after the last (see
     // IncrediCardHostedFieldSlot).
+    // A field's type: the theme's on the card, the component's own in the
+    // stacked layout's list; see `.listField` in IncrediCard.module.scss.
+    function fieldType(kind: "name" | "print" | "securityCode") {
+      if (!isFloating) return styles.listField;
+      if (kind === "name") return styles.cardNameField;
+      return kind === "print" ? styles.cardPrintField : styles.cardSecurityCodeField;
+    }
+
     function hostedSlot(
       key: Exclude<FieldKey, "name">,
       field: IncrediCardHostedField,
@@ -1053,7 +1061,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
           hideLabel={isFloating}
           placeholder={isFloating ? placeholder : undefined}
           size={fieldSize}
-          containerClassName={key === "cvc" ? styles.securityCodeField : styles.printField}
+          containerClassName={fieldType(key === "cvc" ? "securityCode" : "print")}
           disabled={disabled}
           readOnly={readOnly || processing}
           invalid={Boolean(error)}
@@ -1074,9 +1082,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isFloating}
         placeholder={isFloating ? labels.cardholderNamePlaceholder : undefined}
         size={fieldSize}
-        // The theme's name font, distinct from the printed characters'
-        // below; see `.nameField` in IncrediCard.module.scss.
-        containerClassName={styles.nameField}
+        // On the card, the theme's name font, distinct from the printed
+        // characters' below; see `.cardNameField` in IncrediCard.module.scss.
+        containerClassName={fieldType("name")}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -1102,8 +1110,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isFloating}
         placeholder={isFloating ? labels.cardNumberPlaceholder : undefined}
         size={fieldSize}
-        // The theme's printed-character font; see `.printField`.
-        containerClassName={styles.printField}
+        // On the card, the theme's printed-character font; see
+        // `.cardPrintField`.
+        containerClassName={fieldType("print")}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -1145,8 +1154,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isFloating}
         placeholder={isFloating ? labels.expirationPlaceholder : undefined}
         size={fieldSize}
-        // The theme's printed-character font; see `.printField`.
-        containerClassName={styles.printField}
+        // On the card, the theme's printed-character font; see
+        // `.cardPrintField`.
+        containerClassName={fieldType("print")}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}
@@ -1180,8 +1190,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         hideLabel={isFloating}
         placeholder={isFloating ? labels.cvcPlaceholder : undefined}
         size={fieldSize}
-        // Printed flat, never embossed; see `.securityCodeField`.
-        containerClassName={styles.securityCodeField}
+        // Printed flat, never embossed; see `.cardSecurityCodeField`.
+        containerClassName={fieldType("securityCode")}
         disabled={disabled}
         readOnly={readOnly || processing}
         required={required}

@@ -1595,6 +1595,70 @@ export const InvalidRegionsMatchFloating: Story = {
   },
 };
 
+// The theme's type belongs to the card alone. The stacked layout's field
+// list is an ordinary form in the component's own type, with no shadow, on
+// every theme, hosted fields included; the vintage card's own fields keep
+// its OCR lettering and its raised-character shadow in both layouts.
+export const ListFieldsUseDefaultType: Story = {
+  tags: ["!dev"],
+  args: { id: "story-list-type" },
+  render: (args) => (
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 21.25rem)" }}>
+      {CVC_THEMES.map((theme) => (
+        <IncrediCard
+          key={theme}
+          {...cardProps(args)}
+          id={`${args.id}-${theme}`}
+          theme={theme}
+          layout="stacked"
+          defaultValue={FILLED}
+        />
+      ))}
+      <IncrediCard {...cardProps(args)} id={`${args.id}-vintage-floating`} theme="vintage" defaultValue={FILLED} />
+      <HostedFieldsCard {...args} id={`${args.id}-vintage-hosted`} theme="vintage" layout="stacked" />
+    </div>
+  ),
+  play: async ({ args, canvasElement }) => {
+    await document.fonts.ready;
+    const root = document.getElementById(`${args.id}-ribbons`)!;
+    const defaultFont = getComputedStyle(root).fontFamily;
+    const first = (element: Element) => getComputedStyle(element).fontFamily.split(",")[0].trim();
+    for (const theme of CVC_THEMES) {
+      for (const field of ["name", "number", "expiration", "cvc"]) {
+        const input = document.getElementById(`${args.id}-${theme}-${field}`)!;
+        const style = getComputedStyle(input);
+        // The security code's mask is always the system font.
+        if (field === "cvc") expect(first(input)).toBe("system-ui");
+        else expect(style.fontFamily).toBe(defaultFont);
+        expect(style.textShadow).toBe("none");
+      }
+    }
+    // A hosted field in the list is handed the same type.
+    const hosted = hostedBox(canvasElement, "cardNumber");
+    const probe = hosted.querySelector("input[aria-hidden]")!;
+    expect(getComputedStyle(probe).fontFamily).toBe(defaultFont);
+    expect(getComputedStyle(probe).textShadow).toBe("none");
+
+    // The vintage card itself: its printed face in the stacked layout, and
+    // its real fields on the floating card.
+    const vintageFace = document.getElementById(`${args.id}-vintage`)!.querySelector("[data-face-layout]")!;
+    for (const row of ['[class*="_number_"]', '[class*="_name_"]']) {
+      const element = vintageFace.querySelector(row)!;
+      expect(first(element)).toMatch(/IncrediCard OCR-[AB]/);
+      expect(getComputedStyle(element).textShadow).not.toBe("none");
+    }
+    const onCard = (field: string) => document.getElementById(`${args.id}-vintage-floating-${field}`)!;
+    expect(first(onCard("name"))).toBe('"IncrediCard OCR-A"');
+    expect(first(onCard("number"))).toBe('"IncrediCard OCR-B"');
+    expect(first(onCard("expiration"))).toBe('"IncrediCard OCR-B"');
+    for (const field of ["name", "number", "expiration"]) {
+      expect(getComputedStyle(onCard(field)).textShadow).toBe(
+        "rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0.25) 1px 1px 1px",
+      );
+    }
+  },
+};
+
 // The security code's panel is the same box in both layouts: the same width
 // and height on the back (3 digits) and on Amex's front (4), on every theme,
 // at the component's narrowest width, and the floating field still fits a

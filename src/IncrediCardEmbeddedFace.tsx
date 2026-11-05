@@ -81,7 +81,7 @@ export type IncrediCardEmbeddedFaceProps = {
   flipAngleDeg: number;
   /** How the theme arranges the printed text; see the identical prop on
    * IncrediCardFace.tsx. The real fields this face positions get their
-   * fonts from `.nameField`/`.printField` in IncrediCard.module.scss,
+   * fonts from `.cardNameField`/`.cardPrintField` in IncrediCard.module.scss,
    * applied by IncrediCard.tsx, not from this component. */
   faceLayout?: IncrediCardFaceLayout;
   /** Default true. Forwarded straight to `IncrediCardChip`'s

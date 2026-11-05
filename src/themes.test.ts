@@ -59,11 +59,11 @@ describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme:
   });
 
   it("writes only the type values it has", () => {
-    const written = ["nameFont", "printFont", "faceEmboss", "fieldEmboss", "floatingFieldEmboss"].filter(
+    const written = ["nameFont", "printFont", "faceEmboss", "floatingFieldEmboss"].filter(
       (key) => theme.type[key as keyof typeof theme.type] !== null,
     ).length;
     const typeProps = Object.keys(style).filter((p) =>
-      /^--incredicard-(name-font|print-font|face-emboss|field-emboss|floating-field-emboss)$/.test(p),
+      /^--incredicard-(name-font|print-font|face-emboss|floating-field-emboss)$/.test(p),
     );
     expect(typeProps).toHaveLength(written);
   });

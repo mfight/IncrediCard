@@ -146,19 +146,21 @@ export type IncrediCardThemeDefinition = {
     glareStrength: number;
     colorRadius: string;
   } | null;
-  /** `null` keeps the component's own font and no shadow. */
+  /** The card's type, and only the card's: the stacked layout's field list
+   * keeps the component's own type on every theme. `null` keeps the
+   * component's own font and no shadow. The security code is always printed
+   * flat, in the system font, so none of these reach it. */
   type: {
-    /** The cardholder name, on the card and in its field. */
+    /** The cardholder name on the card, and in its field on a floating
+     * card. */
     nameFont: string | null;
-    /** Number, expiration and security code, on the card and in their
-     * fields. */
+    /** The number and expiration on the card, and in their fields on a
+     * floating card. Also sets the security code panel's height. */
     printFont: string | null;
-    /** A raised-character shadow on the card's printed text. */
+    /** A raised-character shadow on the card's printed text, in the stacked
+     * layout. */
     faceEmboss: string | null;
-    /** The same, tuned for the fields' light background. */
-    fieldEmboss: string | null;
-    /** The shadow on a field sitting on the card, in the floating layout.
-     * `null` uses `fieldEmboss` there too. */
+    /** The shadow on a field sitting on the card, in the floating layout. */
     floatingFieldEmboss: string | null;
   };
   /** Knobs this theme pins, ignoring any `--theme-*` override. */
@@ -220,18 +222,18 @@ export const INCREDICARD_THEMES = {
       nameFont: null,
       printFont: null,
       faceEmboss: null,
-      fieldEmboss: null,
       floatingFieldEmboss: null,
     },
     fixed: [],
   },
 
   // An homage to an embossed plastic card: OCR-A for the engraved name,
-  // OCR-B for the three characters an embosser treats as printed (number,
-  // expiration, security code), on aged ivory, with no foil: cards like this
-  // one predate holograms. Two layered text-shadows (a
-  // light highlight, a dark counter-shadow) stand in for raised
-  // characters; a real bevel would need 3D geometry per glyph, which CSS
+  // OCR-B for the number and expiration an embosser raises (the security
+  // code is printed flat, like every theme's), on aged ivory, with no foil:
+  // cards like this one predate holograms. All of it on the card only; the
+  // stacked layout's field list is an ordinary form. Two layered
+  // text-shadows (a light highlight, a dark counter-shadow) stand in for
+  // raised characters; a real bevel would need 3D geometry per glyph, which CSS
   // can't produce for live-typed text. Both fonts are self-hosted under
   // assets/fonts/ (OCR-A-ReadMe.txt, OCR-B-OFL.txt), and only downloaded
   // once this theme uses them.
@@ -255,12 +257,12 @@ export const INCREDICARD_THEMES = {
     type: {
       nameFont: '"IncrediCard OCR-A", ui-monospace, monospace',
       printFont: '"IncrediCard OCR-B", ui-monospace, monospace',
-      // Darker on the card's mid-tone face than on the fields' near-white.
+      // The printed face's shadow is darker than the on-card fields', which
+      // sit on the same face but read as lighter, raised plastic.
       faceEmboss:
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%), 0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%)",
-      fieldEmboss:
+      floatingFieldEmboss:
         "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 90%), 0.0625rem 0.0625rem 0.0625rem rgb(0 0 0 / 25%)",
-      floatingFieldEmboss: null,
     },
     fixed: [],
   },
@@ -293,7 +295,6 @@ export const INCREDICARD_THEMES = {
       nameFont: null,
       printFont: null,
       faceEmboss: null,
-      fieldEmboss: null,
       floatingFieldEmboss: null,
     },
     fixed: [],
@@ -333,7 +334,6 @@ export const INCREDICARD_THEMES = {
       nameFont: null,
       printFont: null,
       faceEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
-      fieldEmboss: null,
       floatingFieldEmboss: "0 0 0.25rem rgb(0 0 0 / 45%)",
     },
     darkText: {
@@ -471,7 +471,6 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
     "--incredicard-name-font": theme.type.nameFont,
     "--incredicard-print-font": theme.type.printFont,
     "--incredicard-face-emboss": theme.type.faceEmboss,
-    "--incredicard-field-emboss": theme.type.fieldEmboss,
     "--incredicard-floating-field-emboss": theme.type.floatingFieldEmboss,
   };
   for (const [name, value] of Object.entries(type)) {

@@ -58,8 +58,8 @@
   padding: var(--incredicard-field-padding);
   font-size: var(--incredicard-field-font-size);
   // Unset by default (falls through to `inherit`, i.e. the component
-  // root's font-family). IncrediCard's own fields set it from the theme
-  // through containerClassName (.nameField/.printField in
+  // root's font-family). IncrediCard's own fields on the card set it from
+  // the theme through containerClassName (.cardNameField/.cardPrintField in
   // IncrediCard.module.scss), using the same shared-custom-property
   // technique as padding and font size above, for the same reason.
   font-family: var(--incredicard-field-font-family, inherit);

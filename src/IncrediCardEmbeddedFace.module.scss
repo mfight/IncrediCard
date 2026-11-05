@@ -57,8 +57,8 @@
 // Smaller caps than "printed"; see the same layout's `.number` and
 // `.expiration` rules in IncrediCardFace.module.scss for the full
 // reasoning (same ratios). `.cvcSlot` is deliberately untouched. The
-// fields' fonts and shadow come from the theme, through `.nameField` and
-// `.printField` in IncrediCard.module.scss.
+// fields' fonts and shadow come from the theme, through `.cardNameField` and
+// `.cardPrintField` in IncrediCard.module.scss.
 .faceWrapper[data-face-layout="embossed"] {
   // Set smaller past 16 digits; see the same layout's `[data-long-number]`
   // rule in IncrediCardFace.module.scss for the measurements.
@@ -366,9 +366,6 @@
   --theme-incredicard-field-border-color: transparent;
   --theme-incredicard-field-border-color-hover: rgb(255 255 255 / 25%);
   --theme-incredicard-field-color: var(--incredicard-face-color);
-  // Read by the input's text-shadow in IncrediCard.module.scss. Unset in a
-  // theme without one, which leaves that rule its `fieldEmboss`.
-  --incredicard-on-card-emboss: var(--incredicard-floating-field-emboss);
   --theme-incredicard-field-radius: 0.125rem;
   --theme-incredicard-field-padding: 0;
 

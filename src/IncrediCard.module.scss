@@ -25,7 +25,7 @@
 // The "vintage" theme's two fonts. Never downloaded unless something
 // renders with one of these family names (an @font-face rule fetches
 // nothing by itself), which only happens when a theme names them (see
-// themes.ts, and .nameField/.printField below). Declared once, here: like
+// themes.ts, and .cardNameField/.cardPrintField below). Declared once, here: like
 // "IncrediCard Figtree" above, @font-face isn't scoped by CSS Modules the
 // way a class selector is, so registering it in this file (loaded by
 // IncrediCard.tsx, the component's entry point) lets every other module
@@ -134,62 +134,60 @@
   }
 }
 
-// The real fields' theme typography (see themes.ts), applied by
-// IncrediCard.tsx through `containerClassName` (which reaches
-// IncrediCardField's `.container` div) to every field it builds: the name
-// field takes the theme's name font, and the number and expiration its
-// printed-character font (the security code has its own rule, below). Both
-// layouts share the same
-// field elements, so this covers the "stacked" field list and the
-// "floating" on-card slots alike.
+// The real fields' type, applied by IncrediCard.tsx through
+// `containerClassName` (which reaches IncrediCardField's `.container` div).
+//
+// The theme's fonts and raised-character shadow (see themes.ts) belong to
+// the card alone. A field takes them only while it sits on the card, in the
+// "floating" layout: the name field the theme's name font, the number and
+// expiration its printed-character font, with the theme's
+// `floatingFieldEmboss` (`.cardNameField`, `.cardPrintField`). The "stacked"
+// layout's list below the card is an ordinary form, in the component's own
+// type on every theme (`.listField`).
 //
 // `--incredicard-field-font-family` is read by `.container` in
 // IncrediCardField.module.scss, the same cross-module technique used
 // there for padding and font size. Your own
-// `--theme-incredicard-field-font-family` on any ancestor wins over the
-// theme's font. In a theme with no font of its own, both are unset, and
-// the field inherits the component's font.
-//
-// The raised-character shadow is the theme's `fieldEmboss`, tuned for the
-// field's white or near-white background (see the
-// `--theme-incredicard-field-background` default in
-// IncrediCardField.module.scss); unset, it leaves the input's own.
-.nameField,
-.printField {
-  :global(input) {
-    text-shadow: var(--incredicard-on-card-emboss, var(--incredicard-field-emboss));
-  }
+// `--theme-incredicard-field-font-family` on any ancestor wins in both
+// layouts. Unset, a list field, or a card field in a theme with no font of
+// its own, inherits the component's font.
+.listField {
+  --incredicard-field-font-family: var(--theme-incredicard-field-font-family);
 }
 
-// The security code: printed flat on a real card, in a sans-serif, so it
-// takes none of the theme's raised-character shadow, on the card or in the
-// stacked layout's list (see cvc-panel.scss). The printed font is still set,
-// but only to hold the field's height: the masked text is always the system
-// font (see `.input[type="password"]` in IncrediCardField.module.scss).
-.securityCodeField {
-  --incredicard-field-font-family: var(
-    --theme-incredicard-field-font-family,
-    var(--incredicard-print-font)
-  );
-
-  :global(input) {
-    text-shadow: none;
-    letter-spacing: normal;
-  }
-}
-
-.nameField {
+.cardNameField {
   --incredicard-field-font-family: var(
     --theme-incredicard-field-font-family,
     var(--incredicard-name-font)
   );
 }
 
-.printField {
+.cardPrintField,
+.cardSecurityCodeField {
   --incredicard-field-font-family: var(
     --theme-incredicard-field-font-family,
     var(--incredicard-print-font)
   );
+}
+
+.cardNameField,
+.cardPrintField {
+  :global(input) {
+    text-shadow: var(--incredicard-floating-field-emboss, none);
+  }
+}
+
+// The security code on the card: printed flat on a real card, in a
+// sans-serif, so it takes none of the theme's raised-character shadow (see
+// cvc-panel.scss). The printed font is still set, but only to hold the
+// field's height: the masked text is always the system font (see
+// `.input[type="password"]` in IncrediCardField.module.scss). In the list it's
+// a `.listField` like the others, which has no shadow either.
+.cardSecurityCodeField {
+  :global(input) {
+    text-shadow: none;
+    letter-spacing: normal;
+  }
 }
 
 // Wraps IncrediCardFace, without touching that component's contract
