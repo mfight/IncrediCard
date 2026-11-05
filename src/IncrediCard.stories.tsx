@@ -905,9 +905,10 @@ function DeviceTiltDemo(args: IncrediCardStoryArgs) {
           </dl>
         ) : null}
         <p className={themedStyles.effectsLegendNote}>
-          Only iOS Safari prompts; everywhere else this resolves{" "}
-          <code>granted</code> without a dialog, and the effects start as soon
-          as the sensor reports.{" "}
+          Only iOS Safari prompts. Elsewhere this answers without a dialog,{" "}
+          <code>granted</code> unless motion sensors are blocked for the site,
+          and where the browser can say so (Chrome), the effects start without
+          asking at all, as soon as the sensor reports.{" "}
           {!secure ? (
             <strong>
               This page is not a secure context, so orientation events will

@@ -271,17 +271,27 @@ export type IncrediCardMotionAccess =
   | "unsupported"
   /**
    * The request could not be made: called outside a user gesture, or on
-   * an insecure origin. Distinct from "denied" -- nothing was asked, and
-   * nothing was spent.
+   * an insecure origin, or the browser answered without deciding. Distinct
+   * from "denied" -- nothing was asked, and nothing was spent.
    */
   | "unavailable";
 
+// What `requestPermission` resolves. iOS answers "granted" or "denied".
+// Chrome answers with its motion-sensor permission, and the spec's type is
+// a full permission state, so "prompt" is possible too (Playwright's own
+// Chromium build answers it, with or without a gesture).
+type PermissionAnswer = "granted" | "denied" | "prompt";
+
 type PermissionCapableDeviceOrientationEvent = {
-  requestPermission?: () => Promise<"granted" | "denied">;
+  requestPermission?: () => Promise<PermissionAnswer>;
 };
 
 let motionGranted = false;
 const accessListeners = new Set<() => void>();
+
+function notifyAccessListeners() {
+  for (const listener of accessListeners) listener();
+}
 
 function markGranted() {
   if (motionGranted) return;
@@ -290,10 +300,53 @@ function markGranted() {
   // a remount. In the usual app-level flow the ask happens long before any
   // card is mounted, but a request triggered from a settings screen can
   // happen with one visible.
-  for (const listener of accessListeners) listener();
+  notifyAccessListeners();
 }
 
-function getRequestPermission(): (() => Promise<"granted" | "denied">) | undefined {
+// The browser's own answer, where it can give one without a request.
+// Chrome's `requestPermission` doesn't prompt: it reports the site's
+// motion-sensor permission, which Chrome grants by default and a person
+// can block in site settings, and the Permissions API reads the same thing
+// as "accelerometer" and "gyroscope". iOS Safari has no permission by those
+// names, so the query fails there and this stays "unknown": its gate is the
+// request itself.
+type SensorPermission = "granted" | "denied" | "prompt" | "unknown";
+let sensorPermission: SensorPermission = "unknown";
+let sensorQueryStarted = false;
+
+const SENSOR_PERMISSIONS = ["accelerometer", "gyroscope"] as const;
+
+function combineSensorStates(states: readonly PermissionState[]): SensorPermission {
+  if (states.includes("denied")) return "denied";
+  if (states.every((state) => state === "granted")) return "granted";
+  return "prompt";
+}
+
+function querySensorPermission() {
+  if (sensorQueryStarted || typeof window === "undefined") return;
+  sensorQueryStarted = true;
+  const permissions = (window as { navigator?: { permissions?: Permissions } }).navigator?.permissions;
+  if (typeof permissions?.query !== "function") return;
+  Promise.all(
+    SENSOR_PERMISSIONS.map((name) => permissions.query({ name } as unknown as PermissionDescriptor)),
+  ).then(
+    (statuses) => {
+      const update = () => {
+        const next = combineSensorStates(statuses.map((status) => status.state));
+        if (next === sensorPermission) return;
+        sensorPermission = next;
+        notifyAccessListeners();
+      };
+      update();
+      // A person can change it in site settings while the page is open.
+      for (const status of statuses) status.addEventListener?.("change", update);
+    },
+    // A browser that doesn't know these names: leave it "unknown".
+    () => {},
+  );
+}
+
+function getRequestPermission(): (() => Promise<PermissionAnswer>) | undefined {
   if (typeof window === "undefined") return undefined;
   const ctor = (window as { DeviceOrientationEvent?: PermissionCapableDeviceOrientationEvent })
     .DeviceOrientationEvent;
@@ -315,11 +368,19 @@ function getRequestPermission(): (() => Promise<"granted" | "denied">) | undefin
  * `await` of anything before this line loses user activation, and iOS
  * then rejects with `NotAllowedError` instead of prompting.
  *
- * Only iOS Safari 13+ gates orientation at all. Everywhere else this
- * resolves `"granted"` immediately without prompting, which is the point
- * of feature-detecting `requestPermission` rather than sniffing for iOS:
- * treating "no requestPermission" as "unsupported" would silently kill
- * the feature across all of Android.
+ * Only iOS Safari prompts. Chrome has `requestPermission` too, but it
+ * answers at once without a dialog, with the site's motion-sensor
+ * permission: `"granted"` by default, `"denied"` if a person blocked
+ * motion sensors for the site. A browser without `requestPermission`
+ * doesn't gate orientation, and this resolves `"granted"`. That is the
+ * point of feature-detecting rather than sniffing for iOS: treating "no
+ * requestPermission" as "unsupported" would silently kill the feature on
+ * every other browser.
+ *
+ * Where the browser can report that permission without a request (Chrome),
+ * the cards listen without this ever being called; calling it anyway is
+ * harmless. Where it can't (iOS), they listen only once this resolves
+ * `"granted"`.
  */
 export function requestIncrediCardMotionAccess(): Promise<IncrediCardMotionAccess> {
   // Deliberately not an `async` function. The body would still run
@@ -340,7 +401,7 @@ export function requestIncrediCardMotionAccess(): Promise<IncrediCardMotionAcces
     return Promise.resolve("granted");
   }
 
-  let pending: Promise<"granted" | "denied">;
+  let pending: Promise<PermissionAnswer>;
   try {
     pending = request();
   } catch {
@@ -348,10 +409,14 @@ export function requestIncrediCardMotionAccess(): Promise<IncrediCardMotionAcces
   }
 
   return pending.then(
-    (state) => {
-      if (state !== "granted") return "denied";
-      markGranted();
-      return "granted";
+    (state): IncrediCardMotionAccess => {
+      if (state === "granted") {
+        markGranted();
+        return "granted";
+      }
+      if (state === "denied") return "denied";
+      // Answered without deciding: nothing was refused.
+      return "unavailable";
     },
     // Rejects, rather than resolving "denied", when there was no user
     // activation to spend. Nothing was asked, so this is not a refusal.
@@ -363,7 +428,9 @@ export function requestIncrediCardMotionAccess(): Promise<IncrediCardMotionAcces
 // Availability, as something an effect can depend on
 // ---------------------------------------------------------------------
 
-function getMotionAvailable(): boolean {
+// Exported for its own test, with `subscribeToMotionAccess` below; the
+// package exposes them only through `useIncrediCardMotionAvailable`.
+export function getMotionAvailable(): boolean {
   if (typeof window === "undefined") return false;
   if (!("ondeviceorientation" in window)) return false;
   // `deviceorientation` does not fire on an insecure origin, silently.
@@ -373,13 +440,17 @@ function getMotionAvailable(): boolean {
   // and never hear anything. Checked here so "nothing is listening" is the
   // honest state rather than a hidden one.
   if (!window.isSecureContext) return false;
+  // Blocked in the browser's settings: no events will come.
+  if (sensorPermission === "denied") return false;
   // Where iOS gates orientation, a listener attached before the grant
-  // hears nothing -- so not attaching is both cheaper and truthful.
-  if (getRequestPermission() && !motionGranted) return false;
+  // hears nothing -- so not attaching is both cheaper and truthful. A
+  // browser that reports the sensors granted needs no request.
+  if (getRequestPermission() && !motionGranted && sensorPermission !== "granted") return false;
   return true;
 }
 
-function subscribeToMotionAccess(onStoreChange: () => void): () => void {
+export function subscribeToMotionAccess(onStoreChange: () => void): () => void {
+  querySensorPermission();
   accessListeners.add(onStoreChange);
   return () => {
     accessListeners.delete(onStoreChange);

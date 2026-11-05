@@ -97,6 +97,113 @@ describe("requestIncrediCardMotionAccess", () => {
   });
 });
 
+// Whether the cards listen, which depends on the browser's own permission
+// where it can report one. The module remembers a grant and the browser's
+// answer for the page's lifetime, so each test imports a fresh copy.
+describe("motion availability", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  type Status = { state: PermissionState; addEventListener: (type: "change", listener: () => void) => void };
+
+  // A browser whose Permissions API reports `state` for both sensors, or
+  // doesn't know their names when `state` is null (iOS Safari).
+  function stubBrowser({
+    state,
+    requestPermission,
+  }: {
+    state: PermissionState | null;
+    requestPermission?: () => Promise<string>;
+  }) {
+    const changeListeners: Array<() => void> = [];
+    const statuses: Status[] = [];
+    const query = vi.fn(() => {
+      if (state === null) return Promise.reject(new TypeError("unknown permission name"));
+      const status: Status = {
+        state,
+        addEventListener: (_type, listener) => changeListeners.push(listener),
+      };
+      statuses.push(status);
+      return Promise.resolve(status);
+    });
+    vi.stubGlobal("window", {
+      isSecureContext: true,
+      ondeviceorientation: null,
+      DeviceOrientationEvent: requestPermission ? { requestPermission } : {},
+      navigator: { permissions: { query } },
+    });
+    return {
+      query,
+      change(next: PermissionState) {
+        for (const status of statuses) status.state = next;
+        for (const listener of changeListeners) listener();
+      },
+    };
+  }
+
+  async function load() {
+    const module = await import("./IncrediCardOrientation");
+    const notified = vi.fn();
+    module.subscribeToMotionAccess(notified);
+    // Let the permission query settle.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return { ...module, notified };
+  }
+
+  it("listens without a request where the browser reports the sensors granted (Chrome)", async () => {
+    const requestPermission = vi.fn(() => Promise.resolve("granted"));
+    const browser = stubBrowser({ state: "granted", requestPermission });
+    const { getMotionAvailable, notified } = await load();
+    expect(browser.query).toHaveBeenCalledTimes(2);
+    expect(getMotionAvailable()).toBe(true);
+    expect(notified).toHaveBeenCalled();
+    expect(requestPermission).not.toHaveBeenCalled();
+  });
+
+  it("doesn't listen where the sensors are blocked, and reports a request as denied", async () => {
+    stubBrowser({ state: "denied", requestPermission: () => Promise.resolve("denied") });
+    const { getMotionAvailable, requestIncrediCardMotionAccess } = await load();
+    expect(getMotionAvailable()).toBe(false);
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("denied");
+    expect(getMotionAvailable()).toBe(false);
+  });
+
+  it("reports an undecided answer as unavailable, not denied, and doesn't listen", async () => {
+    stubBrowser({ state: "prompt", requestPermission: () => Promise.resolve("prompt") });
+    const { getMotionAvailable, requestIncrediCardMotionAccess } = await load();
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("unavailable");
+    expect(getMotionAvailable()).toBe(false);
+  });
+
+  it("waits for the request where the browser can't report the permission (iOS)", async () => {
+    stubBrowser({ state: null, requestPermission: () => Promise.resolve("granted") });
+    const { getMotionAvailable, requestIncrediCardMotionAccess, notified } = await load();
+    expect(getMotionAvailable()).toBe(false);
+    expect(notified).not.toHaveBeenCalled();
+    await expect(requestIncrediCardMotionAccess()).resolves.toBe("granted");
+    expect(getMotionAvailable()).toBe(true);
+    expect(notified).toHaveBeenCalled();
+  });
+
+  it("listens where the browser doesn't gate orientation at all", async () => {
+    stubBrowser({ state: null });
+    const { getMotionAvailable } = await load();
+    expect(getMotionAvailable()).toBe(true);
+  });
+
+  it("follows a change in the browser's settings while the page is open", async () => {
+    const browser = stubBrowser({ state: "granted", requestPermission: () => Promise.resolve("granted") });
+    const { getMotionAvailable, notified } = await load();
+    expect(getMotionAvailable()).toBe(true);
+    notified.mockClear();
+    browser.change("denied");
+    expect(getMotionAvailable()).toBe(false);
+    expect(notified).toHaveBeenCalled();
+  });
+});
+
 describe("offsetFromOrientation", () => {
   it("reads the neutral posture as dead center, whatever angle it is", () => {
     // The point of calibrating rather than using absolute level: a phone
