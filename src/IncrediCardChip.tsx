@@ -7,6 +7,7 @@ import {
   subscribeToDeviceOrientation,
   useIncrediCardMotionAvailable,
 } from "./IncrediCardOrientation";
+import { INCREDICARD_DRAG_EVENT, type IncrediCardDragDetail } from "./IncrediCardTilt";
 
 // Attaches a pointermove/pointerleave listener to the returned ref's own
 // element--meant to be the whole card's own `.faceWrapper` root (passed
@@ -43,14 +44,15 @@ import {
 //
 // `(hover: hover) and (pointer: fine)` is a BRANCH rather than a
 // bail-out. Touch devices don't get less; they just have no pointer
-// position worth reading: a touch device fires real
-// `pointermove`/`pointerleave` events during a drag with no hover state
-// behind them, so the tracked position jumps around rather than
-// settling anywhere meaningful. Device orientation is a genuine position
-// signal, so those devices use that instead (see
-// IncrediCardOrientation.ts). Pointer-capable devices take the pointer
-// path and never attach an orientation listener; the two never run at
-// once, so nothing can fight over these properties.
+// position worth reading: a finger's absolute position jumps to wherever
+// it lands, with no hover state behind it. Those devices get two relative
+// signals instead. Device orientation, where motion access allows (see
+// IncrediCardOrientation.ts), and a finger dragging the card while `tilt`
+// is on, measured from where the press started, which useIncrediCardTilt
+// tracks and announces (`INCREDICARD_DRAG_EVENT`). The drag wins while a
+// finger is down, so the light leans with the card, and hands back to
+// orientation, or to rest, when it lifts. Pointer-capable devices take the
+// pointer path and attach neither; nothing fights over these properties.
 export function useIncrediCardChipLight(active: boolean) {
   const ref = useRef<HTMLDivElement>(null);
   const motionAvailable = useIncrediCardMotionAvailable();
@@ -139,28 +141,60 @@ export function useIncrediCardChipLight(active: boolean) {
       };
     }
 
-    if (!motionAvailable) return undefined;
-
     // The attribute, not the custom properties, is what the hologram's
     // own `@media (hover: none)` blocks key off. Those blocks stop the
     // ambient shimmer and the glare transitions on a device with no
-    // pointer, and CSS has no way to ask whether an orientation signal
-    // exists--so this element carries the answer. Set here rather than
-    // in useIncrediCardTilt because it means precisely "orientation is
-    // driving `--incredicard-chip-light-*` on this element," which is exactly
-    // the condition those blocks need; tilt's own properties are read
-    // by a different rule that never had a touch carve-out.
-    el.setAttribute("data-incredicard-orientation", "");
+    // pointer, and CSS has no way to ask whether a touch signal exists--so
+    // this element carries the answer. Set here rather than in
+    // useIncrediCardTilt because it means precisely "a live signal can
+    // drive `--incredicard-chip-light-*` on this element," which is exactly
+    // the condition those blocks need; tilt's own properties are read by a
+    // different rule that never had a touch carve-out. Set from the first
+    // drag, and left set: from then on the light has something to follow,
+    // and taking it away on release would snap the glare off instead of
+    // letting it fade.
+    const LIVE = "data-incredicard-touch-light";
 
-    const unsubscribe = subscribeToDeviceOrientation(window, (offset) => {
-      // -0.5..0.5 back into the 0%-100% box this effect's own gradients
-      // are addressed in.
+    // -0.5..0.5 back into the 0%-100% box this effect's own gradients are
+    // addressed in.
+    function writeOffset(offset: { x: number; y: number }) {
       writeLight((offset.x + 0.5) * 100, (offset.y + 0.5) * 100);
-    });
+    }
+
+    let dragging = false;
+    const handleDrag = (event: Event) => {
+      const offset = (event as CustomEvent<IncrediCardDragDetail>).detail;
+      if (offset) {
+        dragging = true;
+        el.setAttribute(LIVE, "");
+        writeOffset(offset);
+        return;
+      }
+      dragging = false;
+      // Back to rest, as the tilt does on release. With orientation live,
+      // its next reading takes the light straight back; without one (no
+      // motion access, or a sensor that never reports), it doesn't stay
+      // where the finger left it.
+      clearLight();
+    };
+    el.addEventListener(INCREDICARD_DRAG_EVENT, handleDrag);
+
+    let unsubscribe = () => {};
+    if (motionAvailable) {
+      el.setAttribute(LIVE, "");
+      unsubscribe = subscribeToDeviceOrientation(window, (offset) => {
+        // A finger owns the light. The sensor's own smoothing keeps
+        // tracking underneath, so the light resumes from a current reading
+        // when the finger lifts.
+        if (dragging) return;
+        writeOffset(offset);
+      });
+    }
 
     return () => {
+      el.removeEventListener(INCREDICARD_DRAG_EVENT, handleDrag);
       unsubscribe();
-      el.removeAttribute("data-incredicard-orientation");
+      el.removeAttribute(LIVE);
       clearLight();
     };
   }, [active, motionAvailable]);

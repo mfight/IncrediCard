@@ -16,7 +16,8 @@
 
 // Declared once because `.holo` sets it in two places: its resting
 // declaration, and again inside the `(hover: none)` block that restores
-// it when device orientation is driving the card. Two literal
+// it when a touch signal (device orientation or a finger's drag) is
+// driving the card. Two literal
 // shorthands would be free to drift into different shimmer speeds on
 // touch and pointer devices, a difference nobody would see side by side
 // and so nobody would catch.
@@ -144,13 +145,14 @@ $glare-texture: repeating-linear-gradient(
   @media (hover: none) {
     animation: none;
 
-    // ...unless device orientation is actually driving the card.
-    // The premise of the rule above is "no possible pointer
-    // payoff," and an orientation signal is exactly that payoff
-    // arriving: the shimmer now has something to shimmer alongside.
-    // `data-incredicard-orientation` is set on the card root by
-    // useIncrediCardChipLight, which is the only place that knows -- CSS
-    // cannot ask whether a sensor is feeding the page.
+    // ...unless a touch signal is actually driving the card: device
+    // orientation, or a finger dragging it. The premise of the rule
+    // above is "no possible pointer payoff," and either signal is
+    // exactly that payoff arriving: the shimmer now has something to
+    // shimmer alongside. `data-incredicard-touch-light` is set on the
+    // card root by useIncrediCardChipLight, which is the only place that
+    // knows -- CSS cannot ask whether a sensor or a drag is feeding the
+    // page.
     //
     // Scoped inside `prefers-reduced-motion: no-preference` rather than
     // left to fight the reduced-motion include below on specificity,
@@ -160,7 +162,7 @@ $glare-texture: repeating-linear-gradient(
     // after mount -- but a rule whose correctness rests on a selector
     // never matching is a worse rule than one that cannot match.
     @media (prefers-reduced-motion: no-preference) {
-      [data-incredicard-orientation] & {
+      [data-incredicard-touch-light] & {
         animation: $holo-shift;
       }
     }
@@ -266,11 +268,11 @@ $glare-texture: repeating-linear-gradient(
     transition: none;
     animation: none;
 
-    // Both restored under a live orientation signal, exactly as on
+    // Both restored under a live touch signal, exactly as on
     // `.holo` above and the glare layers below--see `.holo`'s own block
     // for the full reasoning.
     @media (prefers-reduced-motion: no-preference) {
-      [data-incredicard-orientation] & {
+      [data-incredicard-touch-light] & {
         transition: opacity 200ms ease-out;
         animation: $holo-shift;
       }
@@ -485,7 +487,7 @@ $glare-texture: repeating-linear-gradient(
   filter: var(--incredicard-holo-glare-filter, contrast(1.75) saturate(2.2));
   mix-blend-mode: var(--incredicard-holo-blend-mode, color-dodge);
   // Invisible at rest, not just centered: `--incredicard-chip-light-active` is
-  // only set while a pointer or orientation sensor is driving the card
+  // only set while a pointer, a drag or the orientation sensor drives the card
   // (see that property's comment in IncrediCardChip.tsx for why this
   // can't be inferred from the x/y coordinates alone, since 50%/50% is
   // itself a real, reachable pointer position). `calc()` folds the "how
@@ -524,14 +526,14 @@ $glare-texture: repeating-linear-gradient(
     // above: the layer stays invisible unless something sets the active
     // flag, and the transition is removed.
     //
-    // Device orientation can set that flag, and when it does this layer
+    // A touch signal can set that flag, and when it does this layer
     // fades in for real, so the fade gets its transition back. Same
     // attribute and same reduced-motion scoping as `.holo` above; see
     // that block for both.
     transition: none;
 
     @media (prefers-reduced-motion: no-preference) {
-      [data-incredicard-orientation] & {
+      [data-incredicard-touch-light] & {
         transition: opacity 200ms ease-out;
       }
     }
@@ -609,10 +611,10 @@ $glare-texture: repeating-linear-gradient(
   @media (hover: none) {
     transition: none;
 
-    // Restored under a live orientation signal, exactly as on
+    // Restored under a live touch signal, exactly as on
     // `.glareRadial` above--see that block's own comment.
     @media (prefers-reduced-motion: no-preference) {
-      [data-incredicard-orientation] & {
+      [data-incredicard-touch-light] & {
         transition: opacity 200ms ease-out;
       }
     }
@@ -752,10 +754,10 @@ $glare-texture: repeating-linear-gradient(
   @media (hover: none) {
     transition: none;
 
-    // Restored under a live orientation signal, exactly as on
+    // Restored under a live touch signal, exactly as on
     // `.glareRadial` above--see that block's own comment.
     @media (prefers-reduced-motion: no-preference) {
-      [data-incredicard-orientation] & {
+      [data-incredicard-touch-light] & {
         transition: opacity 200ms ease-out;
       }
     }
@@ -845,10 +847,10 @@ $glare-texture: repeating-linear-gradient(
   @media (hover: none) {
     transition: none;
 
-    // Restored under a live orientation signal, exactly as on
+    // Restored under a live touch signal, exactly as on
     // `.glareRadial` above--see that block's own comment.
     @media (prefers-reduced-motion: no-preference) {
-      [data-incredicard-orientation] & {
+      [data-incredicard-touch-light] & {
         transition: opacity 200ms ease-out;
       }
     }

@@ -1601,6 +1601,67 @@ export const InvalidRegionsMatchFloating: Story = {
   },
 };
 
+// A phone, as far as the card can tell: `(hover: hover) and (pointer: fine)`
+// doesn't match, so its effects take the touch path. Installed while
+// rendering, before the card's own effects read it, and restored on unmount.
+const HOVER_QUERY = "(hover: hover) and (pointer: fine)";
+function AsTouchDevice({ children }: { children: React.ReactNode }) {
+  const [restore] = useState(() => {
+    const original = window.matchMedia;
+    window.matchMedia = (query: string) =>
+      query === HOVER_QUERY ? ({ ...original.call(window, query), matches: false } as MediaQueryList) : original.call(window, query);
+    return () => {
+      window.matchMedia = original;
+    };
+  });
+  useEffect(() => restore, [restore]);
+  return children;
+}
+
+// On a touch screen, dragging the card moves its light along with its tilt,
+// from the same relative drag, and the light rests again on release (this
+// browser has no motion access to hand back to).
+export const TouchDragMovesLight: Story = {
+  tags: ["!dev"],
+  args: { id: "story-touch-drag", theme: "glass", tilt: true, chipReflection: true },
+  render: (args) => (
+    <AsTouchDevice>
+      <IncrediCard {...cardProps(args)} defaultValue={FILLED} />
+    </AsTouchDevice>
+  ),
+  play: async ({ args }) => {
+    const card = document.getElementById(args.id!)!.querySelector<HTMLElement>("[data-face-layout]")!;
+    const chip = card.querySelector('[class*="chipOffset"]')!;
+    const light = () => card.style.getPropertyValue("--incredicard-chip-light-x");
+    const pointer = (type: string, x: number, y: number) =>
+      chip.dispatchEvent(
+        new PointerEvent(type, { pointerId: 7, pointerType: "touch", clientX: x, clientY: y, bubbles: true }),
+      );
+    const box = card.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+
+    expect(light()).toBe("");
+    pointer("pointerdown", x, y);
+    // Under the 8px threshold: still a tap, so nothing moves.
+    pointer("pointermove", x + 4, y);
+    expect(light()).toBe("");
+
+    // A quarter of the card's width to the right: three quarters across.
+    pointer("pointermove", x + box.width / 4, y);
+    expect(parseFloat(light())).toBeCloseTo(75, 0);
+    expect(card.style.getPropertyValue("--incredicard-chip-light-y")).toBe("50%");
+    expect(card.style.getPropertyValue("--incredicard-tilt-y")).not.toBe("");
+    expect(card.hasAttribute("data-incredicard-touch-light")).toBe(true);
+
+    pointer("pointerup", x + box.width / 4, y);
+    expect(light()).toBe("");
+    expect(card.style.getPropertyValue("--incredicard-tilt-y")).toBe("");
+    // Left set, so the glare fades out rather than snapping off.
+    expect(card.hasAttribute("data-incredicard-touch-light")).toBe(true);
+  },
+};
+
 // Clicking a row on the stacked card focuses its field in the list, the way
 // the floating card's own fields take a click: on the side facing up, never
 // a placeholder, never on a disabled card. With `scale`, the card's

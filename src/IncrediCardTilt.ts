@@ -9,6 +9,15 @@ import {
   type IncrediCardOffset,
 } from "./IncrediCardOrientation";
 
+// A finger's drag of the card, announced on the card's element for the
+// light (useIncrediCardChipLight in IncrediCardChip.tsx, on the same
+// element), so the highlight follows the same drag the tilt does. The
+// detail is the drag's position in the -0.5..0.5 space below, or `null`
+// once the finger lifts. Only this hook can tell a drag from a tap on a
+// field, so it does the tracking and the light only listens.
+export const INCREDICARD_DRAG_EVENT = "incredicard-drag";
+export type IncrediCardDragDetail = IncrediCardOffset | null;
+
 // Attaches a pointermove/pointerleave listener to the returned ref's own
 // element--meant to be the whole card's own `.faceWrapper` root, the
 // SAME element useIncrediCardChipLight (IncrediCardChip.tsx) already
@@ -285,6 +294,10 @@ export function useIncrediCardTilt(active: boolean, suppressed: boolean) {
       return Math.min(0.5, Math.max(-0.5, value));
     }
 
+    function announceDrag(detail: IncrediCardDragDetail) {
+      el!.dispatchEvent(new CustomEvent<IncrediCardDragDetail>(INCREDICARD_DRAG_EVENT, { detail }));
+    }
+
     // Presses that land on a real field or the flip control are not drags
     // at all -- they fall straight through to the browser, so focus
     // happens natively on pointerdown with nothing added in front of it.
@@ -342,7 +355,10 @@ export function useIncrediCardTilt(active: boolean, suppressed: boolean) {
       //
       // Half a card's width or height of travel reaches full tilt.
       const rect = el.getBoundingClientRect();
-      writeTilt(clampOffset(dx / rect.width), clampOffset(dy / rect.height));
+      const x = clampOffset(dx / rect.width);
+      const y = clampOffset(dy / rect.height);
+      writeTilt(x, y);
+      announceDrag({ x, y });
     };
 
     const handleDragEnd = (event: PointerEvent) => {
@@ -358,6 +374,7 @@ export function useIncrediCardTilt(active: boolean, suppressed: boolean) {
         // transition eases the card back to flat, the same way the hover
         // path's `pointerleave` does.
         clearTilt();
+        announceDrag(null);
       }
       dragging = false;
       dragPointerId = null;
@@ -387,6 +404,10 @@ export function useIncrediCardTilt(active: boolean, suppressed: boolean) {
     el.addEventListener("pointercancel", handleDragEnd);
 
     function detachDrag() {
+      // A drag cut short by unmounting, or by `tilt` turning off, still
+      // ends for the light.
+      if (dragging) announceDrag(null);
+      dragging = false;
       el!.removeEventListener("pointerdown", handleDragStart);
       el!.removeEventListener("pointermove", handleDragMove);
       el!.removeEventListener("pointerup", handleDragEnd);
