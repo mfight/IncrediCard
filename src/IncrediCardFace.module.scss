@@ -630,6 +630,24 @@
   }
 }
 
+// A row that focuses its field when clicked (`onFieldClick`): it takes the
+// pointer the way the floating card's fields do, with a text cursor and the
+// same faint border on hover (`--theme-incredicard-field-border-color-hover`
+// in IncrediCardEmbeddedFace.module.scss's slot rule), easing as theirs does.
+// An invalid row keeps its red under the pointer, as an invalid field does.
+.faceWrapper[data-field-clicks] [data-field] {
+  cursor: text;
+  transition: border-color 120ms ease;
+
+  @include reduced-motion.reduced-motion {
+    transition: none;
+  }
+
+  &:hover:not(.invalidRegion) {
+    border-color: rgb(255 255 255 / 25%);
+  }
+}
+
 // A visual echo of a field's error state, highlighting the matching
 // region of the card. It is never the only error indication: the real,
 // accessible error lives on each semantic field's errorText

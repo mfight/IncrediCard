@@ -74,12 +74,20 @@ export type IncrediCardFaceProps = {
    * own to apply this to: the "stacked" layout's scale target
    * (`.faceContainer`) lives in IncrediCard.tsx, one level up. */
   cardZoomed?: boolean;
-  /** Fires when the card's background is clicked. There are no fields
-   * here, and the flip control is a sibling in IncrediCard.tsx's markup
-   * rather than a descendant of this component, so no filtering is
-   * needed (unlike the identical prop on IncrediCardEmbeddedFace). Wired
-   * straight to `.faceWrapper`'s `onClick`. */
+  /** Fires when the card's background is clicked: anywhere but a row
+   * `onFieldClick` handles. The flip control is a sibling in
+   * IncrediCard.tsx's markup rather than a descendant of this component,
+   * so it needs no filtering here (unlike on IncrediCardEmbeddedFace). */
   onCardClick?: () => void;
+  /** Fires when a row standing for a field is clicked, on the side facing
+   * up: the number, expiration or name, or the security code's panel. The
+   * caller focuses that field in the list, so the card works the way the
+   * floating card's own fields do. Pointer only: the card stays
+   * `aria-hidden` with nothing focusable in it, since keyboard and
+   * screen-reader users reach the fields themselves. Omitted (a disabled or
+   * processing card), the rows are inert. A row not yet revealed is an
+   * invisible placeholder, never a target. */
+  onFieldClick?: (field: IncrediCardFaceField) => void;
   /** The detected network's acceptance mark, or its name where the app
    * supplied no mark (see acceptanceMarks.ts); `undefined` until a
    * network is confidently detected. Anchored to the card's bottom-right
@@ -139,6 +147,9 @@ export type IncrediCardFaceProps = {
   cvcOnFront?: boolean;
 };
 
+/** The field a row on the card stands for. */
+export type IncrediCardFaceField = "number" | "name" | "expiration" | "cvc";
+
 // The synchronized visual half of IncrediCard: a presentation layer
 // only, entirely `aria-hidden`. Every value mirrored here is already the
 // accessible, interactive content of a real field elsewhere in
@@ -165,6 +176,7 @@ export function IncrediCardFace({
   tilt = false,
   cardZoomed = false,
   onCardClick,
+  onFieldClick,
   networkMark,
   cardholderNameDisplay,
   cardNumberDigits,
@@ -238,6 +250,28 @@ export function IncrediCardFace({
 
   const tiltRef = useIncrediCardTilt(tilt, cardZoomed);
 
+  // The row a pointer event landed on, if it stands for a field and is on
+  // the side facing up. The side is checked here rather than trusted to the
+  // browser's hit testing of a turned-away face.
+  function fieldRowAt(target: EventTarget) {
+    if (!onFieldClick || !(target instanceof Element)) return null;
+    const row = target.closest<HTMLElement>("[data-field]");
+    const side = flipped ? "back" : "front";
+    return row?.closest(`[data-side="${side}"]`) ? row : null;
+  }
+
+  function handleClick(event: React.MouseEvent<HTMLDivElement>) {
+    const row = fieldRowAt(event.target);
+    if (row) onFieldClick?.(row.dataset.field as IncrediCardFaceField);
+    else onCardClick?.();
+  }
+
+  // Keeps whatever field has focus focused until the click moves it, so the
+  // card doesn't zoom out and back in on the way.
+  function handleMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    if (fieldRowAt(event.target)) event.preventDefault();
+  }
+
   return (
     <div
       className={classNames(
@@ -248,8 +282,10 @@ export function IncrediCardFace({
       data-flipped={flipped || undefined}
       data-face-layout={faceLayout}
       data-long-number={longNumber || undefined}
+      data-field-clicks={onFieldClick ? "" : undefined}
       ref={mergeRefs(chipLightRef, tiltRef)}
-      onClick={onCardClick}
+      onClick={onCardClick || onFieldClick ? handleClick : undefined}
+      onMouseDown={onFieldClick ? handleMouseDown : undefined}
     >
       <div
         className={styles.flipContainer}
@@ -259,7 +295,7 @@ export function IncrediCardFace({
         // question of the two clobbering each other.
         style={{ "--incredicard-flip-angle": `${flipAngleDeg}deg` } as React.CSSProperties}
       >
-        <div className={classNames(styles.face, styles.front)}>
+        <div className={classNames(styles.face, styles.front)} data-side="front">
           {glassBackdrop ? <IncrediCardBackdropCopy backdrop={glassBackdrop} /> : null}
           {processing ? <IncrediCardSpinner /> : null}
           {/* Front only, unlike the spinner, which is on both. Two
@@ -308,6 +344,7 @@ export function IncrediCardFace({
                     styles.cvc,
                     cvcInvalid && styles.invalidRegion,
                   )}
+                  data-field="cvc"
                 >
                   {cvcContents}
                 </span>
@@ -331,6 +368,7 @@ export function IncrediCardFace({
                 styles.number,
                 numberInvalid && styles.invalidRegion,
               )}
+              data-field="number"
             >
               {numberDisplay}
             </div>
@@ -343,6 +381,7 @@ export function IncrediCardFace({
                 styles.expiration,
                 expirationInvalid && styles.invalidRegion,
               )}
+              data-field="expiration"
             >
               {expirationDisplay || expirationPlaceholder}
             </span>
@@ -362,6 +401,7 @@ export function IncrediCardFace({
                 styles.name,
                 nameInvalid && styles.invalidRegion,
               )}
+              data-field="name"
             >
               {cardholderNameDisplay}
             </span>
@@ -406,7 +446,7 @@ export function IncrediCardFace({
           ) : null}
           {gloss ? <IncrediCardGloss /> : null}
         </div>
-        <div className={classNames(styles.face, styles.back)}>
+        <div className={classNames(styles.face, styles.back)} data-side="back">
           {glassBackdrop ? <IncrediCardBackdropCopy backdrop={glassBackdrop} /> : null}
           {processing ? <IncrediCardSpinner /> : null}
           <div className={styles.magstripe} />
@@ -417,6 +457,7 @@ export function IncrediCardFace({
                   styles.cvc,
                   cvcInvalid && styles.invalidRegion,
                 )}
+                data-field="cvc"
               >
                 {cvcContents}
               </span>

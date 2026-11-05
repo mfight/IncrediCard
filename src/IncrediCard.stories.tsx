@@ -1577,9 +1577,11 @@ export const InvalidRegionsMatchFloating: Story = {
       (field) => document.getElementById(`${args.id}-floating-${field}`)!.parentElement!,
     );
     expect(stackedRows.length).toBe(3);
-    // Retried: a field's border color eases for 120ms after it loses focus.
+    // Retried: a field's border color eases for 120ms after it loses focus,
+    // and so does a row's, so both are waited for to arrive at the red.
     await waitFor(() =>
       stackedRows.forEach((row, index) => {
+        expect(look(row).border).toBe("rgb(220, 38, 38)");
         expect(look(row)).toEqual(look(floatingBoxes[index]));
         expect(relative(row, "stacked")).toEqual(relative(floatingBoxes[index], "floating"));
       }),
@@ -1590,8 +1592,94 @@ export const InvalidRegionsMatchFloating: Story = {
     // of focus here, so its number field stands in for the red; the panel's
     // corners are its own.
     const stackedCvc = card("stacked").querySelector('[class*="signatureRow"] [class*="invalidRegion"]')!;
-    const { radius: _radius, ...floatingRed } = look(floatingBoxes[0]);
-    await waitFor(() => expect(look(stackedCvc)).toMatchObject(floatingRed));
+    await waitFor(() => {
+      const { radius: _radius, ...floatingRed } = look(floatingBoxes[0]);
+      expect(floatingRed.border).toBe("rgb(220, 38, 38)");
+      expect(look(stackedCvc)).toMatchObject(floatingRed);
+    });
+  },
+};
+
+// Clicking a row on the stacked card focuses its field in the list, the way
+// the floating card's own fields take a click: on the side facing up, never
+// a placeholder, never on a disabled card. With `scale`, the card's
+// background still toggles the zoom, and a row doesn't.
+export const StackedRowsFocusFields: Story = {
+  tags: ["!dev"],
+  args: { id: "story-row-clicks", layout: "stacked" },
+  render: (args) => (
+    <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(3, 21.25rem)" }}>
+      <IncrediCard {...cardProps(args)} id={`${args.id}-visa`} defaultValue={FILLED} />
+      <IncrediCard
+        {...cardProps(args)}
+        id={`${args.id}-amex`}
+        defaultValue={{ ...FILLED, cardNumber: "378282246310005", cvc: "1234" }}
+      />
+      <IncrediCard {...cardProps(args)} id={`${args.id}-disabled`} disabled defaultValue={FILLED} />
+      <IncrediCard {...cardProps(args)} id={`${args.id}-empty`} />
+      <IncrediCard {...cardProps(args)} id={`${args.id}-zoom`} scale defaultValue={FILLED} />
+      <HostedFieldsCard {...args} id={`${args.id}-hosted`} />
+    </div>
+  ),
+  play: async ({ args, canvasElement }) => {
+    const card = (name: string) => document.getElementById(`${args.id}-${name}`)!.querySelector<HTMLElement>("[data-face-layout]")!;
+    const row = (name: string, side: string, field: string) =>
+      card(name).querySelector<HTMLElement>(`[data-side="${side}"] [data-field="${field}"]`)!;
+    const input = (name: string, field: string) => document.getElementById(`${args.id}-${name}-${field}`)!;
+
+    // The front's rows, each focusing its own field. Focus moves straight
+    // from one field to the next, so the card never drops its zoom between.
+    for (const field of ["number", "expiration", "name"]) {
+      await userEvent.click(row("visa", "front", field));
+      expect(document.activeElement).toBe(input("visa", field));
+      expect(card("visa").hasAttribute("data-flipped")).toBe(false);
+    }
+    const handoff = new Promise<EventTarget | null>((resolve) =>
+      input("visa", "name").addEventListener("blur", (event) => resolve(event.relatedTarget), { once: true }),
+    );
+    await userEvent.click(row("visa", "front", "number"));
+    expect(await handoff).toBe(input("visa", "number"));
+    expect(getComputedStyle(row("visa", "front", "number")).cursor).toBe("text");
+
+    // The back's security code panel, once the card is turned over.
+    await userEvent.click(document.querySelector(`#${args.id}-visa button[aria-label="Show back of card"]`)!);
+    await waitFor(() => expect(card("visa").hasAttribute("data-flipped")).toBe(true));
+    (document.activeElement as HTMLElement).blur();
+    await userEvent.click(row("visa", "back", "cvc"));
+    expect(document.activeElement).toBe(input("visa", "cvc"));
+    // A row on the turned-away face is not a target.
+    row("visa", "front", "expiration").click();
+    expect(document.activeElement).toBe(input("visa", "cvc"));
+
+    // Amex's security code, on the front.
+    await userEvent.click(row("amex", "front", "cvc"));
+    expect(document.activeElement).toBe(input("amex", "cvc"));
+    expect(card("amex").hasAttribute("data-flipped")).toBe(false);
+
+    // A disabled card's rows are inert.
+    (document.activeElement as HTMLElement).blur();
+    await userEvent.click(row("disabled", "front", "number"));
+    expect(document.activeElement).toBe(document.body);
+    expect(getComputedStyle(row("disabled", "front", "number")).cursor).not.toBe("text");
+
+    // Before reveal, only the number is a row; the rest are placeholders.
+    expect(card("empty").querySelectorAll("[data-field]")).toHaveLength(1);
+    await userEvent.click(row("empty", "front", "number"));
+    expect(document.activeElement).toBe(input("empty", "number"));
+
+    // `scale`: the background toggles the zoom, and a row only focuses.
+    (document.activeElement as HTMLElement).blur();
+    const zoomCard = document.getElementById(`${args.id}-zoom`)!;
+    // The chip: part of the card's background, not a row.
+    await userEvent.click(card("zoom").querySelector('[data-side="front"] [class*="chipOffset"]')!);
+    await waitFor(() => expect(zoomCard.hasAttribute("data-zoomed")).toBe(true));
+    await userEvent.click(row("zoom", "front", "name"));
+    expect(document.activeElement).toBe(input("zoom", "name"));
+    expect(zoomCard.hasAttribute("data-zoomed")).toBe(true);
+
+    // A hosted field is focused through the processor's frame.
+    await userEvent.click(row("hosted", "front", "number"));
+    expect(document.activeElement).toBe(hostedFrame(canvasElement, "cardNumber"));
   },
 };
 

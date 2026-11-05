@@ -1321,6 +1321,10 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 tilt={tilt}
                 cardZoomed={cardZoomed}
                 onCardClick={scale ? handleCardClick : undefined}
+                // A row on the card focuses its field in the list, as the
+                // floating card's own fields take a click. Read-only still
+                // focuses, as clicking a read-only field does.
+                onFieldClick={disabled || processing ? undefined : focusField}
                 revealed={isRevealed}
                 cvcOnFront={isAmex}
                 networkMark={networkMark}
