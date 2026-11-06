@@ -254,7 +254,9 @@ The mark is a plain `<img>`, not a CSS `background-image`, because of how bundle
 
 ### Browser Autofill Is On Unless You Turn It Off
 
-The four fields carry the standard card autofill tokens (`cc-name`, `cc-number`, `cc-exp`, `cc-csc`), so a browser can offer a saved card, which is what a real checkout wants. On a demo, a test page or anywhere else that shouldn't invite a real card, pass `autoComplete={false}`: each field then asks for `autocomplete="off"`. That's a request, not a lock: a browser may still recognize a card field from its label and offer a card anyway. A processor's hosted fields follow the processor's own settings, not this prop. This demo turns autofill off in every story but Autocomplete.
+The four fields carry the standard card autofill tokens (`cc-name`, `cc-number`, `cc-exp`, `cc-csc`), so a browser can offer a saved card, which is what a real checkout wants. On a demo, a test page or anywhere else that shouldn't invite a real card, pass `autoComplete={false}`: each field then asks for `autocomplete="off"`, and carries `data-1p-ignore`, 1Password's own opt-out. That's a request, not a lock. Safari offers saved cards on any form it recognizes as a card form, `off` or not, and IncrediCard's four fields are exactly that; other password managers may do the same. A processor's hosted fields follow the processor's own settings, not this prop. This demo turns autofill off in every story but Autocomplete.
+
+Safari also offers saved cards only on the first card form on a page. Two IncrediCards on one page, as in a comparison, won't both get autofill.
 
 ### Nothing Here Enforces a Complete, Charge-Ready Card
 

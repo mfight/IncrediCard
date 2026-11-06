@@ -483,9 +483,10 @@ export const Processing: Story = {
 };
 
 // Browser autofill on: the one story where it is. A browser with a saved card
-// offers it from any field.
+// offers it from any field. One card, with the layout control: Safari offers
+// saved cards only on the first card form on a page, so a second card beside
+// it would never show autofill.
 export const Autocomplete: Story = {
-  ...bothLayouts,
   args: { id: "story-autocomplete", autoComplete: true },
   render: (args) => (
     <div>
@@ -494,13 +495,13 @@ export const Autocomplete: Story = {
         personal details; use a test number such as 4242 4242 4242 4242. Nothing you type leaves your
         browser: this demo has no server, and nothing is stored or collected.
       </p>
-      <BothLayouts {...args} />
+      <IncrediCard {...cardProps(args)} />
     </div>
   ),
 };
 
-// The fields' autofill tokens with autofill on, and "off" on every field with
-// it off, as every story but Autocomplete has it.
+// The fields' autofill tokens with autofill on, and "off" plus 1Password's
+// opt-out on every field with it off, as every story but Autocomplete has it.
 export const AutocompleteTokens: Story = {
   tags: ["!dev"],
   args: { id: "story-autocomplete-tokens", defaultValue: FILLED },
@@ -513,51 +514,14 @@ export const AutocompleteTokens: Story = {
   play: async ({ args }) => {
     const tokens = { name: "cc-name", number: "cc-number", expiration: "cc-exp", cvc: "cc-csc" };
     for (const [field, token] of Object.entries(tokens)) {
-      expect(document.getElementById(`${args.id}-on-${field}`)!.getAttribute("autocomplete")).toBe(token);
-      expect(document.getElementById(`${args.id}-off-${field}`)!.getAttribute("autocomplete")).toBe("off");
+      const on = document.getElementById(`${args.id}-on-${field}`)!;
+      const off = document.getElementById(`${args.id}-off-${field}`)!;
+      expect(on.getAttribute("autocomplete")).toBe(token);
+      expect(on.hasAttribute("data-1p-ignore")).toBe(false);
+      expect(off.getAttribute("autocomplete")).toBe("off");
+      expect(off.hasAttribute("data-1p-ignore")).toBe(true);
     }
   },
-};
-
-// Temporary: one card per page, for checking what Safari's card AutoFill keys
-// on. Each is its own page, so no other card's fields compete with it.
-// Removed once that's known.
-function InForm({ children }: { children: React.ReactNode }) {
-  return (
-    <form autoComplete="off" onSubmit={(event) => event.preventDefault()}>
-      {children}
-    </form>
-  );
-}
-
-export const AutofillProbeFloatingFilled: Story = {
-  tags: ["!dev"],
-  args: { id: "probe-floating-filled", layout: "floating", autoComplete: true, defaultValue: FILLED },
-};
-
-export const AutofillProbeFloatingEmpty: Story = {
-  tags: ["!dev"],
-  args: { id: "probe-floating-empty", layout: "floating", autoComplete: true },
-};
-
-export const AutofillProbeStackedOff: Story = {
-  tags: ["!dev"],
-  args: { id: "probe-stacked-off", layout: "stacked", defaultValue: FILLED },
-};
-
-export const AutofillProbeStackedOffInForm: Story = {
-  tags: ["!dev"],
-  args: { id: "probe-stacked-off-form", layout: "stacked", defaultValue: FILLED },
-  render: (args) => (
-    <InForm>
-      <IncrediCard {...cardProps(args)} />
-    </InForm>
-  ),
-};
-
-export const AutofillProbeStackedOn: Story = {
-  tags: ["!dev"],
-  args: { id: "probe-stacked-on", layout: "stacked", autoComplete: true, defaultValue: FILLED },
 };
 
 // Every other story renders the "stacked" layout at its narrowest supported

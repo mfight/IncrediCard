@@ -261,10 +261,12 @@ type IncrediCardOwnProps = {
   required?: boolean;
   /** Default true: the fields carry the standard card autofill tokens
    * (`cc-name`, `cc-number`, `cc-exp`, `cc-csc`), so a browser can offer a
-   * saved card. `false` writes `autocomplete="off"` instead, for a demo or
-   * a test page that shouldn't invite a real card. It's a request: a browser
-   * may still recognize a card field from its label. A processor's hosted
-   * fields follow the processor's own settings, not this. */
+   * saved card. `false` writes `autocomplete="off"` instead, plus
+   * `data-1p-ignore` for 1Password, for a demo or a test page that shouldn't
+   * invite a real card. It's a request: Safari still offers saved cards on a
+   * form it recognizes as a card form, and so may other password managers. A
+   * processor's hosted fields follow the processor's own settings, not
+   * this. */
   autoComplete?: boolean;
   /** Visual-only busy indication for a submission your application owns;
    * this component has no submission flow of its own (see this file's
@@ -405,8 +407,11 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     ref,
   ) {
     const labels = { ...DEFAULT_INCREDICARD_LABELS, ...labelsProp };
-    // A field's autofill token, or "off" when the app turned autofill off.
-    const autofill = (token: string) => (autoComplete ? token : "off");
+    // A field's autofill token, or, when the app turned autofill off, "off"
+    // plus 1Password's own opt-out: password managers don't honor "off" on a
+    // card form, and 1Password reads `data-1p-ignore` instead.
+    const autofill = (token: string) =>
+      autoComplete ? { autoComplete: token } : { autoComplete: "off", "data-1p-ignore": "" };
     const isControlled = value !== undefined;
     const [uncontrolledValue, setUncontrolledValue] =
       useState<IncrediCardValue>(defaultValue);
@@ -1101,7 +1106,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(nameError)}
         errorText={nameError}
         hideErrorText
-        autoComplete={autofill("cc-name")}
+        {...autofill("cc-name")}
         value={committedValue.cardholderName}
         onChange={(event) => commit({ cardholderName: event.target.value })}
         onFocus={() => setFlipped(false)}
@@ -1129,7 +1134,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(numberError)}
         errorText={numberError}
         hideErrorText
-        autoComplete={autofill("cc-number")}
+        {...autofill("cc-number")}
         pattern={numberPattern}
         characterClass="numeric"
         value={committedValue.cardNumber}
@@ -1173,7 +1178,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(expirationError)}
         errorText={expirationError}
         hideErrorText
-        autoComplete={autofill("cc-exp")}
+        {...autofill("cc-exp")}
         pattern="XX/XX"
         characterClass="numeric"
         value={expirationDigits || null}
@@ -1208,7 +1213,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(cvcError)}
         errorText={cvcError}
         hideErrorText
-        autoComplete={autofill("cc-csc")}
+        {...autofill("cc-csc")}
         // A digit-only 'X' template with no literal punctuation.
         // IncrediCardMaskedField's charLimitOf derives its max length from
         // this, so it grows from 3 to 4 once an Amex number is detected,

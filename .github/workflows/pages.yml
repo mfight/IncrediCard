@@ -29,10 +29,6 @@ jobs:
           node-version: "24"
       - run: npm ci
       - run: npx storybook build --quiet -o storybook-static
-      # Temporary: a page of single card fields for checking what Safari's
-      # card AutoFill keys on, which only works over HTTPS. Comes out with
-      # the page once that's known.
-      - run: cp demo/autofill-probe.html storybook-static/autofill-probe.html
       - uses: actions/upload-pages-artifact@v5
         with:
           path: storybook-static
