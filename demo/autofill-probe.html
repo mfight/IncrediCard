@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoFill probe</title>
+<style>
+  body { font: 15px/1.4 -apple-system, system-ui, sans-serif; margin: 2rem; color: #1f2328; max-width: 46rem; }
+  h1 { font-size: 1.25rem; }
+  form { border: 1px solid #d0d7de; border-radius: 8px; padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; }
+  .what { font-size: 0.8rem; color: #59636e; margin: 0 0 0.5rem; }
+  .n { font-weight: 700; margin-right: 0.4rem; }
+  label { display: block; font-size: 0.8rem; margin-bottom: 0.25rem; }
+  input { font: inherit; padding: 0.4rem 0.6rem; width: 16rem; border: 1px solid #d0d7de; border-radius: 6px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .stage { perspective: 60rem; }
+  .card3d { transform-style: preserve-3d; transform: rotateY(0deg); padding: 0.75rem; border-radius: 12px; background: #24292f; }
+  .card3d .face { backface-visibility: hidden; }
+  .card3d input { background: transparent; color: #fff; border-color: transparent; }
+</style>
+</head>
+<body>
+<h1>Safari AutoFill probe</h1>
+<p>Click into each field. Note which numbers offer a saved card. Don't pick one: nothing here needs a real number.</p>
+
+<form><p class="what"><span class="n">1</span>Visible label, autocomplete="cc-number" (control: should offer)</p>
+  <label for="f1">Card number</label><input id="f1" autocomplete="cc-number" inputmode="numeric"></form>
+
+<form><p class="what"><span class="n">2</span>Visible label, autocomplete="off" (today's stacked list)</p>
+  <label for="f2">Card number</label><input id="f2" autocomplete="off" inputmode="numeric"></form>
+
+<form><p class="what"><span class="n">3</span>Visible label, autocomplete="nope" (an unrecognized value)</p>
+  <label for="f3">Card number</label><input id="f3" autocomplete="nope" inputmode="numeric"></form>
+
+<form><p class="what"><span class="n">4</span>No label text Safari can read near it: aria-label only, autocomplete="off"</p>
+  <span aria-hidden="true" style="display:block;font-size:0.8rem;margin-bottom:0.25rem">Card number</span><input id="f4" aria-label="Card number" autocomplete="off" inputmode="numeric"></form>
+
+<form><p class="what"><span class="n">5</span>Visually hidden label, autocomplete="cc-number" (like the floating card's labels)</p>
+  <label for="f5" class="sr">Card number</label><input id="f5" autocomplete="cc-number" inputmode="numeric" placeholder="1234 1234 1234 1234"></form>
+
+<form><p class="what"><span class="n">6</span>Visible label, autocomplete="cc-number", inside a 3D card (perspective, preserve-3d, backface hidden)</p>
+  <div class="stage"><div class="card3d"><div class="face"><label for="f6" style="color:#fff">Card number</label><input id="f6" autocomplete="cc-number" inputmode="numeric"></div></div></div></form>
+
+<form><p class="what"><span class="n">7</span>Not in a form at all: visible label, autocomplete="cc-number"</p></form>
+<div style="border:1px solid #d0d7de;border-radius:8px;padding:0.75rem 1rem 1rem;margin:0 0 1rem">
+  <label for="f7">Card number</label><input id="f7" autocomplete="cc-number" inputmode="numeric"></div>
+
+<form><p class="what"><span class="n">8</span>Visible label, autocomplete="cc-number", type="text" with name="cardnumber"</p>
+  <label for="f8">Card number</label><input id="f8" name="cardnumber" type="text" autocomplete="cc-number" inputmode="numeric"></form>
+</body>
+</html>
