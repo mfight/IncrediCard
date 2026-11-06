@@ -519,6 +519,47 @@ export const AutocompleteTokens: Story = {
   },
 };
 
+// Temporary: one card per page, for checking what Safari's card AutoFill keys
+// on. Each is its own page, so no other card's fields compete with it.
+// Removed once that's known.
+function InForm({ children }: { children: React.ReactNode }) {
+  return (
+    <form autoComplete="off" onSubmit={(event) => event.preventDefault()}>
+      {children}
+    </form>
+  );
+}
+
+export const AutofillProbeFloatingFilled: Story = {
+  tags: ["!dev"],
+  args: { id: "probe-floating-filled", layout: "floating", autoComplete: true, defaultValue: FILLED },
+};
+
+export const AutofillProbeFloatingEmpty: Story = {
+  tags: ["!dev"],
+  args: { id: "probe-floating-empty", layout: "floating", autoComplete: true },
+};
+
+export const AutofillProbeStackedOff: Story = {
+  tags: ["!dev"],
+  args: { id: "probe-stacked-off", layout: "stacked", defaultValue: FILLED },
+};
+
+export const AutofillProbeStackedOffInForm: Story = {
+  tags: ["!dev"],
+  args: { id: "probe-stacked-off-form", layout: "stacked", defaultValue: FILLED },
+  render: (args) => (
+    <InForm>
+      <IncrediCard {...cardProps(args)} />
+    </InForm>
+  ),
+};
+
+export const AutofillProbeStackedOn: Story = {
+  tags: ["!dev"],
+  args: { id: "probe-stacked-on", layout: "stacked", autoComplete: true, defaultValue: FILLED },
+};
+
 // Every other story renders the "stacked" layout at its narrowest supported
 // width, since Storybook's `layout: "centered"` parameter doesn't stretch its
 // subject wide enough to reach the row-layout switch. This story is wide
