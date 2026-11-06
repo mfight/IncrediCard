@@ -77,6 +77,17 @@
   line-height: 1.5;
 }
 
+// The trial decoy card fields (see `AutofillDecoy`): positioned out of the
+// flow at zero size, so nothing shows and nothing moves.
+.autofillDecoy {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 // The DeviceTilt story's permission trigger. Page furniture standing in
 // for a call your app makes early (at sign-in, say), not a control the
 // component ships.

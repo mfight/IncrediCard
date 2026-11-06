@@ -161,11 +161,36 @@ const bothLayouts = {
   argTypes: { layout: { table: { disable: true } } },
 } satisfies Story;
 
+// Trial: decoy card fields ahead of a story's cards. Safari offers saved cards
+// only on the first card form it finds on a page, whatever the fields'
+// `autocomplete` says, so a zero-size set placed first may draw it away from
+// the real cards. Hidden from screen readers and out of the tab order.
+function AutofillDecoy() {
+  return (
+    <div className={themedStyles.autofillDecoy} aria-hidden="true">
+      <label htmlFor="autofill-decoy-number">Card number</label>
+      <input id="autofill-decoy-number" autoComplete="cc-number" inputMode="numeric" tabIndex={-1} />
+      <label htmlFor="autofill-decoy-name">Name on card</label>
+      <input id="autofill-decoy-name" autoComplete="cc-name" tabIndex={-1} />
+      <label htmlFor="autofill-decoy-expiration">Expiration date</label>
+      <input id="autofill-decoy-expiration" autoComplete="cc-exp" inputMode="numeric" tabIndex={-1} />
+      <label htmlFor="autofill-decoy-cvc">Security code</label>
+      <input id="autofill-decoy-cvc" autoComplete="cc-csc" inputMode="numeric" tabIndex={-1} />
+    </div>
+  );
+}
+
 // The default theme: a dark card printed with fine twisting lines, which the
 // foil lights. Move the pointer across the card to light the band and the fan
 // separately.
 export const Ribbons: Story = {
   ...bothLayouts,
+  render: (args) => (
+    <>
+      <AutofillDecoy />
+      <BothLayouts {...args} />
+    </>
+  ),
   args: { id: "story-ribbons", theme: "ribbons", holofoil: true, defaultValue: FILLED },
 };
 
