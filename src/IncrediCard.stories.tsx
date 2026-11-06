@@ -55,7 +55,10 @@ const meta = {
   // Every story shows the demo's acceptance marks, which the package
   // doesn't ship (see demo/acceptanceMarks.ts), passed in the way an app
   // passes its own.
-  args: { acceptanceMarks: demoAcceptanceMarks },
+  //
+  // Browser autofill is off everywhere but the Autocomplete story, so the
+  // demo never offers anyone's saved card or looks like it wants one.
+  args: { acceptanceMarks: demoAcceptanceMarks, autoComplete: false },
   parameters: {
     layout: "centered",
   },
@@ -96,6 +99,9 @@ const meta = {
     layout: {
       control: "select",
       options: ["floating", "stacked"],
+    },
+    autoComplete: {
+      control: "boolean",
     },
     reducedMotion: {
       control: "boolean",
@@ -474,6 +480,43 @@ export const Disabled: Story = {
 export const Processing: Story = {
   decorators: [withReducedMotion],
   args: { id: "story-processing", processing: true, defaultValue: FILLED },
+};
+
+// Browser autofill on: the one story where it is. A browser with a saved card
+// offers it from any field.
+export const Autocomplete: Story = {
+  ...bothLayouts,
+  args: { id: "story-autocomplete", autoComplete: true },
+  render: (args) => (
+    <div>
+      <p className={themedStyles.autofillNotice} role="note">
+        Browser autofill is on in this story, to show it working. Please don&rsquo;t enter a real card or
+        personal details; use a test number such as 4242 4242 4242 4242. Nothing you type leaves your
+        browser: this demo has no server, and nothing is stored or collected.
+      </p>
+      <BothLayouts {...args} />
+    </div>
+  ),
+};
+
+// The fields' autofill tokens with autofill on, and "off" on every field with
+// it off, as every story but Autocomplete has it.
+export const AutocompleteTokens: Story = {
+  tags: ["!dev"],
+  args: { id: "story-autocomplete-tokens", defaultValue: FILLED },
+  render: (args) => (
+    <div className={themedStyles.examples}>
+      <IncrediCard {...cardProps(args)} id={`${args.id}-on`} autoComplete />
+      <IncrediCard {...cardProps(args)} id={`${args.id}-off`} autoComplete={false} />
+    </div>
+  ),
+  play: async ({ args }) => {
+    const tokens = { name: "cc-name", number: "cc-number", expiration: "cc-exp", cvc: "cc-csc" };
+    for (const [field, token] of Object.entries(tokens)) {
+      expect(document.getElementById(`${args.id}-on-${field}`)!.getAttribute("autocomplete")).toBe(token);
+      expect(document.getElementById(`${args.id}-off-${field}`)!.getAttribute("autocomplete")).toBe("off");
+    }
+  },
 };
 
 // Every other story renders the "stacked" layout at its narrowest supported
@@ -1328,7 +1371,7 @@ export const NetworkNameOnNameBaseline: Story = {
     for (const card of canvasElement.querySelectorAll<HTMLElement>("fieldset")) {
       const face = card.querySelector<HTMLElement>("[data-face-layout]")!;
       const name =
-        face.querySelector<HTMLInputElement>('input[autocomplete="cc-name"]') ??
+        face.querySelector<HTMLInputElement>('input[id$="-name"]') ??
         [...face.querySelectorAll<HTMLElement>("span")].find(
           (span) => span.textContent === "ALEX RIVERA" && span.children.length === 0,
         )!;
@@ -1515,7 +1558,7 @@ export const CvcPlaceholderOnPanel: Story = {
   ),
   args: { id: "story-cvc-placeholder" },
   play: async ({ canvasElement }) => {
-    const fields = [...canvasElement.querySelectorAll<HTMLInputElement>('input[autocomplete="cc-csc"]')];
+    const fields = [...canvasElement.querySelectorAll<HTMLInputElement>('input[id$="-cvc"]')];
     expect(fields.length).toBe(Object.keys(INCREDICARD_THEMES).length);
     for (const field of fields) {
       expect(field.value).toBe("");

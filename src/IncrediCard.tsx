@@ -259,6 +259,13 @@ type IncrediCardOwnProps = {
   /** Default true. A card form with an optional field is unusual enough
    * that it doesn't warrant a separate per-field `required` setting. */
   required?: boolean;
+  /** Default true: the fields carry the standard card autofill tokens
+   * (`cc-name`, `cc-number`, `cc-exp`, `cc-csc`), so a browser can offer a
+   * saved card. `false` writes `autocomplete="off"` instead, for a demo or
+   * a test page that shouldn't invite a real card. It's a request: a browser
+   * may still recognize a card field from its label. A processor's hosted
+   * fields follow the processor's own settings, not this. */
+  autoComplete?: boolean;
   /** Visual-only busy indication for a submission your application owns;
    * this component has no submission flow of its own (see this file's
    * header comment). Locks every field read-only and dims the card face
@@ -384,6 +391,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       disabled = false,
       readOnly = false,
       required = true,
+      autoComplete = true,
       processing = false,
       labels: labelsProp,
       hostedFields,
@@ -397,6 +405,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     ref,
   ) {
     const labels = { ...DEFAULT_INCREDICARD_LABELS, ...labelsProp };
+    // A field's autofill token, or "off" when the app turned autofill off.
+    const autofill = (token: string) => (autoComplete ? token : "off");
     const isControlled = value !== undefined;
     const [uncontrolledValue, setUncontrolledValue] =
       useState<IncrediCardValue>(defaultValue);
@@ -1091,7 +1101,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(nameError)}
         errorText={nameError}
         hideErrorText
-        autoComplete="cc-name"
+        autoComplete={autofill("cc-name")}
         value={committedValue.cardholderName}
         onChange={(event) => commit({ cardholderName: event.target.value })}
         onFocus={() => setFlipped(false)}
@@ -1119,7 +1129,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(numberError)}
         errorText={numberError}
         hideErrorText
-        autoComplete="cc-number"
+        autoComplete={autofill("cc-number")}
         pattern={numberPattern}
         characterClass="numeric"
         value={committedValue.cardNumber}
@@ -1163,7 +1173,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(expirationError)}
         errorText={expirationError}
         hideErrorText
-        autoComplete="cc-exp"
+        autoComplete={autofill("cc-exp")}
         pattern="XX/XX"
         characterClass="numeric"
         value={expirationDigits || null}
@@ -1198,7 +1208,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
         invalid={Boolean(cvcError)}
         errorText={cvcError}
         hideErrorText
-        autoComplete="cc-csc"
+        autoComplete={autofill("cc-csc")}
         // A digit-only 'X' template with no literal punctuation.
         // IncrediCardMaskedField's charLimitOf derives its max length from
         // this, so it grows from 3 to 4 once an Amex number is detected,

@@ -61,6 +61,22 @@
   color: var(--story-text-secondary);
 }
 
+// The Autocomplete story's notice: the one story with autofill on says
+// plainly what to type and that nothing is kept. Bordered and set at body
+// size, unlike the quieter legend notes above, because it asks something of
+// the reader.
+.autofillNotice {
+  max-width: 44rem;
+  margin: 0 0 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 0.0625rem solid #d4a72c;
+  border-radius: 0.5rem;
+  background: #fff8c5;
+  color: var(--story-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 // The DeviceTilt story's permission trigger. Page furniture standing in
 // for a call your app makes early (at sign-in, say), not a control the
 // component ships.

@@ -252,6 +252,10 @@ The corner's position comes from a 325×204 reference card (the mark at 241,138,
 
 The mark is a plain `<img>`, not a CSS `background-image`, because of how bundlers inline small assets. Under Vite's default 4KB inlining threshold, a small SVG resolves to a raw, non-base64 `data:` URI that keeps the source's single quotes unescaped. Assigning that string to `element.style.backgroundImage` (the mechanism React uses for a `style` object) silently fails: the browser's CSS `url()` tokenizer can't parse the embedded quotes, and the property setter no-ops rather than throwing. `src` has no such parsing step, so an `<img>` works with any asset shape.
 
+### Browser Autofill Is On Unless You Turn It Off
+
+The four fields carry the standard card autofill tokens (`cc-name`, `cc-number`, `cc-exp`, `cc-csc`), so a browser can offer a saved card, which is what a real checkout wants. On a demo, a test page or anywhere else that shouldn't invite a real card, pass `autoComplete={false}`: each field then asks for `autocomplete="off"`. That's a request, not a lock: a browser may still recognize a card field from its label and offer a card anyway. A processor's hosted fields follow the processor's own settings, not this prop. This demo turns autofill off in every story but Autocomplete.
+
 ### Nothing Here Enforces a Complete, Charge-Ready Card
 
 Each field surfaces its own basic format and completeness feedback once left with an invalid value (never mid-type), but real payment validation (whether the card exists, has funds, isn't reported lost) can only come from your payment processor. `onCompletionChange` reports the former (every field filled in and passing this component's format checks), never the latter. Don't treat one "complete" callback firing as permission to charge a card; it isn't.

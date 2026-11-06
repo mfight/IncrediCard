@@ -8,7 +8,7 @@ A credit-card entry form for React with a dimensional card that mirrors what's t
 
 ## Features
 
-- **Real fields:** name, number, expiration and security code are ordinary inputs with labels, `autocomplete` values and error messages. Typing, pasting and browser autofill all work.
+- **Real fields:** name, number, expiration and security code are ordinary inputs with labels, `autocomplete` values and error messages. Typing, pasting and browser autofill all work, and `autoComplete={false}` asks the browser not to offer a saved card.
 - **Two layouts:** `floating` puts the fields on the card itself; `stacked` puts a decorative card above a normal field list.
 - **Network detection:** Visa, Mastercard, American Express, Discover, Diners Club, JCB, Maestro and UnionPay, with each network's grouping, length and security-code rules. The card shows the detected network with the acceptance mark you supply, or its name.
 - **Four themes:** `ribbons`, a dark card printed with fine twisting lines; `vintage`, an embossed plastic card set in OCR-A and OCR-B; `globe`, the same dark card printed with an engraved globe; and `glass`, mostly clear glass that shows the page behind it, with light or dark text for that page (`textTone`), and bends it at the edge in Chromium browsers, or in any browser if you tell it what's behind the card (`glassBackdrop`). Or pass your own definition, starting from one of these with `extendIncrediCardTheme`.
