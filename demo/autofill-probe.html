@@ -23,7 +23,7 @@
 </head>
 <body>
 <h1>Safari AutoFill probe, round 2</h1>
-<p>Every field here asks for <code>autocomplete="off"</code>. Click into each field of each group, and note which groups (and which fields) still offer a saved card. Don't pick one.</p>
+<p>Groups 9 to 13 ask for <code>autocomplete="off"</code> on every field. Click into each field of each group, and note which groups (and which fields) still offer a saved card. Don't pick one. Groups 14 to 16 ask for autofill instead, to test the floating card.</p>
 <div class="group"><p class="what"><span class="n">9</span>Like the stacked list: IDs ending -number, -name, -expiration, -cvc; security code is a password field; required</p>
   <label for="story-number">Card number</label><input id="story-number" type="text" autocomplete="off" inputmode="numeric" required>
   <label for="story-name">Name on card</label><input id="story-name" type="text" autocomplete="off" required>
@@ -51,6 +51,15 @@
 <div class="group"><p class="what"><span class="n">13</span>Same as 9, but only number and expiration (no name, no security code)</p>
   <label for="p13-number">Card number</label><input id="p13-number" type="text" autocomplete="off" inputmode="numeric" required>
   <label for="p13-expiration">Expiration date</label><input id="p13-expiration" type="text" autocomplete="off" inputmode="numeric" required>
+</div>
+<div class="group"><p class="what"><span class="n">14</span>Single field, autocomplete="cc-number", flat (no 3D), but transparent with no border, like a floating card's field</p>
+  <div style="background:#24292f;padding:0.75rem;border-radius:12px"><label for="p14" style="color:#fff">Card number</label><input id="p14" autocomplete="cc-number" inputmode="numeric" style="background:transparent;border-color:transparent;color:#fff"></div>
+</div>
+<div class="group"><p class="what"><span class="n">15</span>Single field, autocomplete="cc-number", in the 3D card, but an ordinary white input with a border</p>
+  <div class="stage"><div class="card3d"><div class="face"><label for="p15" style="color:#fff">Card number</label><input id="p15" autocomplete="cc-number" inputmode="numeric" style="background:#fff;border-color:#d0d7de;color:#1f2328"></div></div></div>
+</div>
+<div class="group"><p class="what"><span class="n">16</span>Same as the first round's 6 (3D, transparent), but already holding a test number</p>
+  <div class="stage"><div class="card3d"><div class="face"><label for="p16" style="color:#fff">Card number</label><input id="p16" autocomplete="cc-number" inputmode="numeric" value="4242 4242 4242 4242"></div></div></div>
 </div>
 </body>
 </html>
