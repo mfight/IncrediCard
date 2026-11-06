@@ -258,6 +258,8 @@ The four fields carry the standard card autofill tokens (`cc-name`, `cc-number`,
 
 Safari also offers saved cards only on the first card form on a page. Two IncrediCards on one page, as in a comparison, won't both get autofill.
 
+That second rule is how this demo keeps Safari's menu off its cards. Each story with autofill off sits inside one `<form>` that starts with a hidden set of decoy card fields, a single clipped pixel that's out of the tab order and hidden from screen readers. Safari offers its saved cards on the decoy, which no one can reach. It's a demo workaround, not part of the component: it depends on Safari's current heuristics, and on a real checkout you want the menu.
+
 ### Nothing Here Enforces a Complete, Charge-Ready Card
 
 Each field surfaces its own basic format and completeness feedback once left with an invalid value (never mid-type), but real payment validation (whether the card exists, has funds, isn't reported lost) can only come from your payment processor. `onCompletionChange` reports the former (every field filled in and passing this component's format checks), never the latter. Don't treat one "complete" callback firing as permission to charge a card; it isn't.

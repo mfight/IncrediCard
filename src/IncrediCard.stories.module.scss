@@ -77,9 +77,9 @@
   line-height: 1.5;
 }
 
-// The trial decoy card fields (see `AutofillDecoy`): positioned out of the
-// flow in a single clipped pixel, so nothing shows and nothing moves. One
-// pixel, not zero: Safari passed over a zero-size set.
+// The decoy card fields (see `AutofillDecoy`): positioned out of the flow in
+// a single clipped pixel, so nothing shows and nothing moves. One pixel is
+// the size Safari was tested with; it isn't known to work at zero.
 .autofillDecoy {
   position: absolute;
   inset-block-start: 0;

@@ -41,6 +41,43 @@ const withReducedMotion: Decorator = (Story, context) => (
   </ForceReducedMotion>
 );
 
+// Safari offers saved cards on the first card fields in a form, whatever
+// their `autocomplete` says. Every visible story with autofill off is wrapped
+// in one form whose first fields are this decoy set, a single clipped pixel
+// that's hidden from screen readers and out of the tab order, so the menu
+// goes there and not to a card. The ID prefix keeps the decoys apart when several stories
+// share a docs page; the endings stay clear of the `-name` and `-cvc` that the
+// story tests select by.
+function AutofillDecoy({ idPrefix }: { idPrefix: string }) {
+  const id = (field: string) => `${idPrefix}-autofill-decoy-${field}`;
+  return (
+    <div className={themedStyles.autofillDecoy} aria-hidden="true">
+      <label htmlFor={id("number")}>Card number</label>
+      <input id={id("number")} autoComplete="cc-number" inputMode="numeric" tabIndex={-1} />
+      <label htmlFor={id("holder")}>Name on card</label>
+      <input id={id("holder")} autoComplete="cc-name" tabIndex={-1} />
+      <label htmlFor={id("expiry")}>Expiration date</label>
+      <input id={id("expiry")} autoComplete="cc-exp" inputMode="numeric" tabIndex={-1} />
+      <label htmlFor={id("code")}>Security code</label>
+      <input id={id("code")} autoComplete="cc-csc" inputMode="numeric" tabIndex={-1} />
+    </div>
+  );
+}
+
+// The form has no submit button, and the cards' own buttons are all
+// `type="button"`, but it cancels a submit anyway. Hidden test stories
+// (tagged `!dev`, so without `dev`) are never on a page anyone visits, and
+// skip the decoy: its labels would answer their queries for the card's own.
+const withAutofillDecoy: Decorator = (Story, context) =>
+  context.args.autoComplete || !context.tags.includes("dev") ? (
+    <Story />
+  ) : (
+    <form onSubmit={(event) => event.preventDefault()}>
+      <AutofillDecoy idPrefix={context.id} />
+      <Story />
+    </form>
+  );
+
 // Storybook hands every arg to the component as a prop, so the story-only
 // `reducedMotion` arg is taken out first. Left in, it reaches the card's
 // root element and React warns about an unknown DOM attribute.
@@ -57,8 +94,10 @@ const meta = {
   // passes its own.
   //
   // Browser autofill is off everywhere but the Autocomplete story, so the
-  // demo never offers anyone's saved card or looks like it wants one.
+  // demo never offers anyone's saved card or looks like it wants one. Safari
+  // ignores that on a card form, so the decoy takes its menu instead.
   args: { acceptanceMarks: demoAcceptanceMarks, autoComplete: false },
+  decorators: [withAutofillDecoy],
   parameters: {
     layout: "centered",
   },
@@ -161,39 +200,11 @@ const bothLayouts = {
   argTypes: { layout: { table: { disable: true } } },
 } satisfies Story;
 
-// Trial: decoy card fields ahead of a story's cards. Safari offers saved cards
-// only on the first card form it finds on a page, whatever the fields'
-// `autocomplete` says, so a zero-size set placed first may draw it away from
-// the real cards. Hidden from screen readers and out of the tab order.
-function AutofillDecoy() {
-  return (
-    <div className={themedStyles.autofillDecoy} aria-hidden="true">
-      <label htmlFor="autofill-decoy-number">Card number</label>
-      <input id="autofill-decoy-number" autoComplete="cc-number" inputMode="numeric" tabIndex={-1} />
-      <label htmlFor="autofill-decoy-name">Name on card</label>
-      <input id="autofill-decoy-name" autoComplete="cc-name" tabIndex={-1} />
-      <label htmlFor="autofill-decoy-expiration">Expiration date</label>
-      <input id="autofill-decoy-expiration" autoComplete="cc-exp" inputMode="numeric" tabIndex={-1} />
-      <label htmlFor="autofill-decoy-cvc">Security code</label>
-      <input id="autofill-decoy-cvc" autoComplete="cc-csc" inputMode="numeric" tabIndex={-1} />
-    </div>
-  );
-}
-
 // The default theme: a dark card printed with fine twisting lines, which the
 // foil lights. Move the pointer across the card to light the band and the fan
 // separately.
 export const Ribbons: Story = {
   ...bothLayouts,
-  // Trial: one form around the decoy and both cards, so Safari may read them
-  // as a single card form whose first fields are the decoy's. The form has no
-  // submit button and never submits.
-  render: (args) => (
-    <form onSubmit={(event) => event.preventDefault()}>
-      <AutofillDecoy />
-      <BothLayouts {...args} />
-    </form>
-  ),
   args: { id: "story-ribbons", theme: "ribbons", holofoil: true, defaultValue: FILLED },
 };
 
