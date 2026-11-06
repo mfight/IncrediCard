@@ -185,11 +185,14 @@ function AutofillDecoy() {
 // separately.
 export const Ribbons: Story = {
   ...bothLayouts,
+  // Trial: one form around the decoy and both cards, so Safari may read them
+  // as a single card form whose first fields are the decoy's. The form has no
+  // submit button and never submits.
   render: (args) => (
-    <>
+    <form onSubmit={(event) => event.preventDefault()}>
       <AutofillDecoy />
       <BothLayouts {...args} />
-    </>
+    </form>
   ),
   args: { id: "story-ribbons", theme: "ribbons", holofoil: true, defaultValue: FILLED },
 };
