@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+import { expect, fn, spyOn, userEvent, waitFor, within } from "storybook/test";
 // Imported from the index, not the component module: the index is where
 // the compound namespace is composed, and it has to be.
 import {
@@ -19,6 +19,13 @@ import {
 } from "../demo/hostedFields/MockHostedField";
 import { engravedCardTheme } from "../demo/themes/engravedCard";
 import { tumblingBlocksTheme } from "../demo/themes/tumblingBlocks";
+import {
+  cardNumberPattern,
+  detectCardNetwork,
+  getCardNetworkInfo,
+  luhnCheck,
+  type CardNetwork,
+} from "./cardNetworks";
 import { ForceReducedMotion } from "./reducedMotion";
 import { INCREDICARD_THEMES } from "./themes";
 import themedStyles from "./IncrediCard.stories.module.scss";
@@ -78,6 +85,18 @@ const withAutofillDecoy: Decorator = (Story, context) =>
     </form>
   );
 
+// The copyable test numbers go under every visible story where the card
+// takes typing: not Disabled or Processing, and not the hidden test stories.
+const withTestCardNumbers: Decorator = (Story, context) =>
+  context.tags.includes("dev") && !context.args.disabled && !context.args.processing ? (
+    <div className={themedStyles.withTestNumbers}>
+      <Story />
+      <TestCardNumbers />
+    </div>
+  ) : (
+    <Story />
+  );
+
 // Storybook hands every arg to the component as a prop, so the story-only
 // `reducedMotion` arg is taken out first. Left in, it reaches the card's
 // root element and React warns about an unknown DOM attribute.
@@ -97,7 +116,9 @@ const meta = {
   // demo never offers anyone's saved card or looks like it wants one. Safari
   // ignores that on a card form, so the decoy takes its menu instead.
   args: { acceptanceMarks: demoAcceptanceMarks, autoComplete: false },
-  decorators: [withAutofillDecoy],
+  // Storybook applies the last decorator outermost, so the test numbers sit
+  // outside the autofill form, after it.
+  decorators: [withAutofillDecoy, withTestCardNumbers],
   parameters: {
     layout: "centered",
   },
@@ -396,16 +417,109 @@ export const CustomThemes: Story = {
 // Its name, the longest, wraps onto two lines. Diners Club's 14-digit number
 // groups 4-6-4. The rest share the neutral shape, so what they show is
 // detection itself.
-const NETWORKS = [
-  { name: "American Express", cardNumber: "378282246310005", cvc: "1234" },
-  { name: "Diners Club", cardNumber: "30569309025904" },
-  { name: "Discover", cardNumber: "6011111111111117" },
-  { name: "JCB", cardNumber: "3530111333300000" },
-  { name: "Maestro", cardNumber: "6700000000000000" },
-  { name: "Mastercard", cardNumber: "5555555555554444" },
-  { name: "UnionPay", cardNumber: "6200000000000005" },
-  { name: "Visa", cardNumber: "4242424242424242" },
+const NETWORKS: { name: string; network: CardNetwork; cardNumber: string; cvc?: string }[] = [
+  { name: "American Express", network: "amex", cardNumber: "378282246310005", cvc: "1234" },
+  { name: "Diners Club", network: "dinersclub", cardNumber: "30569309025904" },
+  { name: "Discover", network: "discover", cardNumber: "6011111111111117" },
+  { name: "JCB", network: "jcb", cardNumber: "3530111333300000" },
+  { name: "Maestro", network: "maestro", cardNumber: "6700000000000000" },
+  { name: "Mastercard", network: "mastercard", cardNumber: "5555555555554444" },
+  { name: "UnionPay", network: "unionpay", cardNumber: "6200000000000005" },
+  { name: "Visa", network: "visa", cardNumber: "4242424242424242" },
 ];
+
+// A test number grouped the way the card itself groups it (4-6-5 for
+// American Express, 4-6-4 for a 14-digit Diners Club, fours otherwise).
+function groupedCardNumber(digits: string) {
+  const info = getCardNetworkInfo(detectCardNetwork(digits));
+  let next = 0;
+  return cardNumberPattern(info, digits.length).replace(/X/g, () => digits[next++] ?? "");
+}
+
+function CopyGlyph() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={themedStyles.testNumberGlyph}>
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+      <path d="M10.5 3.5v-0.5a1.5 1.5 0 0 0 -1.5 -1.5h-5a1.5 1.5 0 0 0 -1.5 1.5v5a1.5 1.5 0 0 0 1.5 1.5h0.5" />
+    </svg>
+  );
+}
+
+function CopiedGlyph() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={themedStyles.testNumberGlyph}>
+      <path d="M3 8.5l3 3l7 -7" />
+    </svg>
+  );
+}
+
+type CopyState = { name: string; outcome: "copied" | "failed" } | null;
+
+// Published test numbers, one per network the card recognizes, each a
+// button that copies its digits so a visitor can paste one into the card
+// and watch it recognize the network. Shown grouped, copied as bare digits.
+// Page furniture, not part of the component.
+function TestCardNumbers() {
+  const headingId = useId();
+  const [copyState, setCopyState] = useState<CopyState>(null);
+  const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(resetTimer.current), []);
+
+  const copy = async (name: string, digits: string) => {
+    clearTimeout(resetTimer.current);
+    let outcome: "copied" | "failed" = "copied";
+    try {
+      // Missing on an insecure origin, where the browser has no clipboard API.
+      if (!navigator.clipboard) throw new Error("No clipboard access");
+      await navigator.clipboard.writeText(digits);
+    } catch {
+      outcome = "failed";
+    }
+    setCopyState({ name, outcome });
+    resetTimer.current = setTimeout(() => setCopyState(null), 2000);
+  };
+
+  return (
+    <section className={themedStyles.testNumbers} aria-labelledby={headingId}>
+      <h2 id={headingId} className={themedStyles.testNumbersHeading}>
+        Test card numbers
+      </h2>
+      <p className={themedStyles.testNumbersIntro}>
+        Published test numbers, not real cards. Click one to copy it, then paste it into the card number. Use any
+        name, any future expiration date, and any 3-digit security code (4 for American Express).
+      </p>
+      <ul className={themedStyles.testNumbersList}>
+        {NETWORKS.map(({ name, cardNumber }) => {
+          const outcome = copyState?.name === name ? copyState.outcome : null;
+          return (
+            <li key={name}>
+              <button
+                type="button"
+                className={themedStyles.testNumberButton}
+                aria-label={`Copy ${name} test number, ${groupedCardNumber(cardNumber)}`}
+                onClick={() => copy(name, cardNumber)}
+              >
+                <span className={themedStyles.testNumberNetwork}>{name}</span>
+                <span className={themedStyles.testNumberDigits}>{groupedCardNumber(cardNumber)}</span>
+                <span className={themedStyles.testNumberAction} data-outcome={outcome ?? undefined}>
+                  {outcome === "copied" ? "Copied" : outcome === "failed" ? "Couldn't copy" : null}
+                  {outcome === "copied" ? <CopiedGlyph /> : <CopyGlyph />}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p role="status" className={themedStyles.visuallyHidden}>
+        {copyState?.outcome === "copied"
+          ? `${copyState.name} test number copied.`
+          : copyState?.outcome === "failed"
+            ? `Couldn't copy the ${copyState.name} test number. Type it in instead.`
+            : ""}
+      </p>
+    </section>
+  );
+}
 
 export const Networks: Story = {
   render: (args) => (
@@ -1997,5 +2111,46 @@ export const CvcPanelsMatch: Story = {
       (network) => document.getElementById(`${args.id}-ribbons-${network}-floating-cvc`)!.parentElement!.offsetWidth,
     );
     expect(longer).toBeGreaterThan(visa);
+  },
+};
+
+// The test numbers under each typeable story: every one is recognized as its
+// network and passes the checksum, each shows grouped as the card groups it,
+// and a click copies the bare digits and says so, or says it couldn't.
+export const TestCardNumbersCopy: Story = {
+  tags: ["!dev"],
+  render: () => <TestCardNumbers />,
+  play: async ({ canvasElement }) => {
+    for (const { network, cardNumber } of NETWORKS) {
+      expect(detectCardNetwork(cardNumber)).toBe(network);
+      expect(luhnCheck(cardNumber)).toBe(true);
+    }
+
+    const canvas = within(canvasElement);
+    const amex = canvas.getByRole("button", { name: "Copy American Express test number, 3782 822463 10005" });
+    expect(amex).toHaveTextContent("3782 822463 10005");
+    expect(canvas.getByRole("button", { name: "Copy Diners Club test number, 3056 930902 5904" })).toBeVisible();
+    expect(canvas.getAllByRole("button")).toHaveLength(NETWORKS.length);
+
+    const writeText = spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+    try {
+      const visa = canvas.getByRole("button", { name: /^Copy Visa test number/ });
+      await userEvent.click(visa);
+      expect(writeText).toHaveBeenCalledWith("4242424242424242");
+      await waitFor(() => expect(visa).toHaveTextContent("Copied"));
+      expect(canvas.getByRole("status")).toHaveTextContent("Visa test number copied.");
+
+      writeText.mockRejectedValueOnce(new Error("Denied"));
+      await userEvent.click(amex);
+      expect(writeText).toHaveBeenLastCalledWith("378282246310005");
+      await waitFor(() => expect(amex).toHaveTextContent("Couldn't copy"));
+      expect(visa).not.toHaveTextContent("Copied");
+      expect(canvas.getByRole("status")).toHaveTextContent("Couldn't copy the American Express test number.");
+
+      await waitFor(() => expect(amex).not.toHaveTextContent("Couldn't copy"), { timeout: 3000 });
+      expect(canvas.getByRole("status")).toBeEmptyDOMElement();
+    } finally {
+      writeText.mockRestore();
+    }
   },
 };
