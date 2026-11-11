@@ -122,8 +122,10 @@
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
-  gap: 0.25rem 1rem;
+  // One column, wide enough for the name, the number and "Couldn't copy"
+  // side by side; any wider and the icon drifts away from its number.
+  max-width: 28rem;
+  gap: 0.25rem;
 }
 
 // The whole row is the button, so the name, the number and the icon are all
@@ -152,8 +154,11 @@
   }
 }
 
+// The name gives way first on a narrow screen, wrapping to a second line,
+// so the number and the "Couldn't copy" beside it never run off the page.
 .testNumberNetwork {
-  flex: 0 0 8rem;
+  flex: 0 1 8rem;
+  min-width: 0;
   color: var(--story-text-secondary);
 }
 
@@ -166,6 +171,7 @@
 // The icon, with "Copied" or "Couldn't copy" beside it for two seconds
 // after a click.
 .testNumberAction {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;

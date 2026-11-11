@@ -497,6 +497,12 @@ function TestCardNumbers() {
                 type="button"
                 className={themedStyles.testNumberButton}
                 aria-label={`Copy ${name} test number, ${groupedCardNumber(cardNumber)}`}
+                // A press leaves focus where it was. Safari refuses the
+                // clipboard write when a text field loses focus during the
+                // same click, so a click while a card field had focus said
+                // "Couldn't copy". It also leaves the caret in the field, so
+                // a paste right after puts the number there.
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => copy(name, cardNumber)}
               >
                 <span className={themedStyles.testNumberNetwork}>{name}</span>
@@ -2116,10 +2122,16 @@ export const CvcPanelsMatch: Story = {
 
 // The test numbers under each typeable story: every one is recognized as its
 // network and passes the checksum, each shows grouped as the card groups it,
-// and a click copies the bare digits and says so, or says it couldn't.
+// and a click copies the bare digits and says so, or says it couldn't. A
+// click leaves focus in the field that had it.
 export const TestCardNumbersCopy: Story = {
   tags: ["!dev"],
-  render: () => <TestCardNumbers />,
+  render: () => (
+    <>
+      <input aria-label="A field with focus" />
+      <TestCardNumbers />
+    </>
+  ),
   play: async ({ canvasElement }) => {
     for (const { network, cardNumber } of NETWORKS) {
       expect(detectCardNetwork(cardNumber)).toBe(network);
@@ -2135,7 +2147,10 @@ export const TestCardNumbersCopy: Story = {
     const writeText = spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
     try {
       const visa = canvas.getByRole("button", { name: /^Copy Visa test number/ });
+      const field = canvas.getByRole("textbox", { name: "A field with focus" });
+      await userEvent.click(field);
       await userEvent.click(visa);
+      expect(field).toHaveFocus();
       expect(writeText).toHaveBeenCalledWith("4242424242424242");
       await waitFor(() => expect(visa).toHaveTextContent("Copied"));
       expect(canvas.getByRole("status")).toHaveTextContent("Visa test number copied.");
