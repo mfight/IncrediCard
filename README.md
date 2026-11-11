@@ -19,7 +19,7 @@ A credit-card entry form for React with a dimensional card that mirrors what's t
 
 ## Installing
 
-IncrediCard isn't on npm yet. Once it is:
+Install it from npm:
 
 ```sh
 npm install incredicard

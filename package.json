@@ -1,6 +1,6 @@
 {
   "name": "incredicard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A credit-card entry form for React with a dimensional card that mirrors what's typed, built on real, accessible fields.",
   "license": "Apache-2.0",
   "author": "Mark Fight",
