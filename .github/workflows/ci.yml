@@ -2,12 +2,14 @@ name: CI
 
 # Types, lint and guards, unit tests, every story as a test in Chromium,
 # and the package itself: it builds, installs and works in a fresh consumer
-# project.
+# project. The release workflow runs these same jobs before it stages a
+# version on npm.
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   lint:

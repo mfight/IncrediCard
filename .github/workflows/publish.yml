@@ -1,0 +1,62 @@
+name: Release
+
+# Pushing a version tag (v1.2.3) stages that version on npm. It goes public
+# only when a maintainer approves it with two-factor authentication, on
+# npmjs.com or with `npm stage approve`. npm trusts this workflow by its file
+# name (trusted publishing), so no token is stored anywhere, and the release
+# carries a provenance statement tying it to this run and commit.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Tag matches the package version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare the tag with package.json
+        run: |
+          expected="v$(node -p 'require("./package.json").version')"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "::error::The tag is $GITHUB_REF_NAME, but package.json says $expected."
+            exit 1
+          fi
+
+  # The same jobs CI runs on every push, so a release passes exactly the
+  # checks main does.
+  checks:
+    name: Checks
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Stage on npm
+    needs: [version, checks]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          # A release builds from a clean install, never a restored cache.
+          package-manager-cache: false
+      - run: npm ci
+      # `npm stage publish` needs npm 11.15.0 or later, newer than the npm
+      # some Node 24 releases ship with. Pinned, so a new npm version can't
+      # change how a release behaves.
+      - run: npm install --global npm@11.21.2
+      # Packs with the prepack build, the same as `npm publish`, then uploads
+      # the release to npm's staging area instead of publishing it.
+      - run: npm stage publish

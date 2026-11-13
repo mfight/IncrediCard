@@ -38,3 +38,30 @@ Reports that one of these has slipped are especially welcome.
 - **Payment data stays in the form.** The component never logs, stores or sends what's typed, and never shows the security code: its field is masked, and the card shows only dots for it. It makes no network requests.
 - **Self-contained.** Nothing but React is required: the styles, fonts and English strings ship with it.
 - **American English** in code, comments, docs and strings, checked by `npm run check:american-english`.
+
+## How a release happens
+
+For maintainers. Releases come from GitHub Actions (`.github/workflows/publish.yml`), never from a laptop, and each one waits for a maintainer's approval before it's public.
+
+1. Set the new version without tagging, and commit it:
+
+   ```sh
+   npm version 1.2.3 --no-git-tag-version
+   ```
+
+2. Push the commit, then tag it and push the tag:
+
+   ```sh
+   git tag v1.2.3 && git push origin v1.2.3
+   ```
+
+   The tag starts the release. It stops if the tag doesn't match the version in `package.json`, or if any CI check fails. Otherwise it stages the version on npm, where it isn't installable yet.
+
+3. Approve it with two-factor authentication, in the package's Staged Packages tab on npmjs.com or from a terminal:
+
+   ```sh
+   npm stage list incredicard
+   npm stage approve <stage-id>
+   ```
+
+   Approving publishes it as `latest`, with a provenance statement linking it to the commit and the workflow run that built it. To discard a staged version instead, use `npm stage reject <stage-id>`.
