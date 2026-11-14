@@ -125,12 +125,7 @@ function Hero() {
         </div>
 
         <div className={styles.fanStage}>
-          <div
-            ref={fanRef}
-            className={styles.fan}
-            role="img"
-            aria-label="Three IncrediCard themes, Glass, Vintage and Globe, fanned out, each showing the same sample card."
-          >
+          <div ref={fanRef} className={styles.fan}>
             {START.map((theme, index) => (
               <LiveCard
                 key={theme}
@@ -146,7 +141,12 @@ function Hero() {
               />
             ))}
           </div>
-          <p className={styles.fanCaption}>Three of four built-in themes</p>
+          <p className={styles.fanCaption}>
+            Three of four built-in themes
+            <span className={styles.visuallyHidden}>
+              : Glass, Vintage and Globe, fanned out above, each showing the same sample card.
+            </span>
+          </p>
         </div>
       </PointerStage>
     </section>

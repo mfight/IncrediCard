@@ -1,14 +1,19 @@
 // Display-only cards: real IncrediCard instances that nobody can type into
 // or tab into, but that still tilt and catch the light.
 //
-// Each card sits in an `inert` wrapper, which takes it out of the tab order,
-// out of the accessibility tree and out of reach of clicks. Inert also stops
-// the pointer from reaching it, though, and the card's tilt and light follow
-// pointer events on the card itself. So a `PointerStage` (a section of the
-// page) watches the pointer instead and replays it to each card inside it,
-// scaled to the card. While the pointer is elsewhere, the stage plays a slow
-// path of its own, so the cards keep moving. Under reduced motion it plays
-// nothing; the component calms its own effects there too.
+// Each card's wrapper keeps it out of reach three ways: `pointer-events:
+// none` lets clicks and hover pass through, every focusable element inside
+// gets `tabindex="-1"` (re-applied as the card adds fields), and
+// `aria-hidden` takes it out of the accessibility tree. Not `inert`, which
+// does all three at once: Safari doesn't draw the card's light inside an
+// inert subtree until the pointer stops moving.
+//
+// With the pointer passing through, the card's tilt and light, which follow
+// pointer events on the card itself, would never move. So a `PointerStage`
+// (a section of the page) watches the pointer instead and replays it to each
+// card inside it, scaled to the card. While the pointer is elsewhere, the
+// stage plays a slow path of its own, so the cards keep moving. Under reduced
+// motion it plays nothing; the component calms its own effects there too.
 
 import {
   createContext,
@@ -20,6 +25,8 @@ import {
   type ReactNode,
 } from "react";
 import { IncrediCard } from "../src";
+
+const FOCUSABLE = "a[href], button, input, select, textarea, [tabindex], [contenteditable]";
 
 type Point = { x: number; y: number } | null;
 type Listener = (point: Point) => void;
@@ -162,8 +169,30 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
     });
   }, [subscribe, reach]);
 
+  // Out of the tab order, including fields that appear later (the card
+  // reveals the rest once the number is valid) and anything re-rendered.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const lockOut = () => {
+      for (const node of el.querySelectorAll<HTMLElement>(FOCUSABLE)) {
+        if (node.getAttribute("tabindex") !== "-1") node.setAttribute("tabindex", "-1");
+      }
+    };
+    lockOut();
+    const observer = new MutationObserver(lockOut);
+    observer.observe(el, { subtree: true, childList: true, attributes: true, attributeFilter: ["tabindex"] });
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div ref={ref} className={className} data-position={position} inert>
+    <div
+      ref={ref}
+      className={className}
+      data-position={position}
+      aria-hidden="true"
+      style={{ pointerEvents: "none" }}
+    >
       <IncrediCard autoComplete={false} {...cardProps} />
       {children}
     </div>
