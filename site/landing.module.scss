@@ -242,12 +242,6 @@ $gutter: 1.25rem;
     filter: brightness(0.86);
   }
 
-  // The card's own flip control. Nobody can press it here, so it would only
-  // be clutter on a fan of pictures.
-  button {
-    visibility: hidden;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }

@@ -81,3 +81,10 @@ code {
   font-family: var(--site-mono);
   font-size: 0.9em;
 }
+
+/* A display-only card's own flip control (its only button). Nobody can
+   press it there, so it would only offer something that does nothing.
+   See LiveCard.tsx. */
+[data-display-only] button {
+  visibility: hidden;
+}

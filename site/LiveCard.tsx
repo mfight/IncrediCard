@@ -190,6 +190,7 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
       ref={ref}
       className={className}
       data-position={position}
+      data-display-only=""
       aria-hidden="true"
       style={{ pointerEvents: "none" }}
     >
