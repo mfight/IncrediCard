@@ -1,0 +1,83 @@
+/* The landing page's own type and colors. The component styles itself and
+   uses none of these. */
+
+@font-face {
+  font-family: "IncrediCard Site Figtree";
+  src: url("../src/assets/fonts/Figtree-VariableFont_wght.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+:root {
+  --site-ink: #1c1f29;
+  --site-text: #434856;
+  --site-muted: #5d6372;
+  --site-canvas: #fbfbf8;
+  --site-surface: #f2f2ee;
+  --site-line: #e2e2dc;
+  --site-hero-deep: #020a2b;
+  --site-hero-mid: #04238a;
+  --site-hero-bright: #0b5ae8;
+  --site-on-dark: #ffffff;
+  --site-on-dark-muted: #c9d6f5;
+  --site-accent-soft: #e3efff;
+  --site-accent-ink: #0a2a6e;
+  --site-accent: #1a4fd6;
+  --site-panel-neutral: #ecece8;
+  --site-panel-blue: #e5edf8;
+  --site-code-surface: #0b1640;
+  --site-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--site-canvas);
+  color: var(--site-text);
+  font-family: "IncrediCard Site Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+figure,
+pre {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+}
+
+code {
+  font-family: var(--site-mono);
+  font-size: 0.9em;
+}

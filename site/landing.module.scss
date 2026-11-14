@@ -1,0 +1,578 @@
+// The landing page's layout. Colors and type come from site.css.
+
+$page-width: 72rem;
+$gutter: 1.25rem;
+
+@mixin focus-ring($color: var(--site-accent)) {
+  &:focus-visible {
+    outline: 0.125rem solid $color;
+    outline-offset: 0.1875rem;
+    border-radius: 0.25rem;
+  }
+}
+
+.skipLink {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-start: -3rem;
+  z-index: 10;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  background: var(--site-ink);
+  color: var(--site-on-dark);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:focus {
+    inset-block-start: 1rem;
+  }
+}
+
+// --- Header -----------------------------------------------------------------
+
+.header {
+  background: var(--site-canvas);
+  border-block-end: 0.0625rem solid var(--site-line);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: $page-width;
+  margin: 0 auto;
+  padding: 1.25rem $gutter;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--site-ink);
+  font-size: 1.375rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  @include focus-ring;
+}
+
+.brandIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.nav {
+  display: flex;
+  gap: 1.75rem;
+
+  // A phone has room for two links beside the name. Docs is the one that
+  // goes; the hero links to it right below.
+  @media (max-width: 30rem) {
+    gap: 1.25rem;
+
+    li:nth-child(2) {
+      display: none;
+    }
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--site-ink);
+    font-size: 1rem;
+    text-decoration: none;
+    @include focus-ring;
+
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.25rem;
+    }
+  }
+}
+
+.arrowIcon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+
+// --- Hero -------------------------------------------------------------------
+
+.hero {
+  overflow: clip;
+  color: var(--site-on-dark);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 100%, var(--site-hero-bright) 0%, transparent 100%),
+    radial-gradient(ellipse 120% 90% at 50% 110%, var(--site-hero-mid) 0%, var(--site-hero-deep) 75%);
+}
+
+.heroInner {
+  max-width: $page-width;
+  margin: 0 auto;
+  padding: 5rem $gutter 3.5rem;
+  text-align: center;
+}
+
+.heroTitle {
+  max-width: 14ch;
+  margin: 0 auto;
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.heroLede {
+  max-width: 44rem;
+  margin: 1.75rem auto 0;
+  color: var(--site-on-dark-muted);
+  font-size: 1.1875rem;
+  text-wrap: balance;
+}
+
+.heroActions,
+.installActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1.75rem;
+  margin-block-start: 2.25rem;
+}
+
+.installActions {
+  justify-content: flex-start;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8125rem 1.375rem;
+  border-radius: 0.625rem;
+  background: var(--site-accent-soft);
+  color: var(--site-accent-ink);
+  font-weight: 650;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background: var(--site-on-dark);
+  }
+
+  @include focus-ring(var(--site-on-dark));
+}
+
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--site-on-dark);
+  font-weight: 650;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.3rem;
+  }
+
+  @include focus-ring(var(--site-on-dark));
+}
+
+// The fanned cards. Each card is centered on the stage and moved out to its
+// slot, so a card changing slots slides there.
+.fanStage {
+  margin-block-start: 3.5rem;
+}
+
+.fan {
+  position: relative;
+  height: 20rem;
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.fanCard {
+  --fan-x: 0rem;
+  --fan-y: 0%;
+  --fan-turn: 0deg;
+  --fan-scale: 1;
+
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  width: 20rem;
+  transform: translate(calc(-50% + var(--fan-x)), calc(-50% + var(--fan-y))) rotate(var(--fan-turn))
+    scale(var(--fan-scale));
+  transition:
+    transform 1100ms cubic-bezier(0.22, 0.8, 0.24, 1),
+    filter 1100ms ease;
+
+  &[data-position="front"] {
+    z-index: 4;
+  }
+
+  &[data-position="right"] {
+    --fan-x: 10rem;
+    --fan-y: 4%;
+    --fan-turn: 9deg;
+    --fan-scale: 0.88;
+    z-index: 3;
+    filter: brightness(0.86);
+  }
+
+  &[data-position="left"] {
+    --fan-x: -10rem;
+    --fan-y: 6%;
+    --fan-turn: -11deg;
+    --fan-scale: 0.88;
+    z-index: 2;
+    filter: brightness(0.86);
+  }
+
+  // The card's own flip control. Nobody can press it here, so it would only
+  // be clutter on a fan of pictures.
+  button {
+    visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  @media (max-width: 40rem) {
+    width: 17.5rem;
+
+    &[data-position="right"] {
+      --fan-x: 5rem;
+    }
+
+    &[data-position="left"] {
+      --fan-x: -5rem;
+    }
+  }
+}
+
+.fanCaption {
+  margin-block-start: 1.5rem;
+  color: var(--site-on-dark-muted);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+// --- Sections -----------------------------------------------------------------
+
+.section {
+  max-width: $page-width;
+  margin: 0 auto;
+  padding: 6rem $gutter;
+}
+
+.eyebrow {
+  color: var(--site-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eyebrowOnDark {
+  color: var(--site-on-dark-muted);
+}
+
+.sectionTitle {
+  max-width: 22ch;
+  margin-block-start: 1rem;
+  color: var(--site-ink);
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.sectionLede {
+  max-width: 40rem;
+  margin-block-start: 1.25rem;
+  font-size: 1.1875rem;
+  line-height: 1.65;
+
+  code {
+    color: var(--site-ink);
+  }
+}
+
+// --- The card experience --------------------------------------------------------
+
+.panels {
+  display: grid;
+  gap: 3rem 4rem;
+  margin-block-start: 3rem;
+
+  @media (min-width: 56rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+// Side by side, both panels take the taller one's height, so the captions
+// under them line up.
+.panelFigure {
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+.panel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 22rem;
+  padding: 2.5rem 1.5rem;
+  border-radius: 1.25rem;
+}
+
+.panelNeutral {
+  background: var(--site-panel-neutral);
+}
+
+// The stacked layout grows as its fields appear, so its panel holds the
+// height of the finished form and the card stays where it is.
+.panelBlue {
+  align-items: flex-start;
+  min-height: 30rem;
+  background: var(--site-panel-blue);
+}
+
+.panelCard {
+  width: 100%;
+  max-width: 20rem;
+}
+
+.panelTitle {
+  margin-block-start: 1.75rem;
+  color: var(--site-ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.panelText {
+  max-width: 34rem;
+  margin-block-start: 0.625rem;
+  font-size: 1.125rem;
+}
+
+.features {
+  display: grid;
+  gap: 2.5rem 3rem;
+  margin-block-start: 4.5rem;
+  padding-block-start: 3rem;
+  border-block-start: 0.0625rem solid var(--site-line);
+
+  @media (min-width: 56rem) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--site-accent);
+}
+
+.featureTitle {
+  margin-block-start: 1rem;
+  color: var(--site-ink);
+  font-size: 1.3125rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.featureText {
+  margin-block-start: 0.5rem;
+}
+
+// --- Themes ---------------------------------------------------------------------
+
+.themesBand {
+  background: var(--site-surface);
+  border-block: 0.0625rem solid var(--site-line);
+}
+
+.themeGrid {
+  display: grid;
+  gap: 3rem 2.5rem;
+  margin-block-start: 3rem;
+
+  @media (min-width: 48rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.themeStage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--site-canvas);
+  border: 0.0625rem solid var(--site-line);
+}
+
+// Glass shows what's behind it, so its card gets something to show.
+.themeStageGlass {
+  border-color: transparent;
+  background:
+    repeating-linear-gradient(115deg, rgb(255 255 255 / 16%) 0 0.5rem, rgb(255 255 255 / 0%) 0.5rem 2.5rem),
+    linear-gradient(120deg, #0f172a, #312e81 50%, #134e4a);
+}
+
+.themeCard {
+  width: 100%;
+  max-width: 20rem;
+}
+
+.themeName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin-block-start: 1.25rem;
+  color: var(--site-ink);
+  font-size: 1.3125rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.themeProp {
+  color: var(--site-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.themeSummary {
+  margin-block-start: 0.375rem;
+}
+
+// --- Real fields ------------------------------------------------------------------
+
+.split {
+  display: grid;
+  gap: 3rem 5rem;
+
+  @media (min-width: 60rem) {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+  }
+}
+
+.points {
+  display: grid;
+  gap: 2rem 2.5rem;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.point {
+  display: flex;
+  gap: 0.875rem;
+}
+
+.checkIcon {
+  flex: none;
+  width: 1.375rem;
+  height: 1.375rem;
+  margin-block-start: 0.125rem;
+  color: var(--site-accent);
+}
+
+.pointTitle {
+  color: var(--site-ink);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.pointText {
+  margin-block-start: 0.25rem;
+  font-size: 1rem;
+}
+
+// --- Install ----------------------------------------------------------------------
+
+.installBand {
+  color: var(--site-on-dark-muted);
+  background: var(--site-hero-deep);
+
+  .sectionTitle {
+    color: var(--site-on-dark);
+  }
+}
+
+.code {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+
+  pre {
+    overflow-x: auto;
+    padding: 1.25rem 1.5rem;
+    border: 0.0625rem solid rgb(255 255 255 / 12%);
+    border-radius: 0.875rem;
+    background: var(--site-code-surface);
+    color: var(--site-on-dark);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+}
+
+.codePrompt {
+  color: var(--site-on-dark-muted);
+  user-select: none;
+}
+
+// --- Footer -----------------------------------------------------------------------
+
+.footer {
+  border-block-start: 0.0625rem solid var(--site-line);
+}
+
+.footerInner {
+  display: grid;
+  gap: 1.5rem;
+  max-width: $page-width;
+  margin: 0 auto;
+  padding: 3rem $gutter 4rem;
+  font-size: 0.9375rem;
+}
+
+.footerNote {
+  max-width: 48rem;
+
+  strong {
+    color: var(--site-ink);
+  }
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+
+  a {
+    color: var(--site-ink);
+    font-weight: 600;
+    @include focus-ring;
+  }
+}
+
+.footerLegal {
+  color: var(--site-muted);
+  font-size: 0.875rem;
+}

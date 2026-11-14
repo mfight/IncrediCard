@@ -1,6 +1,7 @@
 node_modules/
 dist/
 storybook-static/
+site-dist/
 test-results/
 playwright-report/
 *.tsbuildinfo

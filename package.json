@@ -51,6 +51,8 @@
     "artwork:line-art": "node scripts/generate-line-art.mjs",
     "storybook": "storybook dev -p ${PORT:-6006}",
     "build-storybook": "storybook build",
+    "site": "vite --config site/vite.config.ts",
+    "build-site": "vite build --config site/vite.config.ts",
     "prepack": "npm run build"
   },
   "peerDependencies": {

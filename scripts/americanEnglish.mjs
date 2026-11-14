@@ -214,6 +214,7 @@ const EXEMPT_DIRECTORIES = [
   ".git",
   "dist",
   "storybook-static",
+  "site-dist",
   "test-results",
   "playwright-report",
 ];

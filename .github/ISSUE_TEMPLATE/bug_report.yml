@@ -12,7 +12,7 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Start from a story in the [demo](https://incredicard.markfight.com/) if you can.
+      description: Start from a story in the [demo](https://incredicard.markfight.com/storybook/) if you can.
       placeholder: |
         1. Open the Default story
         2. Type 3782 into the number field

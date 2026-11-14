@@ -14,7 +14,7 @@ import globals from "globals";
 // (scripts/check-react-hooks-refs.mjs).
 const config = tseslint.config(
   {
-    ignores: ["node_modules/**", "dist/**", "storybook-static/**", "test-results/**", "playwright-report/**"],
+    ignores: ["node_modules/**", "dist/**", "storybook-static/**", "site-dist/**", "test-results/**", "playwright-report/**"],
   },
   {
     files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],
