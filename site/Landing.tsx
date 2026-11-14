@@ -85,10 +85,10 @@ export function Landing() {
 const SLOTS = ["front", "right", "left"] as const;
 type Slot = (typeof SLOTS)[number];
 
-// The three opaque themes, the default in front. Every few seconds each card
-// moves one slot on. Glass sits this out: clear glass over the other cards
-// shows every edge behind it, and it gets its own backdrop under Themes.
-const START: IncrediCardTheme[] = ["ribbons", "vintage", "globe"];
+// The three most different themes: clear glass in front, then the vintage
+// plastic and the engraved globe. Every few seconds each card moves one slot
+// on. Ribbons sits this out; beside Globe it would read as the same dark card.
+const START: IncrediCardTheme[] = ["glass", "vintage", "globe"];
 
 function Hero() {
   const fanRef = useRef<HTMLDivElement>(null);
@@ -129,7 +129,7 @@ function Hero() {
             ref={fanRef}
             className={styles.fan}
             role="img"
-            aria-label="Three IncrediCard themes, Ribbons, Vintage and Globe, fanned out, each showing the same sample card."
+            aria-label="Three IncrediCard themes, Glass, Vintage and Globe, fanned out, each showing the same sample card."
           >
             {START.map((theme, index) => (
               <LiveCard
