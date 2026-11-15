@@ -190,11 +190,12 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
       ref={ref}
       className={className}
       data-position={position}
-      data-display-only=""
       aria-hidden="true"
       style={{ pointerEvents: "none" }}
     >
-      <IncrediCard autoComplete={false} {...cardProps} />
+      {/* No flip control: nobody can press it here. The page turns the
+          card with `side` instead. */}
+      <IncrediCard autoComplete={false} {...cardProps} flippable={false} />
       {children}
     </div>
   );

@@ -37,6 +37,7 @@ export type {
   IncrediCardProps,
   IncrediCardValue,
   IncrediCardLayout,
+  IncrediCardSide,
   IncrediCardTheme,
   IncrediCardTextTone,
   IncrediCardLabels,

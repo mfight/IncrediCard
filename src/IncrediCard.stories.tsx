@@ -641,6 +641,18 @@ export const Processing: Story = {
   args: { id: "story-processing", processing: true, defaultValue: FILLED },
 };
 
+// `side` turns the card from outside, and `flippable` takes the flip control
+// away; use the controls to try both. `side` sets the side rather than
+// holding it, so the card still turns for its own flip control and for focus
+// reaching the security code, and `onSideChange` (in the Actions panel)
+// reports each of those.
+export const Side: Story = {
+  args: { id: "story-side", side: "back", flippable: true, onSideChange: fn(), defaultValue: FILLED },
+  argTypes: {
+    side: { control: "inline-radio", options: ["front", "back"] },
+  },
+};
+
 // Browser autofill on: the one story where it is. A browser with a saved card
 // offers it from any field. One card, with the layout control: Safari offers
 // saved cards only on the first card form on a page, so a second card beside
@@ -1271,6 +1283,120 @@ export const CompletionChange: Story = {
     await userEvent.type(cvc, "{Backspace}");
     await waitFor(() => expect(onCompletionChange).toHaveBeenLastCalledWith(false));
     expect(onCompletionChange).toHaveBeenCalledTimes(3);
+  },
+};
+
+// `side` and `flippable`. Each card reports its side through the face
+// wrapper's `data-flipped`, which both layouts set while the back shows.
+const showsBack = (canvasElement: HTMLElement) =>
+  canvasElement.querySelector("[data-face-layout]")!.hasAttribute("data-flipped");
+
+// A card whose `side` the story's own buttons set, as an app's state would.
+function SideHarness({
+  initialSide,
+  ...props
+}: IncrediCardStoryArgs & { initialSide: "front" | "back" }) {
+  const [side, setSide] = useState(initialSide);
+  const [processing, setProcessing] = useState(Boolean(props.processing));
+  return (
+    <div>
+      <IncrediCard {...cardProps(props)} side={side} processing={processing} />
+      <button type="button" onClick={() => setSide("front")}>
+        Set side to front
+      </button>
+      <button type="button" onClick={() => setSide("back")}>
+        Set side to back
+      </button>
+      <button type="button" onClick={() => setProcessing(false)}>
+        End processing
+      </button>
+    </div>
+  );
+}
+
+// Changing `side` turns the card without reporting it (the app already
+// knows); the card's own flip control still turns it, and that is reported.
+export const SideTurnsTheCard: Story = {
+  tags: ["!dev"],
+  args: { id: "story-side-turns", onSideChange: fn(), defaultValue: FILLED },
+  render: (args) => <SideHarness {...args} initialSide="front" />,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const onSideChange = args.onSideChange as ReturnType<typeof fn>;
+    expect(showsBack(canvasElement)).toBe(false);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Set side to back" }));
+    await waitFor(() => expect(showsBack(canvasElement)).toBe(true));
+    await userEvent.click(canvas.getByRole("button", { name: "Set side to front" }));
+    await waitFor(() => expect(showsBack(canvasElement)).toBe(false));
+    expect(onSideChange).not.toHaveBeenCalled();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Show back of card" }));
+    await waitFor(() => expect(showsBack(canvasElement)).toBe(true));
+    await waitFor(() => expect(onSideChange).toHaveBeenLastCalledWith("back"));
+    expect(onSideChange).toHaveBeenCalledTimes(1);
+  },
+};
+
+// A `side` given at mount shows from the first paint, unreported.
+export const SideAtMount: Story = {
+  tags: ["!dev"],
+  args: { id: "story-side-at-mount", side: "back", onSideChange: fn(), defaultValue: FILLED },
+  play: async ({ args, canvasElement }) => {
+    expect(showsBack(canvasElement)).toBe(true);
+    expect(args.onSideChange).not.toHaveBeenCalled();
+  },
+};
+
+// Without the flip control, focus reaching the security code still turns
+// the card (in "floating" that field is printed on the back), and it's
+// reported.
+export const NotFlippable: Story = {
+  tags: ["!dev"],
+  args: { id: "story-not-flippable", flippable: false, onSideChange: fn(), defaultValue: FILLED },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.queryByRole("button", { name: /of card$/ })).toBeNull();
+    expect(showsBack(canvasElement)).toBe(false);
+
+    // The name comes right before the security code.
+    await userEvent.click(canvas.getByLabelText("Name on card"));
+    await userEvent.tab();
+    await waitFor(() => expect(canvas.getByLabelText("Security code")).toHaveFocus());
+    expect(showsBack(canvasElement)).toBe(true);
+    await waitFor(() => expect(args.onSideChange).toHaveBeenLastCalledWith("back"));
+  },
+};
+
+// An American Express card prints its security code on the front and has
+// nothing on its back, so it stays face-up whatever `side` says.
+export const SideIgnoredForAmex: Story = {
+  tags: ["!dev"],
+  args: {
+    id: "story-side-amex",
+    side: "back",
+    defaultValue: { ...FILLED, cardNumber: "378282246310005", cvc: "1234" },
+  },
+  play: async ({ canvasElement }) => {
+    expect(showsBack(canvasElement)).toBe(false);
+  },
+};
+
+// The processing loop turns the card on its own, unreported, and lands on
+// `side` when it ends, rather than face-up.
+export const ProcessingLandsOnSide: Story = {
+  tags: ["!dev"],
+  args: { id: "story-processing-side", processing: true, onSideChange: fn(), defaultValue: FILLED },
+  render: (args) => <SideHarness {...args} initialSide="back" />,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(showsBack(canvasElement)).toBe(true);
+    // The loop turns the card every 2 seconds.
+    await waitFor(() => expect(showsBack(canvasElement)).toBe(false), { timeout: 3000 });
+
+    await userEvent.click(canvas.getByRole("button", { name: "End processing" }));
+    await waitFor(() => expect(showsBack(canvasElement)).toBe(true));
+    expect(args.onSideChange).not.toHaveBeenCalled();
   },
 };
 

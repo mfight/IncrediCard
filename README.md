@@ -53,6 +53,16 @@ export function PaymentForm() {
 
 `onCompletionChange` reports that the form is complete as far as IncrediCard can tell. It doesn't mean the card is real or can be charged; only your payment processor can tell you that.
 
+### Turning the card
+
+The card turns over by itself when focus reaches the security code, and from its flip control. To choose the side from outside, pass `side` (`"front"` or `"back"`); the card turns whenever it changes, and `onSideChange` reports each time it turns on its own. `flippable={false}` removes the flip control.
+
+```tsx
+const [side, setSide] = useState<IncrediCardSide>("front");
+
+<IncrediCard id="payment-card" side={side} onSideChange={setSide} />;
+```
+
 ### Acceptance marks
 
 IncrediCard ships no card-network acceptance marks: they're trademarks of their networks, and each network publishes its own artwork and rules for using it. Get the marks from each network's brand resources and pass them in, as URLs or static image imports:

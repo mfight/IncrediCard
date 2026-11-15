@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { IncrediCardTheme } from "../src";
+import type { IncrediCardSide, IncrediCardTheme } from "../src";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypedValue } from "./useTypedValue";
@@ -90,17 +90,49 @@ type Slot = (typeof SLOTS)[number];
 // on. Ribbons sits this out; beside Globe it would read as the same dark card.
 const START: IncrediCardTheme[] = ["glass", "vintage", "globe"];
 
+const ROTATE_MS = 5000;
+
 function Hero() {
   const fanRef = useRef<HTMLDivElement>(null);
   const onScreen = useOnScreen(fanRef);
   const reduced = usePrefersReducedMotion();
   const [turn, setTurn] = useState(0);
+  // The side the front card shows. The others always show their fronts, so
+  // a card leaving the front turns face-up as it goes.
+  const [frontSide, setFrontSide] = useState<IncrediCardSide>("front");
+  // Off for good once the visitor flips the card themselves, so the page
+  // never turns it against them.
+  const [autoFlip, setAutoFlip] = useState(true);
+  // Bumped by the Flip card button, which restarts the rotation timer: a
+  // visitor who just turned the card gets a full interval to look at it.
+  const [rotationStart, setRotationStart] = useState(0);
 
   useEffect(() => {
     if (!onScreen || reduced) return;
-    const timer = window.setInterval(() => setTurn((value) => value + 1), 5000);
+    const timer = window.setInterval(() => {
+      setTurn((value) => value + 1);
+      setFrontSide("front");
+    }, ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [onScreen, reduced]);
+  }, [onScreen, reduced, rotationStart]);
+
+  // Every other turn, the front card shows its back for a while before the
+  // fan moves on.
+  useEffect(() => {
+    if (!onScreen || reduced || !autoFlip || turn % 2 === 0) return;
+    const toBack = window.setTimeout(() => setFrontSide("back"), 1200);
+    const toFront = window.setTimeout(() => setFrontSide("front"), 3700);
+    return () => {
+      window.clearTimeout(toBack);
+      window.clearTimeout(toFront);
+    };
+  }, [turn, onScreen, reduced, autoFlip]);
+
+  const flipFrontCard = () => {
+    setAutoFlip(false);
+    setFrontSide((side) => (side === "front" ? "back" : "front"));
+    setRotationStart((value) => value + 1);
+  };
 
   const slotOf = (index: number): Slot => SLOTS[(index + turn) % SLOTS.length];
 
@@ -132,6 +164,7 @@ function Hero() {
                 id={`hero-${theme}`}
                 className={styles.fanCard}
                 position={slotOf(index)}
+                side={slotOf(index) === "front" ? frontSide : "front"}
                 theme={theme}
                 tilt
                 chipReflection
@@ -141,12 +174,23 @@ function Hero() {
               />
             ))}
           </div>
-          <p className={styles.fanCaption}>
-            Three of four built-in themes
-            <span className={styles.visuallyHidden}>
-              : Glass, Vintage and Globe, fanned out above, each showing the same sample card.
-            </span>
-          </p>
+          <div className={styles.fanFooter}>
+            <p className={styles.fanCaption}>
+              Three of four built-in themes
+              <span className={styles.visuallyHidden}>
+                : Glass, Vintage and Globe, fanned out above, each showing the same sample card.
+              </span>
+            </p>
+            <button
+              type="button"
+              className={styles.flipButton}
+              aria-pressed={frontSide === "back"}
+              onClick={flipFrontCard}
+            >
+              <FlipIcon />
+              Flip card
+            </button>
+          </div>
         </div>
       </PointerStage>
     </section>
@@ -159,8 +203,8 @@ function Experience() {
   const panelsRef = useRef<HTMLDivElement>(null);
   const onScreen = useOnScreen(panelsRef);
   const reduced = usePrefersReducedMotion();
-  const floatingValue = useTypedValue(SAMPLE_VALUE, onScreen && !reduced);
-  const stackedValue = useTypedValue(SAMPLE_VALUE, onScreen && !reduced, 1800);
+  const floating = useTypedValue(SAMPLE_VALUE, onScreen && !reduced);
+  const stacked = useTypedValue(SAMPLE_VALUE, onScreen && !reduced, 1800);
 
   return (
     <section id="features" className={styles.section} aria-labelledby="experience-title">
@@ -182,7 +226,8 @@ function Experience() {
               layout="floating"
               tilt
               chipReflection
-              value={floatingValue}
+              value={floating.value}
+              side={floating.side}
               acceptanceMarks={demoAcceptanceMarks}
             />
           </PointerStage>
@@ -203,7 +248,8 @@ function Experience() {
               layout="stacked"
               tilt
               chipReflection
-              value={stackedValue}
+              value={stacked.value}
+              side={stacked.side}
               acceptanceMarks={demoAcceptanceMarks}
             />
           </PointerStage>
@@ -492,6 +538,15 @@ function ProcessorIcon() {
   return (
     <Icon>
       <path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6z" />
+    </Icon>
+  );
+}
+
+function FlipIcon() {
+  return (
+    <Icon className={styles.flipIcon}>
+      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+      <path d="M19.5 4.5v4h-4" />
     </Icon>
   );
 }

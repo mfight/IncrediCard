@@ -114,6 +114,26 @@ Under `prefers-reduced-motion` the loop is skipped entirely rather than merely u
 <button type="button" disabled={!complete}>Continue</button>`}
 />
 
+### Choosing the Side From Outside
+
+`side` (`"front"` or `"back"`) turns the card from outside, the same way the flip control turns it, whenever it changes. A `side` given at mount shows from the first paint. It sets the side rather than holding it: the card still turns for its own reasons afterward (its flip control, or focus reaching the security code), and `onSideChange` reports each of those, so pass it back as `side` to keep the two in step. A change to `side` itself isn't reported, since your app made it.
+
+`flippable={false}` removes the flip control, so nobody can turn the card by hand. Focus reaching the security code still turns it, because in the `"floating"` layout that field is printed on the back, and `side` still turns it.
+
+While `processing`, the card turns on its own loop, unreported, and lands on `side` when it ends (face-up without one). An American Express card stays on the front whatever `side` says: its security code is printed there, and its back is empty. See the Side story.
+
+<Source
+  language="tsx"
+  copyable={false}
+  dark={true}
+  code={`const [side, setSide] = useState<IncrediCardSide>("front");
+
+<IncrediCard id="payment" side={side} onSideChange={setSide} />
+<button type="button" onClick={() => setSide(side === "front" ? "back" : "front")}>
+  Flip card
+</button>`}
+/>
+
 ### A Payment Processor's Hosted Fields
 
 With **IncrediCard**'s own fields, raw card numbers pass through your page, which puts it in scope for PCI requirements. A processor's hosted fields (Stripe Elements, Braintree Hosted Fields, Adyen's secured fields, and the like) keep the data inside a frame from the processor's own origin instead. `hostedFields` puts those fields where **IncrediCard**'s would go. **IncrediCard** loads no processor and depends on none: you render each field and report what it tells you.
@@ -356,7 +376,7 @@ In the "floating" layout, this needs more than an `onFocus` handler: the field o
 
 ### The Flip Control Jumps Straight to the First Field on the Other Side
 
-Clicking the flip control doesn't just turn the card over; it also moves focus to the first real field on whichever side is now showing (CVC on the back; Number on the front), reusing the same flip-then-deferred-focus mechanism the keyboard navigation above needs. `scale`'s grow effect isn't triggered as a special case for this: it follows naturally once the deferred focus lands on a real field, the same as any other way of focusing one.
+The flip control is there whenever there's a back to show (a valid, non-Amex number), the card isn't `processing`, and `flippable` isn't `false`. Clicking it doesn't just turn the card over; it also moves focus to the first real field on whichever side is now showing (CVC on the back; Number on the front), reusing the same flip-then-deferred-focus mechanism the keyboard navigation above needs. `scale`'s grow effect isn't triggered as a special case for this: it follows naturally once the deferred focus lands on a real field, the same as any other way of focusing one.
 
 This is why the flip control never counts as "a field is focused." Under plain `:focus-within`, which matches when any focusable descendant has focus, clicking the flip control (a real `<button>`) would focus it and trigger the scale-up transform mid-click. The button would then move to a new, larger position between the click's `mousedown` (which focuses it) and `mouseup`, so the browser's `click` event would never fire (its two halves no longer land on the same element), and the flip would only register on a second click. Both `scale`'s state (`fieldsFocused`, checking `event.target instanceof HTMLInputElement`) and `tilt`'s focus suppression exclude the flip control for this reason.
 

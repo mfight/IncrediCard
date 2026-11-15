@@ -125,6 +125,8 @@ const UNTOUCHED: IncrediCardTouched = {
 };
 
 export type IncrediCardLayout = "stacked" | "floating";
+/** Which side of the card is showing. */
+export type IncrediCardSide = "front" | "back";
 
 // The visual themes; each is one object in themes.ts, whose keys are the
 // valid names.
@@ -301,6 +303,28 @@ type IncrediCardOwnProps = {
    * expiration and security code count as passing when their `complete`
    * says so. */
   onCompletionChange?: (complete: boolean) => void;
+  /** The side to show. Whenever it changes, the card turns to that side,
+   * the same way the flip control turns it. Leave it unset and the card
+   * starts face-up and turns only for the person using it.
+   *
+   * It sets the side rather than holding it: the card still turns for its
+   * own reasons afterward (its flip control, or focus reaching the security
+   * code, which is printed on the back), and `onSideChange` reports each of
+   * those, so the card can never strand someone on the wrong side. While
+   * `processing`, the card turns on its own loop and lands on this side
+   * when it ends. An American Express card stays on the front, as its
+   * security code is printed there and its back is empty. */
+  side?: IncrediCardSide;
+  /** Called with the new side whenever the card turns for a reason other
+   * than `side` changing or the `processing` loop: its flip control, or
+   * focus moving to a field on the other side. Pass it back as `side` to
+   * keep the two in step. */
+  onSideChange?: (side: IncrediCardSide) => void;
+  /** Default true. `false` removes the flip control, so the card can't be
+   * turned over by hand. Focus reaching the security code still turns the
+   * card, since in the "floating" layout that field is printed on the back,
+   * and `side` still turns it. */
+  flippable?: boolean;
   className?: string;
 };
 
@@ -401,6 +425,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       defaultValue = EMPTY_VALUE,
       onChange,
       onCompletionChange,
+      side,
+      onSideChange,
+      flippable = true,
       className,
       ...rest
     },
@@ -631,6 +658,52 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     // detected. Deliberately not gated on `isRevealed`: it appears as soon
     // as the prefix identifies the network, before the number is complete.
     const networkMark = getNetworkMark(network, networkInfo.displayName, acceptanceMarks);
+
+    // The side `side` asks for: the back only where there's a back to show,
+    // never for Amex.
+    const requestedFlip = side === "back" && !isAmex;
+    // `side` turns the card when it changes, compared against the last value
+    // during render (the same supported pattern as the hosted-field focus
+    // below), so the turn and the render that asked for it are one commit.
+    // Starts from "nothing asked for yet", so a `side` given at mount turns
+    // the card before its first paint, with nothing to animate from. A
+    // change in network counts too: a number becoming Amex brings the card
+    // back to the front. While `processing`, the loop simply carries on
+    // from the new side, and its cleanup lands on `side` when it ends.
+    const [syncedSide, setSyncedSide] = useState<{ side?: IncrediCardSide; isAmex: boolean }>({
+      side: undefined,
+      isAmex,
+    });
+    if (side !== syncedSide.side || (side !== undefined && isAmex !== syncedSide.isAmex)) {
+      setSyncedSide({ side, isAmex });
+      if (side !== undefined) setFlipped(requestedFlip);
+    }
+    // Where the card comes to rest when `processing` ends: `side`, or the
+    // front without it. Read by the loop's cleanup, which runs after this
+    // render has already gone, so it needs a ref.
+    const restingFlipRef = useRef(false);
+    useEffect(() => {
+      restingFlipRef.current = requestedFlip;
+    });
+
+    // Reports the card turning for anything other than `side` or the
+    // processing loop: its flip control, or focus crossing to the other side.
+    // In effects, after the commit, so the callback never runs during a
+    // render. `reportedSideRef` holds the side the app last knew about,
+    // whether it set it or was told; a turn back to it isn't news.
+    const reportedSideRef = useRef<IncrediCardSide>("front");
+    useEffect(() => {
+      if (side !== undefined) reportedSideRef.current = requestedFlip ? "back" : "front";
+    }, [side, requestedFlip]);
+    const lastShownRef = useRef<IncrediCardSide | null>(null);
+    useEffect(() => {
+      const shown: IncrediCardSide = flipped ? "back" : "front";
+      const turned = lastShownRef.current !== null && lastShownRef.current !== shown;
+      lastShownRef.current = shown;
+      if (!turned || processing || shown === reportedSideRef.current) return;
+      reportedSideRef.current = shown;
+      onSideChange?.(shown);
+    }, [flipped, processing, onSideChange]);
 
     // A hosted field's focus, reported by the processor, does what focus on
     // IncrediCard's own fields does (see their `onFocus`/`onBlur` below):
@@ -925,11 +998,11 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       );
       return () => {
         clearInterval(id);
-        // Land face-up again when processing ends, rather than leaving
-        // the card stranded on whichever side the last tick happened to
-        // reach. In the cleanup, not a second effect, so it runs on the
-        // processing -> false transition and on unmount alike.
-        setFlipped(false);
+        // Land on `side` (face-up without it) when processing ends, rather
+        // than leaving the card stranded on whichever side the last tick
+        // happened to reach. In the cleanup, not a second effect, so it
+        // runs on the processing -> false transition and on unmount alike.
+        setFlipped(restingFlipRef.current);
       };
       // `setFlipped` is a stable useCallback([]) wrapper, so listing it
       // here cannot retrigger the loop; it satisfies the exhaustive-deps
@@ -1315,7 +1388,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             hostedFields={Boolean(hostedFields)}
             cvcOnFront={isAmex}
             onFlip={
-              isRevealed && !isAmex && !processing
+              isRevealed && !isAmex && !processing && flippable
                 ? flipAndFocusFirstField
                 : undefined
             }
@@ -1384,8 +1457,9 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                `processing` too: the card is turning itself over on a
                loop there, so a control offering to turn it over is both
                inert and confusing; a disabled button next to a card
-               already flipping reads as broken. */}
-              {isRevealed && !isAmex && !processing ? (
+               already flipping reads as broken. And omitted when the app
+               turned flipping off (`flippable={false}`). */}
+              {isRevealed && !isAmex && !processing && flippable ? (
                 <button
                   type="button"
                   disabled={disabled}
