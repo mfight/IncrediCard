@@ -1,7 +1,12 @@
+@use "sass:math";
+
 // The landing page's layout. Colors and type come from site.css.
 
 $page-width: 72rem;
 $gutter: 1.25rem;
+// Two-thirds of the page's content width: the measure for section titles and
+// their intros, wide enough that they don't wrap into a narrow column.
+$text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
 
 @mixin focus-ring($color: var(--site-accent)) {
   &:focus-visible {
@@ -142,8 +147,7 @@ $gutter: 1.25rem;
   text-wrap: balance;
 }
 
-.heroActions,
-.installActions {
+.heroActions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -152,13 +156,21 @@ $gutter: 1.25rem;
   margin-block-start: 2.25rem;
 }
 
+// A row of its own across the whole band, left-aligned under the text, so
+// it runs on under the code samples as far as it needs to.
 .installActions {
-  justify-content: flex-start;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.75rem;
 }
 
-.installNote {
-  margin-block-start: 0.75rem;
-  font-size: 1rem;
+// The React requirement, under the whole band in small type.
+.installFootnote {
+  grid-column: 1 / -1;
+  font-size: 0.8125rem;
+  color: var(--site-on-dark-muted);
 }
 
 .primaryButton {
@@ -198,15 +210,29 @@ $gutter: 1.25rem;
 
 // The fanned cards. Each card is centered on the stage and moved out to its
 // slot, so a card changing slots slides there.
+//
+// The fan is laid out with 20rem cards, the side cards half a card out, and
+// scaled as a whole by `--fan-fit` (set from Landing.tsx): 1.7 where there's
+// room, less to fit the stage's width. The stage takes the scaled height, so
+// nothing below moves. The layout box holds the side cards' tilted corners
+// with a little room to spare, so the fan stays centered.
+$fan-card: 20rem;
+$fan-width: 42rem;
+$fan-height: 16.5rem;
+
 .fanStage {
-  margin-block-start: 3.5rem;
+  position: relative;
+  height: calc(#{$fan-height} * var(--fan-fit, 1.7));
 }
 
 .fan {
-  position: relative;
-  height: 20rem;
-  max-width: 44rem;
-  margin: 0 auto;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 50%;
+  width: $fan-width;
+  height: $fan-height;
+  transform: translateX(-50%) scale(var(--fan-fit, 1.7));
+  transform-origin: top center;
 }
 
 .fanCard {
@@ -218,7 +244,7 @@ $gutter: 1.25rem;
   position: absolute;
   inset-inline-start: 50%;
   inset-block-start: 50%;
-  width: 20rem;
+  width: $fan-card;
   transform: translate(calc(-50% + var(--fan-x)), calc(-50% + var(--fan-y))) rotate(var(--fan-turn))
     scale(var(--fan-scale));
   transition:
@@ -250,27 +276,6 @@ $gutter: 1.25rem;
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
-
-  @media (max-width: 40rem) {
-    width: 17.5rem;
-
-    &[data-position="right"] {
-      --fan-x: 5rem;
-    }
-
-    &[data-position="left"] {
-      --fan-x: -5rem;
-    }
-  }
-}
-
-.fanCaption {
-  margin-block-start: 1.5rem;
-  color: var(--site-on-dark-muted);
-  font-size: 0.8125rem;
-  font-weight: 650;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 // --- Sections -----------------------------------------------------------------
@@ -294,7 +299,7 @@ $gutter: 1.25rem;
 }
 
 .sectionTitle {
-  max-width: 22ch;
+  max-width: $text-measure;
   margin-block-start: 1rem;
   color: var(--site-ink);
   font-size: clamp(2.25rem, 5vw, 3.75rem);
@@ -305,7 +310,8 @@ $gutter: 1.25rem;
 }
 
 .sectionLede {
-  max-width: 40rem;
+  max-width: $text-measure;
+  text-wrap: pretty;
   margin-block-start: 1.25rem;
   font-size: 1.1875rem;
   line-height: 1.65;

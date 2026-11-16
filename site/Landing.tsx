@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import type { IncrediCardTheme } from "../src";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { IncrediCardSide, IncrediCardTheme } from "../src";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypedValue } from "./useTypedValue";
@@ -30,7 +30,7 @@ const THEMES: { theme: IncrediCardTheme; name: string; summary: string }[] = [
   {
     theme: "globe",
     name: "Globe",
-    summary: "Holographic globe on a dark background.",
+    summary: "A holographic globe on a dark background.",
   },
   {
     theme: "glass",
@@ -96,18 +96,69 @@ type Slot = (typeof SLOTS)[number];
 // on. Ribbons sits this out; beside Globe it would read as the same dark card.
 const START: IncrediCardTheme[] = ["glass", "vintage", "globe"];
 
-const ROTATE_MS = 5000;
+// The fan's rhythm. A card slides to the front (the slide's own CSS
+// transition), turns to its back, holds there briefly, turns face-up again,
+// then holds before the fan moves on. FLIP_MS is the card's own flip
+// transition, so each hold starts once the turn has finished.
+const SLIDE_MS = 1100;
+const FLIP_MS = 280;
+const HOLD_BACK_MS = 500;
+const HOLD_FRONT_MS = 2000;
+// How much the fan is scaled up on a screen with room for it: the 20rem cards
+// show at 34rem, 160% of the component's usual 21.25rem, as the page's lead
+// example.
+const HERO_SCALE = 1.7;
 
 function Hero() {
   const fanRef = useRef<HTMLDivElement>(null);
   const onScreen = useOnScreen(fanRef);
   const reduced = usePrefersReducedMotion();
   const [turn, setTurn] = useState(0);
+  // The side the front card shows. The others always show their fronts.
+  const [frontSide, setFrontSide] = useState<IncrediCardSide>("front");
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  // The fan is laid out with the cards at the component's usual size, then
+  // scaled as a whole: up to HERO_SCALE where there's room, and down as the
+  // screen narrows, so all three cards stay in view. Scaling rather than
+  // sizing the cards: the card caps its own width (and its text sizes) and
+  // has a minimum width, which would run the fan off a phone. Set before
+  // paint, so it never shows at the wrong size.
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const fan = fanRef.current;
+    if (!stage || !fan) return;
+    const fit = () =>
+      stage.style.setProperty("--fan-fit", String(Math.min(HERO_SCALE, stage.clientWidth / fan.offsetWidth)));
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!onScreen || reduced) return;
-    const timer = window.setInterval(() => setTurn((value) => value + 1), ROTATE_MS);
-    return () => window.clearInterval(timer);
+    let timer = 0;
+    // From a card's arrival at the front (or the page's first frame, where
+    // the first card is already there) to the next card's arrival.
+    const arrive = () => {
+      timer = window.setTimeout(() => {
+        setFrontSide("back");
+        timer = window.setTimeout(() => {
+          setFrontSide("front");
+          timer = window.setTimeout(() => {
+            setTurn((value) => value + 1);
+            arrive();
+          }, FLIP_MS + HOLD_FRONT_MS);
+        }, FLIP_MS + HOLD_BACK_MS);
+      }, SLIDE_MS);
+    };
+    arrive();
+    return () => {
+      window.clearTimeout(timer);
+      // Stopped mid-turn (scrolled away), the card lands face-up.
+      setFrontSide("front");
+    };
   }, [onScreen, reduced]);
 
   const slotOf = (index: number): Slot => SLOTS[(index + turn) % SLOTS.length];
@@ -132,7 +183,7 @@ function Hero() {
           </a>
         </div>
 
-        <div className={styles.fanStage}>
+        <div ref={stageRef} className={styles.fanStage}>
           <div ref={fanRef} className={styles.fan}>
             {START.map((theme, index) => (
               <LiveCard
@@ -140,6 +191,7 @@ function Hero() {
                 id={`hero-${theme}`}
                 className={styles.fanCard}
                 position={slotOf(index)}
+                side={slotOf(index) === "front" ? frontSide : "front"}
                 theme={theme}
                 tilt
                 chipReflection
@@ -149,11 +201,9 @@ function Hero() {
               />
             ))}
           </div>
-          <p className={styles.fanCaption}>
-            Three of four built-in themes
-            <span className={styles.visuallyHidden}>
-              : Glass, Vintage and Globe, fanned out above, each showing the same sample card.
-            </span>
+          <p className={styles.visuallyHidden}>
+            Three of the four built-in themes, Glass, Vintage and Globe, fanned out, each showing the same
+            sample card.
           </p>
         </div>
       </PointerStage>
@@ -334,7 +384,8 @@ function RealFields() {
         <div>
           <p className={styles.eyebrow}>Accessible by design</p>
           <h2 id="fields-title" className={styles.sectionTitle}>
-            A familiar card. A thoughtful form.
+            {/* "A thoughtful" stays together, so a wrap falls after "card.". */}
+            A familiar card. A{"\u00a0"}thoughtful form.
           </h2>
           <p className={styles.sectionLede}>
             Labeled inputs, keyboard navigation, and reduced-motion support come built in. Use
@@ -376,22 +427,9 @@ function Install() {
             Make it part of your checkout.
           </h2>
           <p className={styles.sectionLede}>
-            Install from npm, import the stylesheet, and render your first card. IncrediCard is Apache 2.0
-            licensed and ready to adapt.
+            Install from npm, import the stylesheet, and render your first card.
+            <span aria-hidden="true">*</span> IncrediCard is Apache 2.0 licensed and ready to adapt.
           </p>
-          {/* peerDependencies: react and react-dom ^19.2.0. */}
-          <p className={styles.installNote}>It needs React 19.2 or later.</p>
-          <div className={styles.installActions}>
-            <a className={styles.primaryButton} href={DOCS_URL}>
-              Read the docs
-            </a>
-            <a className={styles.secondaryLink} href={NPM_URL}>
-              View on npm <ArrowIcon />
-            </a>
-            <a className={styles.secondaryLink} href={GITHUB_URL}>
-              View on GitHub <ArrowIcon />
-            </a>
-          </div>
         </div>
         <div className={styles.code}>
           <pre>
@@ -406,6 +444,24 @@ function Install() {
             <code>{USAGE}</code>
           </pre>
         </div>
+        {/* Its own row across the band, starting under the text, so it can
+            run on under the code samples. */}
+        <div className={styles.installActions}>
+          <a className={styles.primaryButton} href={DOCS_URL}>
+            Read the docs
+          </a>
+          <a className={styles.secondaryLink} href={NPM_URL}>
+            View on npm <ArrowIcon />
+          </a>
+          <a className={styles.secondaryLink} href={GITHUB_URL}>
+            View on GitHub <ArrowIcon />
+          </a>
+        </div>
+        {/* peerDependencies: react and react-dom ^19.2.0. */}
+        <p className={styles.installFootnote}>
+          {/* Set tight, the way fine print usually sets an asterisk note. */}
+          <span aria-hidden="true">*</span>Requires React 19.2 or later
+        </p>
       </div>
     </section>
   );
