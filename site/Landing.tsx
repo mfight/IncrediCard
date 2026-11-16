@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { IncrediCardSide, IncrediCardTheme } from "../src";
+import type { IncrediCardSide, IncrediCardTheme, IncrediCardValue } from "../src";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypedValue } from "./useTypedValue";
@@ -95,6 +95,17 @@ type Slot = (typeof SLOTS)[number];
 // plastic and the engraved globe. Every few seconds each card moves one slot
 // on. Ribbons sits this out; beside Globe it would read as the same dark card.
 const START: IncrediCardTheme[] = ["glass", "vintage", "globe"];
+
+// A different network on each, so the fan shows the card recognizing them:
+// Visa on the glass, American Express on the vintage card (which has no
+// back to turn to, its security code being printed on the front, so it
+// skips the flip), Mastercard on the globe. Payment processors' published
+// test numbers.
+const HERO_VALUES: Record<string, IncrediCardValue> = {
+  glass: SAMPLE_VALUE,
+  vintage: { ...SAMPLE_VALUE, cardNumber: "378282246310005", cvc: "1234" },
+  globe: { ...SAMPLE_VALUE, cardNumber: "5555555555554444" },
+};
 
 // The fan's rhythm. A card slides to the front (the slide's own CSS
 // transition), turns to its back, holds there briefly, turns face-up again,
@@ -198,6 +209,7 @@ function Hero() {
                 holofoil
                 reach={0.6}
                 {...cardBase}
+                value={HERO_VALUES[theme]}
               />
             ))}
           </div>
@@ -317,31 +329,52 @@ function Themes() {
           colors, artwork, and typography to fit your brand.
         </p>
         <ul className={styles.themeGrid}>
-          {THEMES.map(({ theme, name, summary }, index) => (
-            <li key={theme} className={styles.themeItem}>
-              <PointerStage
-                className={`${styles.themeStage} ${theme === "glass" ? styles.themeStageGlass : ""}`}
-                phase={index * 1.7}
-              >
-                <LiveCard
-                  id={`theme-${theme}`}
-                  className={styles.themeCard}
-                  theme={theme}
-                  tilt
-                  chipReflection
-                  holofoil
-                  {...cardBase}
-                />
-              </PointerStage>
-              <h3 className={styles.themeName}>
-                {name} <code className={styles.themeProp}>{`theme="${theme}"`}</code>
-              </h3>
-              <p className={styles.themeSummary}>{summary}</p>
-            </li>
+          {THEMES.map((entry, index) => (
+            <ThemeItem key={entry.theme} {...entry} index={index} />
           ))}
         </ul>
       </div>
     </section>
+  );
+}
+
+// One theme's card, with a Flip card button that turns it over and back.
+// The card itself stays display-only; the button is the control.
+function ThemeItem({ theme, name, summary, index }: (typeof THEMES)[number] & { index: number }) {
+  const [side, setSide] = useState<IncrediCardSide>("front");
+  return (
+    <li className={styles.themeItem}>
+      <PointerStage
+        className={`${styles.themeStage} ${theme === "glass" ? styles.themeStageGlass : ""}`}
+        phase={index * 1.7}
+      >
+        <LiveCard
+          id={`theme-${theme}`}
+          className={styles.themeCard}
+          theme={theme}
+          side={side}
+          tilt
+          chipReflection
+          holofoil
+          {...cardBase}
+        />
+      </PointerStage>
+      <div className={styles.themeHeader}>
+        <h3 className={styles.themeName}>
+          {name} <code className={styles.themeProp}>{`theme="${theme}"`}</code>
+        </h3>
+        <button
+          type="button"
+          className={`${styles.primaryButton} ${styles.quietButton} ${styles.smallButton}`}
+          aria-pressed={side === "back"}
+          onClick={() => setSide((current) => (current === "front" ? "back" : "front"))}
+        >
+          <FlipIcon />
+          Flip card<span className={styles.visuallyHidden}>: {name.replace(" (default)", "")}</span>
+        </button>
+      </div>
+      <p className={styles.themeSummary}>{summary}</p>
+    </li>
   );
 }
 
@@ -589,6 +622,15 @@ function ProcessorIcon() {
   return (
     <Icon>
       <path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6z" />
+    </Icon>
+  );
+}
+
+function FlipIcon() {
+  return (
+    <Icon className={styles.flipIcon}>
+      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
+      <path d="M19.5 4.5v4h-4" />
     </Icon>
   );
 }

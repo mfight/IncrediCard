@@ -454,12 +454,21 @@ $fan-height: 16.5rem;
   max-width: 20rem;
 }
 
+// The theme's name on the left, its Flip card button on the right.
+.themeHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-block-start: 1.25rem;
+}
+
 .themeName {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 0.75rem;
-  margin-block-start: 1.25rem;
   color: var(--site-ink);
   font-size: 1.3125rem;
   font-weight: 700;
@@ -613,6 +622,18 @@ $fan-height: 16.5rem;
   &:focus-visible {
     outline-color: var(--site-accent);
   }
+}
+
+// A compact size of the same button, for controls beside a heading.
+.smallButton {
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.flipIcon {
+  width: 1rem;
+  height: 1rem;
 }
 
 // --- Footer -----------------------------------------------------------------------
