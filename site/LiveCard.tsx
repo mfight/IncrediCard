@@ -19,6 +19,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -27,6 +28,10 @@ import {
 import { IncrediCard } from "../src";
 
 const FOCUSABLE = "a[href], button, input, select, textarea, [tabindex], [contenteditable]";
+
+// How long a card goes without the stage's pointer when it turns over: the
+// card's 280ms flip, plus a little. See LiveCard's flip effect.
+const FLIP_PAUSE_MS = 360;
 
 type Point = { x: number; y: number } | null;
 type Listener = (point: Point) => void;
@@ -142,24 +147,31 @@ type LiveCardProps = Omit<ComponentProps<typeof IncrediCard>, "ref"> & {
 export function LiveCard({ className, position, reach = 0.8, children, ...cardProps }: LiveCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const subscribe = useContext(StageContext);
+  const insideRef = useRef(false);
+  const pausedUntilRef = useRef(0);
+
+  // The card's own pointer listeners sit on the face wrapper, the one element
+  // in either layout carrying `data-face-layout`. Looked up each time, since a
+  // theme change can replace it.
+  const face = () => ref.current?.querySelector<HTMLElement>("[data-face-layout]") ?? null;
+  const leave = () => {
+    if (insideRef.current) face()?.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
+    insideRef.current = false;
+  };
 
   useEffect(() => {
     if (!subscribe) return;
-    let inside = false;
     return subscribe((point) => {
-      // The card's own pointer listeners sit on the face wrapper, the one
-      // element in either layout carrying `data-face-layout`. Looked up on
-      // each event, since a theme change can replace it.
-      const face = ref.current?.querySelector<HTMLElement>("[data-face-layout]");
-      if (!face) return;
+      const el = face();
+      if (!el) return;
       if (!point) {
-        if (inside) face.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
-        inside = false;
+        leave();
         return;
       }
-      inside = true;
-      const rect = face.getBoundingClientRect();
-      face.dispatchEvent(
+      if (performance.now() < pausedUntilRef.current) return;
+      insideRef.current = true;
+      const rect = el.getBoundingClientRect();
+      el.dispatchEvent(
         new PointerEvent("pointermove", {
           pointerType: "mouse",
           clientX: rect.left + rect.width * (0.5 + point.x * reach),
@@ -167,7 +179,25 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
         }),
       );
     });
+    // `face` and `leave` read only refs, so they needn't be dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subscribe, reach]);
+
+  // While a pointer is driving the tilt, the card turns its flip animation
+  // off so the two don't fight, and the stage's idle path never stops moving.
+  // So when the side changes, the card goes without the stage's pointer for
+  // the length of the flip: it eases flat and turns over, then picks the
+  // pointer up again. Before paint, in the same commit as the new side:
+  // after it, the turn would already have been drawn without its animation.
+  const { side } = cardProps;
+  const lastSideRef = useRef(side);
+  useLayoutEffect(() => {
+    if (side === lastSideRef.current) return;
+    lastSideRef.current = side;
+    pausedUntilRef.current = performance.now() + FLIP_PAUSE_MS;
+    leave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [side]);
 
   // Out of the tab order, including fields that appear later (the card
   // reveals the rest once the number is valid) and anything re-rendered.
