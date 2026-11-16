@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { IncrediCardSide, IncrediCardTheme } from "../src";
+import type { IncrediCardTheme } from "../src";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypedValue } from "./useTypedValue";
@@ -103,42 +103,12 @@ function Hero() {
   const onScreen = useOnScreen(fanRef);
   const reduced = usePrefersReducedMotion();
   const [turn, setTurn] = useState(0);
-  // The side the front card shows. The others always show their fronts, so
-  // a card leaving the front turns face-up as it goes.
-  const [frontSide, setFrontSide] = useState<IncrediCardSide>("front");
-  // Off for good once the visitor flips the card themselves, so the page
-  // never turns it against them.
-  const [autoFlip, setAutoFlip] = useState(true);
-  // Bumped by the Flip card button, which restarts the rotation timer: a
-  // visitor who just turned the card gets a full interval to look at it.
-  const [rotationStart, setRotationStart] = useState(0);
 
   useEffect(() => {
     if (!onScreen || reduced) return;
-    const timer = window.setInterval(() => {
-      setTurn((value) => value + 1);
-      setFrontSide("front");
-    }, ROTATE_MS);
+    const timer = window.setInterval(() => setTurn((value) => value + 1), ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [onScreen, reduced, rotationStart]);
-
-  // Every other turn, the front card shows its back for a while before the
-  // fan moves on.
-  useEffect(() => {
-    if (!onScreen || reduced || !autoFlip || turn % 2 === 0) return;
-    const toBack = window.setTimeout(() => setFrontSide("back"), 1200);
-    const toFront = window.setTimeout(() => setFrontSide("front"), 3700);
-    return () => {
-      window.clearTimeout(toBack);
-      window.clearTimeout(toFront);
-    };
-  }, [turn, onScreen, reduced, autoFlip]);
-
-  const flipFrontCard = () => {
-    setAutoFlip(false);
-    setFrontSide((side) => (side === "front" ? "back" : "front"));
-    setRotationStart((value) => value + 1);
-  };
+  }, [onScreen, reduced]);
 
   const slotOf = (index: number): Slot => SLOTS[(index + turn) % SLOTS.length];
 
@@ -170,7 +140,6 @@ function Hero() {
                 id={`hero-${theme}`}
                 className={styles.fanCard}
                 position={slotOf(index)}
-                side={slotOf(index) === "front" ? frontSide : "front"}
                 theme={theme}
                 tilt
                 chipReflection
@@ -180,23 +149,12 @@ function Hero() {
               />
             ))}
           </div>
-          <div className={styles.fanFooter}>
-            <p className={styles.fanCaption}>
-              Three of four built-in themes
-              <span className={styles.visuallyHidden}>
-                : Glass, Vintage and Globe, fanned out above, each showing the same sample card.
-              </span>
-            </p>
-            <button
-              type="button"
-              className={styles.flipButton}
-              aria-pressed={frontSide === "back"}
-              onClick={flipFrontCard}
-            >
-              <FlipIcon />
-              Flip card
-            </button>
-          </div>
+          <p className={styles.fanCaption}>
+            Three of four built-in themes
+            <span className={styles.visuallyHidden}>
+              : Glass, Vintage and Globe, fanned out above, each showing the same sample card.
+            </span>
+          </p>
         </div>
       </PointerStage>
     </section>
@@ -575,15 +533,6 @@ function ProcessorIcon() {
   return (
     <Icon>
       <path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6z" />
-    </Icon>
-  );
-}
-
-function FlipIcon() {
-  return (
-    <Icon className={styles.flipIcon}>
-      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
-      <path d="M19.5 4.5v4h-4" />
     </Icon>
   );
 }

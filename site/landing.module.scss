@@ -264,50 +264,8 @@ $gutter: 1.25rem;
   }
 }
 
-// The caption under the fan's left card, the Flip card button under its
-// right, as in the mockup; stacked and centered on a phone.
-.fanFooter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem 2rem;
-  max-width: 32rem;
-  margin: 1.5rem auto 0;
-
-  @media (max-width: 30rem) {
-    justify-content: center;
-  }
-}
-
-.flipButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  border: 0.0625rem solid rgb(255 255 255 / 35%);
-  border-radius: 0.625rem;
-  background: rgb(255 255 255 / 6%);
-  color: var(--site-on-dark);
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 650;
-  cursor: pointer;
-  transition: background-color 150ms ease;
-
-  &:hover {
-    background: rgb(255 255 255 / 14%);
-  }
-
-  @include focus-ring(var(--site-on-dark));
-}
-
-.flipIcon {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
 .fanCaption {
+  margin-block-start: 1.5rem;
   color: var(--site-on-dark-muted);
   font-size: 0.8125rem;
   font-weight: 650;
