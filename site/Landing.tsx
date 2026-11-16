@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { IncrediCardSide, IncrediCardTheme, IncrediCardValue } from "../src";
+import { detectCardNetwork } from "../src/cardNetworks";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypedValue } from "./useTypedValue";
@@ -107,6 +108,14 @@ const HERO_VALUES: Record<string, IncrediCardValue> = {
   globe: { ...SAMPLE_VALUE, cardNumber: "5555555555554444" },
 };
 
+// Which hero cards turn over when they reach the front. The American Express
+// card stays face-up, holding at the front for as long as the others take to
+// turn over and back. It's never asked to turn at all: the card would ignore
+// the request, but its tilt would still pause for a flip that never comes.
+const HERO_TURNS: Record<string, boolean> = Object.fromEntries(
+  Object.entries(HERO_VALUES).map(([theme, value]) => [theme, detectCardNetwork(value.cardNumber) !== "amex"]),
+);
+
 // The fan's rhythm. A card slides to the front (the slide's own CSS
 // transition), turns to its back, holds there briefly, turns face-up again,
 // then holds before the fan moves on. FLIP_MS is the card's own flip
@@ -202,7 +211,7 @@ function Hero() {
                 id={`hero-${theme}`}
                 className={styles.fanCard}
                 position={slotOf(index)}
-                side={slotOf(index) === "front" ? frontSide : "front"}
+                side={slotOf(index) === "front" && HERO_TURNS[theme] ? frontSide : "front"}
                 theme={theme}
                 tilt
                 chipReflection
@@ -214,8 +223,8 @@ function Hero() {
             ))}
           </div>
           <p className={styles.visuallyHidden}>
-            Three of the four built-in themes, Glass, Vintage and Globe, fanned out, each showing the same
-            sample card.
+            Three of the four built-in themes fanned out: a Visa card in Glass, an American Express card
+            in Vintage, and a Mastercard card in Globe.
           </p>
         </div>
       </PointerStage>
