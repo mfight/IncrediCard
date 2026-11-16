@@ -11,26 +11,31 @@ const DOCS_URL = `${STORYBOOK}?path=/docs/incredicard-overview--docs`;
 const GITHUB_URL = "https://github.com/mfight/IncrediCard";
 const NPM_URL = "https://www.npmjs.com/package/incredicard";
 
+// The "Buy me a coffee" button's destination: the full URL of a hosted
+// donation page, such as "https://example.com/your-page". While it's null,
+// the whole support section stays off the page.
+const DONATION_URL: string | null = null;
+
 const THEMES: { theme: IncrediCardTheme; name: string; summary: string }[] = [
   {
     theme: "ribbons",
-    name: "Ribbons",
-    summary: "A dark card printed with fine, twisting lines. The default.",
+    name: "Ribbons (default)",
+    summary: "Abstract holographic lines on a dark background.",
   },
   {
     theme: "vintage",
     name: "Vintage",
-    summary: "Embossed plastic, set in OCR-A and OCR-B, the way cards used to be.",
+    summary: "Gold card with embossed lettering, inspired by classic plastic cards.",
   },
   {
     theme: "globe",
     name: "Globe",
-    summary: "The dark card again, engraved with a globe instead of ribbons.",
+    summary: "Holographic globe on a dark background.",
   },
   {
     theme: "glass",
     name: "Glass",
-    summary: "Mostly clear glass that shows the page behind it, with light or dark text to suit.",
+    summary: "A translucent finish that reveals the background, with light or dark text to suit.",
   },
 ];
 
@@ -74,6 +79,7 @@ export function Landing() {
         <Themes />
         <RealFields />
         <Install />
+        <Support />
       </main>
       <Footer />
     </>
@@ -145,7 +151,7 @@ function Hero() {
           Credit card entry that feels like a real card.
         </h1>
         <p className={styles.heroLede}>
-          A React payment form with a dimensional card that updates as you type.
+          A customizable, dimensional credit card with accessible inputs, built for React.
         </p>
         <div className={styles.heroActions}>
           <a className={styles.primaryButton} href={DEMO_URL}>
@@ -208,13 +214,13 @@ function Experience() {
 
   return (
     <section id="features" className={styles.section} aria-labelledby="experience-title">
-      <p className={styles.eyebrow}>The card experience</p>
+      <p className={styles.eyebrow}>Flexible layouts</p>
       <h2 id="experience-title" className={styles.sectionTitle}>
-        One card. Two ways to enter it.
+        One card. Two layouts.
       </h2>
       <p className={styles.sectionLede}>
-        Put the fields right on the card or use a familiar form underneath. In either layout, the card
-        responds as you type, paste, or autofill.
+        Enter details directly on the card or in a labeled form below it. Both layouts respond as you
+        type, paste, or autofill.
       </p>
 
       <div ref={panelsRef} className={styles.panels}>
@@ -232,10 +238,9 @@ function Experience() {
             />
           </PointerStage>
           <figcaption>
-            <h3 className={styles.panelTitle}>Fields on the card</h3>
+            <h3 className={styles.panelTitle}>Floating layout</h3>
             <p className={styles.panelText}>
-              In the floating layout, the card face holds the actual inputs. Flip to the back when it’s
-              time to enter the security code.
+              Enter details directly on the card. Flip to the back for the security code.
             </p>
           </figcaption>
         </figure>
@@ -254,11 +259,8 @@ function Experience() {
             />
           </PointerStage>
           <figcaption>
-            <h3 className={styles.panelTitle}>Fields below the card</h3>
-            <p className={styles.panelText}>
-              In the stacked layout, a live visual preview sits above a conventional form with visible
-              labels.
-            </p>
+            <h3 className={styles.panelTitle}>Stacked layout</h3>
+            <p className={styles.panelText}>A live card preview above a familiar, fully labeled form.</p>
           </figcaption>
         </figure>
       </div>
@@ -266,26 +268,25 @@ function Experience() {
       <ul className={styles.features}>
         <li className={styles.feature}>
           <RevealIcon />
-          <h3 className={styles.featureTitle}>Reveal fields as needed</h3>
+          <h3 className={styles.featureTitle}>Reveal details as needed</h3>
           <p className={styles.featureText}>
-            Only the number shows at first. The expiration, name and security code appear once it’s a
-            valid number, so the form is never longer than it needs to be.
+            Start with the card number. The remaining fields appear once it passes a format check.
           </p>
         </li>
         <li className={styles.feature}>
           <DepthIcon />
-          <h3 className={styles.featureTitle}>Add a sense of depth</h3>
+          <h3 className={styles.featureTitle}>Add a little depth</h3>
           <p className={styles.featureText}>
-            A chip that catches the light, a holographic foil, tilt toward the pointer or the phone, and
-            zoom on focus. Each is optional, and each respects reduced motion.
+            Bring the card to life with reflections, holographic foil, tilt, and zoom on focus. Every
+            effect is optional and respects reduced motion.
           </p>
         </li>
         <li className={styles.feature}>
           <ProcessorIcon />
           <h3 className={styles.featureTitle}>Bring your own processor</h3>
           <p className={styles.featureText}>
-            Your payment processor’s hosted fields can take the number, expiration and security code,
-            so card data never touches your page. The card, flip and Tab order work around them.
+            Use your processor’s hosted fields for the number, expiration, and security code.
+            IncrediCard coordinates the card, flip, and keyboard navigation around them.
           </p>
         </li>
       </ul>
@@ -299,13 +300,13 @@ function Themes() {
   return (
     <section className={styles.themesBand} aria-labelledby="themes-title">
       <div className={styles.section}>
-        <p className={styles.eyebrow}>Themes</p>
+        <p className={styles.eyebrow}>Make it yours</p>
         <h2 id="themes-title" className={styles.sectionTitle}>
-          Four looks, or your own.
+          Ready-made looks. Room to make your own.
         </h2>
         <p className={styles.sectionLede}>
-          Pick a built-in theme with one prop, or start from one with <code>extendIncrediCardTheme</code>{" "}
-          and change its colors, artwork and type.
+          Choose from four built-in themes, customize an existing look, or create your own. Adjust
+          colors, artwork, and typography to fit your brand.
         </p>
         <ul className={styles.themeGrid}>
           {THEMES.map(({ theme, name, summary }, index) => (
@@ -340,43 +341,46 @@ function Themes() {
 
 const FIELD_POINTS = [
   {
-    title: "Labeled, ordinary inputs",
-    text: "Name, number, expiration and security code are real form fields with labels, autocomplete values and error messages.",
-  },
-  {
     title: "Keyboard and screen readers",
-    text: "Tab moves through the fields and flips the card when the next one is on the back. The card’s decoration stays out of the way of assistive technology.",
+    text: "Labeled fields support assistive technology. Tab follows the form and flips the card when needed.",
   },
   {
-    title: "Paste and autofill",
-    text: "Pasting a number or accepting the browser’s saved card fills the card the same way typing does.",
+    title: "Typing, paste, and autofill",
+    text: "Enter details your way. The card stays in sync as you type, paste a number, or use browser autofill.",
   },
   {
-    title: "Eight networks",
-    text: "Visa, Mastercard, American Express, Discover, Diners Club, JCB, Maestro and UnionPay, each with its own grouping, length and security-code rules.",
+    title: "Smart credit card number recognition",
+    text: "Recognizes eight networks from the number prefix and applies their formatting rules. Display your own acceptance-mark assets or show the network name.",
   },
   {
-    title: "Reduced motion",
-    text: "Under reduced motion, every effect keeps its state and loses only its movement.",
+    title: "Built-in or hosted fields",
+    text: "Start with the included inputs or connect your processor’s hosted number, expiration, and security-code fields.",
   },
   {
-    title: "Nothing but React",
-    text: "Styles, fonts and English strings ship with it, and every string can be replaced.",
+    // The component replaces movement with a calmer signal rather than only
+    // removing it (the processing loop becomes a slow pulse), so "calmer
+    // alternatives", not "remove".
+    title: "Motion that respects preferences",
+    text: "Reduced-motion settings replace animated transitions and decorative movement with calmer alternatives while keeping the form fully usable.",
+  },
+  {
+    title: "Self-contained for React",
+    text: "Fields, styles, fonts, and default labels ship together. Replace the labels to suit your language or product.",
   },
 ];
 
 function RealFields() {
   return (
     <section className={styles.section} aria-labelledby="fields-title">
-      <div className={styles.split}>
+      <div>
         <div>
-          <p className={styles.eyebrow}>Underneath</p>
+          <p className={styles.eyebrow}>Accessible by design</p>
           <h2 id="fields-title" className={styles.sectionTitle}>
-            The card is just a picture of real fields.
+            A familiar card. A thoughtful form.
           </h2>
           <p className={styles.sectionLede}>
-            Everything a person can type into is a standard, accessible input. The card mirrors those
-            fields; it never replaces them.
+            Labeled inputs, keyboard navigation, and reduced-motion support come built in. Use
+            IncrediCard’s own fields or connect your processor’s hosted fields.
           </p>
         </div>
         <ul className={styles.points}>
@@ -409,19 +413,25 @@ function Install() {
     <section className={styles.installBand} aria-labelledby="install-title">
       <div className={`${styles.section} ${styles.split}`}>
         <div>
-          <p className={`${styles.eyebrow} ${styles.eyebrowOnDark}`}>Get started</p>
+          <p className={`${styles.eyebrow} ${styles.eyebrowOnDark}`}>Free and open</p>
           <h2 id="install-title" className={styles.sectionTitle}>
-            Install it from npm.
+            Make it part of your checkout.
           </h2>
           <p className={styles.sectionLede}>
-            Import the stylesheet once, then render the component. It needs React 19.2 or later.
+            Install from npm, import the stylesheet, and render your first card. IncrediCard is Apache 2.0
+            licensed and ready to adapt.
           </p>
+          {/* peerDependencies: react and react-dom ^19.2.0. */}
+          <p className={styles.installNote}>It needs React 19.2 or later.</p>
           <div className={styles.installActions}>
             <a className={styles.primaryButton} href={DOCS_URL}>
               Read the docs
             </a>
             <a className={styles.secondaryLink} href={NPM_URL}>
               View on npm <ArrowIcon />
+            </a>
+            <a className={styles.secondaryLink} href={GITHUB_URL}>
+              View on GitHub <ArrowIcon />
             </a>
           </div>
         </div>
@@ -443,6 +453,34 @@ function Install() {
   );
 }
 
+// --- Support --------------------------------------------------------------
+
+// An optional thank-you, quieter than the demo and install calls to action:
+// a lighter heading and an outlined button. Off the page until DONATION_URL
+// is set.
+function Support() {
+  if (!DONATION_URL) return null;
+  return (
+    <section className={styles.supportBand} aria-labelledby="support-title">
+      <div className={`${styles.section} ${styles.support}`}>
+        <div>
+          <p className={styles.eyebrow}>Support the project</p>
+          <h2 id="support-title" className={styles.supportTitle}>
+            Enjoying IncrediCard?
+          </h2>
+          <p className={styles.supportText}>
+            If IncrediCard made your checkout a little better, a couple of bucks is a welcome way to say
+            thanks.
+          </p>
+        </div>
+        <a className={`${styles.primaryButton} ${styles.quietButton}`} href={DONATION_URL}>
+          Buy me a coffee <ArrowIcon />
+        </a>
+      </div>
+    </section>
+  );
+}
+
 // --- Footer ---------------------------------------------------------------
 
 function Footer() {
@@ -450,10 +488,9 @@ function Footer() {
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
         <p className={styles.footerNote}>
-          <strong>IncrediCard is not a payment integration.</strong> It checks the format of what’s typed.
-          It has no payment processor, no tokenization and no submission flow, and it makes no
-          PCI-compliance claim. Pair it with your processor’s own validation, or let your processor’s
-          hosted fields take the card data.
+          <strong>IncrediCard handles card entry and format checks.</strong> Connect your payment
+          processor for validation, tokenization, and submission, or use its hosted fields to collect
+          card details. IncrediCard makes no PCI-compliance claim.
         </p>
         <ul className={styles.footerLinks}>
           <li>

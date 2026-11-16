@@ -156,6 +156,11 @@ $gutter: 1.25rem;
   justify-content: flex-start;
 }
 
+.installNote {
+  margin-block-start: 0.75rem;
+  font-size: 1rem;
+}
+
 .primaryButton {
   display: inline-flex;
   align-items: center;
@@ -516,12 +521,19 @@ $gutter: 1.25rem;
   }
 }
 
+// Below the section's heading and intro, so the heading keeps the page's
+// full measure: two columns on a tablet, three on a wide screen.
 .points {
   display: grid;
   gap: 2rem 2.5rem;
+  margin-block-start: 3rem;
 
   @media (min-width: 40rem) {
     grid-template-columns: 1fr 1fr;
+  }
+
+  @media (min-width: 64rem) {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -574,12 +586,65 @@ $gutter: 1.25rem;
     color: var(--site-on-dark);
     font-size: 0.9375rem;
     line-height: 1.7;
+
+    // On a phone the lines wrap instead of scrolling sideways: a scrolling
+    // box would need keyboard focus to be reachable by anyone not using a
+    // pointer.
+    @media (max-width: 40rem) {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
   }
 }
 
 .codePrompt {
   color: var(--site-on-dark-muted);
   user-select: none;
+}
+
+// --- Support ----------------------------------------------------------------------
+
+// Below the install band and above the footer: same page width, less
+// height, a smaller heading than the sections above, and an outlined button.
+.supportBand {
+  border-block-start: 0.0625rem solid var(--site-line);
+}
+
+.support {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 3rem;
+  padding-block: 3.5rem;
+}
+
+.supportTitle {
+  margin-block-start: 0.75rem;
+  color: var(--site-ink);
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.supportText {
+  max-width: 36rem;
+  margin-block-start: 0.5rem;
+}
+
+// The primary button's shape, outlined on the light page.
+.quietButton {
+  border: 0.0625rem solid var(--site-line);
+  background: var(--site-canvas);
+  color: var(--site-ink);
+
+  &:hover {
+    background: var(--site-surface);
+  }
+
+  &:focus-visible {
+    outline-color: var(--site-accent);
+  }
 }
 
 // --- Footer -----------------------------------------------------------------------
