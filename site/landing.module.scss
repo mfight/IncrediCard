@@ -369,11 +369,15 @@ $gutter: 1.25rem;
   }
 }
 
-// Side by side, both panels take the taller one's height, so the captions
-// under them line up.
+// Each figure spans two of the grid's rows, the box and its caption, as a
+// subgrid. Side by side, the two boxes share one row and so match heights
+// whatever their captions say, and the captions start on one line. The
+// figure's own row gap is zero; the caption's heading sets that space.
 .panelFigure {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  row-gap: 0;
 }
 
 .panel {
