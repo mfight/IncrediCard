@@ -11,15 +11,17 @@ const DEMO_URL = `${STORYBOOK}?path=/story/incredicard--effects`;
 const DOCS_URL = `${STORYBOOK}?path=/docs/incredicard-overview--docs`;
 const GITHUB_URL = "https://github.com/mfight/IncrediCard";
 const NPM_URL = "https://www.npmjs.com/package/incredicard";
+const AUTHOR_URL = "https://markfight.com";
 
 // The "Leave a tip" button's destination, a hosted donation page. Set
 // to null, the whole support section leaves the page.
 const DONATION_URL: string | null = "https://ko-fi.com/markfight";
 
-const THEMES: { theme: IncrediCardTheme; name: string; summary: string }[] = [
+const THEMES: { theme: IncrediCardTheme; name: string; note?: string; summary: string }[] = [
   {
     theme: "ribbons",
-    name: "Ribbons (default)",
+    name: "Ribbons",
+    note: "(default)",
     summary: "Abstract holographic lines on a dark background.",
   },
   {
@@ -348,7 +350,7 @@ function Themes() {
 
 // One theme's card, with a Flip card button that turns it over and back.
 // The card itself stays display-only; the button is the control.
-function ThemeItem({ theme, name, summary, index }: (typeof THEMES)[number] & { index: number }) {
+function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number] & { index: number }) {
   const [side, setSide] = useState<IncrediCardSide>("front");
   return (
     <li className={styles.themeItem}>
@@ -369,7 +371,8 @@ function ThemeItem({ theme, name, summary, index }: (typeof THEMES)[number] & { 
       </PointerStage>
       <div className={styles.themeHeader}>
         <h3 className={styles.themeName}>
-          {name} <code className={styles.themeProp}>{`theme="${theme}"`}</code>
+          {name}
+          {note && <span className={styles.themeNote}> {note}</span>}
         </h3>
         <button
           type="button"
@@ -378,7 +381,7 @@ function ThemeItem({ theme, name, summary, index }: (typeof THEMES)[number] & { 
           onClick={() => setSide((current) => (current === "front" ? "back" : "front"))}
         >
           <FlipIcon />
-          Flip card<span className={styles.visuallyHidden}>: {name.replace(" (default)", "")}</span>
+          Flip card<span className={styles.visuallyHidden}>: {name}</span>
         </button>
       </div>
       <p className={styles.themeSummary}>{summary}</p>
@@ -554,14 +557,18 @@ function Footer() {
             <a href={DEMO_URL}>Demo</a>
           </li>
           <li>
-            <a href={GITHUB_URL}>GitHub</a>
+            <a href={GITHUB_URL}>
+              GitHub <ArrowIcon />
+            </a>
           </li>
           <li>
-            <a href={NPM_URL}>npm</a>
+            <a href={NPM_URL}>
+              npm <ArrowIcon />
+            </a>
           </li>
         </ul>
         <p className={styles.footerLegal}>
-          Apache-2.0 licensed. Copyright 2026 Mark Fight. Card network marks shown here are the
+          Apache-2.0 licensed. Copyright 2026 <a href={AUTHOR_URL}>Mark Fight</a>. Card network marks shown here are the
           trademarks of their owners and appear for demonstration only.
         </p>
       </div>
