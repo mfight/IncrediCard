@@ -13,8 +13,13 @@
   --site-text: #434856;
   --site-muted: #5d6372;
   --site-canvas: #fbfbf8;
-  --site-surface: #f2f2ee;
   --site-line: #e2e2dc;
+  /* The cool tint behind the themes and support bands, their edge lines, and
+     the outline of the white buttons set on them. */
+  --site-tint: #f3f5f9;
+  --site-tint-line: #e0e4e7;
+  --site-control: #ffffff;
+  --site-control-line: #a0abbc;
   --site-hero-deep: #020a2b;
   --site-hero-mid: #04238a;
   --site-hero-bright: #0b5ae8;

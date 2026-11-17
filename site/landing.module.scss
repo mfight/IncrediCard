@@ -418,8 +418,8 @@ $fan-height: 16.5rem;
 // --- Themes ---------------------------------------------------------------------
 
 .themesBand {
-  background: var(--site-surface);
-  border-block: 0.0625rem solid var(--site-line);
+  background: var(--site-tint);
+  border-block: 0.0625rem solid var(--site-tint-line);
 }
 
 .themeGrid {
@@ -585,7 +585,8 @@ $fan-height: 16.5rem;
 // Below the install band and above the footer: same page width, less
 // height, a smaller heading than the sections above, and an outlined button.
 .supportBand {
-  border-block-start: 0.0625rem solid var(--site-line);
+  background: var(--site-tint);
+  border-block-start: 0.0625rem solid var(--site-tint-line);
 }
 
 .support {
@@ -610,14 +611,14 @@ $fan-height: 16.5rem;
   margin-block-start: 0.5rem;
 }
 
-// The primary button's shape, outlined on the light page.
+// The primary button's shape, white and outlined on the tinted bands.
 .quietButton {
-  border: 0.0625rem solid var(--site-line);
-  background: var(--site-canvas);
+  border: 0.0625rem solid var(--site-control-line);
+  background: var(--site-control);
   color: var(--site-ink);
 
   &:hover {
-    background: var(--site-surface);
+    background: var(--site-panel-blue);
   }
 
   &:focus-visible {
