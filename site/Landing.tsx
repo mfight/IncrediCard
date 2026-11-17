@@ -528,7 +528,7 @@ function Support() {
           </p>
         </div>
         <a className={`${styles.primaryButton} ${styles.quietButton}`} href={DONATION_URL}>
-          Leave a tip <ArrowIcon />
+          <HeartIcon /> Leave a tip
         </a>
       </div>
     </section>
@@ -603,6 +603,14 @@ function ArrowIcon() {
   return (
     <Icon className={styles.arrowIcon}>
       <path d="M7 17 17 7M9 7h8v8" />
+    </Icon>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <Icon className={styles.heartIcon}>
+      <path d="m12 19.5-7.4-7.4a4.53 4.53 0 0 1 6.4-6.4l1 1 1-1a4.53 4.53 0 0 1 6.4 6.4z" />
     </Icon>
   );
 }

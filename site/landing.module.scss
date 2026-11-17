@@ -107,7 +107,8 @@ $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
   }
 }
 
-.arrowIcon {
+.arrowIcon,
+.heartIcon {
   width: 1em;
   height: 1em;
   flex: none;
@@ -438,8 +439,8 @@ $fan-height: 16.5rem;
   align-items: center;
   padding: 3rem 1.25rem;
   border-radius: 1.25rem;
-  background: var(--site-canvas);
-  border: 0.0625rem solid var(--site-line);
+  background: var(--site-control);
+  border: 0.0625rem solid var(--site-tint-line);
 }
 
 // Glass shows what's behind it, so its card gets something to show.
