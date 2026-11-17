@@ -196,7 +196,7 @@ function Hero() {
         </p>
         <div className={styles.heroActions}>
           <a className={styles.primaryButton} href={DEMO_URL}>
-            Try the demo <ArrowIcon />
+            Try the demo
           </a>
           <a className={styles.secondaryLink} href={DOCS_URL}>
             View docs

@@ -95,7 +95,8 @@ $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
     align-items: center;
     gap: 0.25rem;
     color: var(--site-ink);
-    font-size: 1rem;
+    // The buttons' type: their weight, at the page's base size.
+    font-weight: 650;
     text-decoration: none;
     @include focus-ring;
 
