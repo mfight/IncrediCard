@@ -21,5 +21,8 @@ const config: StorybookConfig = {
     },
   ],
   framework: "@storybook/react-vite",
+  // The component's fonts, served at ./fonts/ so Storybook's own interface
+  // can use the landing page's typeface (manager-head.html).
+  staticDirs: [{ from: "../src/assets/fonts", to: "/fonts" }],
 };
 export default config;
