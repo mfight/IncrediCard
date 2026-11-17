@@ -12,10 +12,9 @@ const DOCS_URL = `${STORYBOOK}?path=/docs/incredicard-overview--docs`;
 const GITHUB_URL = "https://github.com/mfight/IncrediCard";
 const NPM_URL = "https://www.npmjs.com/package/incredicard";
 
-// The "Buy me a coffee" button's destination: the full URL of a hosted
-// donation page, such as "https://example.com/your-page". While it's null,
-// the whole support section stays off the page.
-const DONATION_URL: string | null = null;
+// The "Leave a tip" button's destination, a hosted donation page. Set
+// to null, the whole support section leaves the page.
+const DONATION_URL: string | null = "https://ko-fi.com/markfight";
 
 const THEMES: { theme: IncrediCardTheme; name: string; summary: string }[] = [
   {
@@ -525,12 +524,11 @@ function Support() {
             Enjoying IncrediCard?
           </h2>
           <p className={styles.supportText}>
-            If IncrediCard made your checkout a little better, a couple of bucks is a welcome way to say
-            thanks.
+            If IncrediCard made your checkout a little better, a small tip is always appreciated.
           </p>
         </div>
         <a className={`${styles.primaryButton} ${styles.quietButton}`} href={DONATION_URL}>
-          Buy me a coffee <ArrowIcon />
+          Leave a tip <ArrowIcon />
         </a>
       </div>
     </section>
