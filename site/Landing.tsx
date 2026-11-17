@@ -529,6 +529,7 @@ function Support() {
           <p className={styles.supportText}>
             If IncrediCard made your checkout a little better, a small tip is always appreciated.
           </p>
+          <p className={styles.supportAside}>Sorry their payment form isn’t this nice.</p>
         </div>
         <a className={`${styles.primaryButton} ${styles.quietButton} ${styles.iconFirst}`} href={DONATION_URL}>
           <HeartIcon /> Leave a tip

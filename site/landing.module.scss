@@ -605,6 +605,12 @@ $fan-height: 16.5rem;
   margin-block-start: 0.5rem;
 }
 
+.supportAside {
+  margin-block-start: 0.5rem;
+  color: var(--site-muted);
+  font-size: 0.875rem;
+}
+
 // The primary button's shape, white and outlined on the tinted bands.
 .quietButton {
   border: 0.0625rem solid var(--site-control-line);
