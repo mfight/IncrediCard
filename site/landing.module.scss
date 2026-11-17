@@ -7,6 +7,9 @@ $gutter: 1.25rem;
 // Two-thirds of the page's content width: the measure for section titles and
 // their intros, wide enough that they don't wrap into a narrow column.
 $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
+// The space between the hero's intro and its buttons, and again between the
+// buttons and the cards.
+$hero-gap: 2.25rem;
 
 @mixin focus-ring($color: var(--site-accent)) {
   &:focus-visible {
@@ -148,7 +151,7 @@ $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
   align-items: center;
   justify-content: center;
   gap: 0.75rem 1.75rem;
-  margin-block-start: 2.25rem;
+  margin-block-start: $hero-gap;
 }
 
 // A row of its own across the whole band, left-aligned under the text, so
@@ -214,10 +217,16 @@ $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
 $fan-card: 20rem;
 $fan-width: 42rem;
 $fan-height: 16.5rem;
+// How far into the fan the cards' top edges sit before scaling: the fan's
+// height less a card's (ID-1 proportions, 1.586:1), halved.
+$fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 
 .fanStage {
   position: relative;
   height: calc(#{$fan-height} * var(--fan-fit, 1.7));
+  // The cards start $hero-gap below the buttons at any scale: the margin
+  // takes back the scaled inset above them.
+  margin-block-start: calc(#{$hero-gap} - #{$fan-card-inset} * var(--fan-fit, 1.7));
 }
 
 .fan {
@@ -295,7 +304,7 @@ $fan-height: 16.5rem;
 
 .sectionTitle {
   max-width: $text-measure;
-  margin-block-start: 1rem;
+  margin-block-start: 0.625rem;
   color: var(--site-ink);
   font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 800;
@@ -642,7 +651,7 @@ $fan-height: 16.5rem;
 }
 
 .supportTitle {
-  margin-block-start: 0.75rem;
+  margin-block-start: 0.5rem;
   color: var(--site-ink);
   font-size: 1.75rem;
   font-weight: 750;
