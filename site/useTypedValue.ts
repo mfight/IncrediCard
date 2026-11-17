@@ -3,10 +3,12 @@
 // appear once it's valid), then the expiration, then the name, then the card
 // turns over for the security code and back again. Runs only while
 // `running`; otherwise it holds the finished value face-up, which is also
-// all a reduced-motion visitor sees.
+// all a reduced-motion visitor sees. An American Express card prints its
+// code on the front, so it stays face-up throughout.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { IncrediCardSide, IncrediCardValue } from "../src";
+import { detectCardNetwork } from "../src/cardNetworks";
 
 export const SAMPLE_VALUE: IncrediCardValue = {
   cardholderName: "Alex Morgan",
@@ -27,8 +29,10 @@ const EMPTY: IncrediCardValue = {
 type Typed = { value: IncrediCardValue; side: IncrediCardSide };
 type Step = Typed & { delay: number };
 
-function script(final: IncrediCardValue): Step[] {
-  const steps: Step[] = [{ value: EMPTY, side: "front", delay: 900 }];
+// `once` leaves off the closing turn and its long hold: the caller ends on
+// the front by itself.
+function script(final: IncrediCardValue, once = false): Step[] {
+  const steps: Step[] = [{ value: EMPTY, side: "front", delay: once ? 300 : 900 }];
   let value = EMPTY;
   let side: IncrediCardSide = "front";
   const type = (field: keyof IncrediCardValue, text: string, pace: number) => {
@@ -49,10 +53,11 @@ function script(final: IncrediCardValue): Step[] {
   type("cardholderName", final.cardholderName, 85);
   steps[steps.length - 1].delay = 900;
   // The flip takes a moment; the code starts once the back is showing.
-  turn("back", 700);
+  const codeOnBack = detectCardNetwork(final.cardNumber) !== "amex";
+  if (codeOnBack) turn("back", 700);
   type("cvc", final.cvc, 160);
   steps[steps.length - 1].delay = 1600;
-  turn("front", 3000);
+  if (!once) turn("front", 3000);
   return steps;
 }
 
@@ -73,4 +78,37 @@ export function useTypedValue(final: IncrediCardValue, running: boolean, startDe
   }, [final, running, startDelay]);
 
   return running ? typed : { value: final, side: "front" };
+}
+
+// The same script, once through, started by a visitor's choice instead of
+// by coming on screen. `typed` is null while it isn't running, so the
+// caller shows its own value and side; `finish` stops it where it is.
+export function useTypeOut() {
+  const [typed, setTyped] = useState<Typed | null>(null);
+  const timerRef = useRef(0);
+
+  const finish = useCallback(() => {
+    window.clearTimeout(timerRef.current);
+    setTyped(null);
+  }, []);
+
+  const start = useCallback((final: IncrediCardValue) => {
+    window.clearTimeout(timerRef.current);
+    const steps = script(final, true);
+    let index = 0;
+    const next = () => {
+      const step = steps[index++];
+      if (!step) {
+        setTyped(null);
+        return;
+      }
+      setTyped({ value: step.value, side: step.side });
+      timerRef.current = window.setTimeout(next, step.delay);
+    };
+    next();
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(timerRef.current), []);
+
+  return { typed, start, finish };
 }

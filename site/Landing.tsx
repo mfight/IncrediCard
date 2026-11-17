@@ -1,9 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { IncrediCardSide, IncrediCardTheme, IncrediCardValue } from "../src";
-import { detectCardNetwork } from "../src/cardNetworks";
+import { detectCardNetwork, type CardNetwork } from "../src/cardNetworks";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
+import { SAMPLE_CARDS } from "../demo/sampleCards";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
-import { SAMPLE_VALUE, useTypedValue } from "./useTypedValue";
+import { SAMPLE_VALUE, useTypeOut, useTypedValue } from "./useTypedValue";
 import styles from "./landing.module.scss";
 
 const STORYBOOK = "/storybook/";
@@ -348,10 +349,41 @@ function Themes() {
   );
 }
 
-// One theme's card, with a Flip card button that turns it over and back.
-// The card itself stays display-only; the button is the control.
+// The sample details on another network's test number.
+function sampleValue(network: CardNetwork): IncrediCardValue {
+  const card = SAMPLE_CARDS.find((entry) => entry.network === network) ?? SAMPLE_CARDS[0];
+  return { ...SAMPLE_VALUE, cardNumber: card.cardNumber, cvc: card.cvc ?? SAMPLE_VALUE.cvc };
+}
+
+// One theme's card, with a network picker and a Flip card button. The card
+// itself stays display-only; those two are the controls. Picking a network
+// types the details out again, turning over for the security code where
+// the network prints it on the back, and ends face-up.
 function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number] & { index: number }) {
+  const [network, setNetwork] = useState<CardNetwork>("visa");
   const [side, setSide] = useState<IncrediCardSide>("front");
+  const reduced = usePrefersReducedMotion();
+  const { typed, start, finish } = useTypeOut();
+  const value = useMemo(() => sampleValue(network), [network]);
+  // American Express prints its code on the front and doesn't turn over.
+  const turns = network !== "amex";
+  const shownSide = typed?.side ?? side;
+
+  const pickNetwork = (next: CardNetwork) => {
+    setNetwork(next);
+    setSide("front");
+    // Reduced motion swaps the details in place: no typing, no turn.
+    if (reduced) finish();
+    else start(sampleValue(next));
+  };
+
+  // Mid-typing, the button finishes the details at once, then turns the
+  // card from whichever side it's showing.
+  const flip = () => {
+    finish();
+    setSide(shownSide === "front" ? "back" : "front");
+  };
+
   return (
     <li className={styles.themeItem}>
       <PointerStage
@@ -362,11 +394,12 @@ function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number
           id={`theme-${theme}`}
           className={styles.themeCard}
           theme={theme}
-          side={side}
           tilt
           chipReflection
           holofoil
           {...cardBase}
+          value={typed?.value ?? value}
+          side={turns ? shownSide : "front"}
         />
       </PointerStage>
       <div className={styles.themeHeader}>
@@ -374,15 +407,32 @@ function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number
           {name}
           {note && <span className={styles.themeNote}> {note}</span>}
         </h3>
-        <button
-          type="button"
-          className={`${styles.primaryButton} ${styles.quietButton} ${styles.smallButton}`}
-          aria-pressed={side === "back"}
-          onClick={() => setSide((current) => (current === "front" ? "back" : "front"))}
-        >
-          <FlipIcon />
-          Flip card<span className={styles.visuallyHidden}>: {name}</span>
-        </button>
+        <div className={styles.themeControls}>
+          <span className={styles.networkPicker}>
+            <select
+              aria-label={`Card network: ${name}`}
+              value={network}
+              onChange={(event) => pickNetwork(event.target.value as CardNetwork)}
+            >
+              {SAMPLE_CARDS.map((card) => (
+                <option key={card.network} value={card.network}>
+                  {card.name}
+                </option>
+              ))}
+            </select>
+            <ChevronIcon />
+          </span>
+          <button
+            type="button"
+            className={`${styles.primaryButton} ${styles.quietButton} ${styles.smallButton}`}
+            aria-pressed={turns && shownSide === "back"}
+            disabled={!turns}
+            onClick={flip}
+          >
+            <FlipIcon />
+            Flip card<span className={styles.visuallyHidden}>: {name}</span>
+          </button>
+        </div>
       </div>
       <p className={styles.themeSummary}>{summary}</p>
     </li>
@@ -654,6 +704,14 @@ function FlipIcon() {
     <Icon className={styles.buttonIcon}>
       <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
       <path d="M19.5 4.5v4h-4" />
+    </Icon>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <Icon className={styles.chevronIcon}>
+      <path d="m7 10 5 5 5-5" />
     </Icon>
   );
 }

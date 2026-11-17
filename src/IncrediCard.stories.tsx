@@ -11,6 +11,7 @@ import {
   type IncrediCardMotionAccess,
 } from ".";
 import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
+import { SAMPLE_CARDS } from "../demo/sampleCards";
 import {
   EMPTY_MOCK_REPORT,
   MockHostedField,
@@ -24,7 +25,6 @@ import {
   detectCardNetwork,
   getCardNetworkInfo,
   luhnCheck,
-  type CardNetwork,
 } from "./cardNetworks";
 import { ForceReducedMotion } from "./reducedMotion";
 import { INCREDICARD_THEMES } from "./themes";
@@ -412,21 +412,8 @@ export const CustomThemes: Story = {
 // (per `detectCardNetwork`), passes `luhnCheck`, AND has one of that
 // network's lengths, which is what the card requires before it will reveal.
 //
-// Amex has the most structural differences: 4-6-5 number grouping, a 4-digit
-// CVC, and that CVC printed on the FRONT of the card rather than the back.
-// Its name, the longest, wraps onto two lines. Diners Club's 14-digit number
-// groups 4-6-4. The rest share the neutral shape, so what they show is
-// detection itself.
-const NETWORKS: { name: string; network: CardNetwork; cardNumber: string; cvc?: string }[] = [
-  { name: "American Express", network: "amex", cardNumber: "378282246310005", cvc: "1234" },
-  { name: "Diners Club", network: "dinersclub", cardNumber: "30569309025904" },
-  { name: "Discover", network: "discover", cardNumber: "6011111111111117" },
-  { name: "JCB", network: "jcb", cardNumber: "3530111333300000" },
-  { name: "Maestro", network: "maestro", cardNumber: "6700000000000000" },
-  { name: "Mastercard", network: "mastercard", cardNumber: "5555555555554444" },
-  { name: "UnionPay", network: "unionpay", cardNumber: "6200000000000005" },
-  { name: "Visa", network: "visa", cardNumber: "4242424242424242" },
-];
+// One per network; see the module for what each shows.
+const NETWORKS = SAMPLE_CARDS;
 
 // A test number grouped the way the card itself groups it (4-6-5 for
 // American Express, 4-6-4 for a 14-digit Diners Club, fours otherwise).
