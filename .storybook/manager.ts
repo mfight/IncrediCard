@@ -2,9 +2,10 @@
 // stories) in the landing page's look: its card icon and wordmark at the top
 // of the sidebar, linking back to the site, and its colors and typeface.
 //
-// Light uses the landing page's own colors. Dark uses the navy of its hero,
-// with two blues where light needs one: no single blue is both dark enough
-// behind white text and light enough as text on the navy. Which one loads
+// Light uses the landing page's own colors. Dark keeps Storybook's own dark
+// grays, with the navy of the landing page's hero for its lines and two
+// blues where light needs one: no single blue is both dark enough behind
+// white text and light enough as text on the gray. Which one loads
 // follows the system's light or dark setting when Storybook opens.
 //
 // The stories and docs pages themselves render in the preview, which this
@@ -65,20 +66,21 @@ const dark = create({
   colorPrimary: "#6d98f8",
   // The selected story's fill, behind white text (4.69:1).
   colorSecondary: "#2f6bf0",
-  appBg: "#020a2b",
-  appContentBg: "#0b1640",
+  // Storybook's own dark grays, with the hero's navy kept for the lines.
+  appBg: "#1b1c1d",
+  appContentBg: "#222325",
   appPreviewBg: "#ffffff",
   appBorderColor: "#1e2c5e",
   textColor: "#ffffff",
-  textInverseColor: "#020a2b",
+  textInverseColor: "#1b1c1d",
   textMutedColor: "#c9d6f5",
-  barBg: "#020a2b",
+  barBg: "#222325",
   barTextColor: "#c9d6f5",
   // Toolbar icons and the selected panel tab are drawn in these, as text on
-  // the navy (6.94:1).
+  // the gray (5.62:1 or better).
   barHoverColor: "#6d98f8",
   barSelectedColor: "#6d98f8",
-  inputBg: "#0b1640",
+  inputBg: "#1b1c1d",
   inputBorder: "#1e2c5e",
   inputTextColor: "#ffffff",
 });
