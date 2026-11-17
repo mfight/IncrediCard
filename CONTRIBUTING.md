@@ -12,7 +12,7 @@ Don't include a real card number, security code, expiration date or cardholder n
 
 ## Reporting a bug
 
-Check the [demo](https://incredicard.markfight.com/storybook/) and the existing issues first. Then open a bug report with:
+Check the [demo](https://incredicard.dev/storybook/) and the existing issues first. Then open a bug report with:
 
 - the steps that cause it, starting from a story in the demo if you can;
 - what you expected, and what happened instead;

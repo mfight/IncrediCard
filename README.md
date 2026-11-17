@@ -2,7 +2,7 @@
 
 A credit-card entry form for React with a dimensional card that mirrors what's typed. The card shows the name, number and expiration date on the front and the security code on the back, and it flips when you ask it to. Underneath, the actual inputs are real, labeled, accessible form fields, so the card is just a picture of them.
 
-**[See it live](https://incredicard.markfight.com/)** · **[Try the demo](https://incredicard.markfight.com/storybook/)**
+**[See it live](https://incredicard.dev/)** · **[Try the demo](https://incredicard.dev/storybook/)**
 
 > **This is not a payment integration.** IncrediCard checks the format of what's typed. It has no payment processor, no tokenization and no submission flow, and it makes no PCI-compliance claim. Pair it with your processor's own validation, the same as any other card form, or let your processor's hosted fields take the card data (see Hosted fields).
 
@@ -92,7 +92,7 @@ To keep card data off your page, pass your payment processor's hosted fields as 
 
 Check each processor's own documentation before relying on these. The demo's `MockHostedField` (in `demo/hostedFields/`, not in the package) is a working wrapper around a mock processor.
 
-The [demo's Overview page](https://incredicard.markfight.com/storybook/?path=/docs/incredicard-overview--docs) documents every prop, the layouts and themes, composing your own layout from `IncrediCard.Field` and `IncrediCard.MaskedField`, accessibility, and how the card treats sensitive data.
+The [demo's Overview page](https://incredicard.dev/storybook/?path=/docs/incredicard-overview--docs) documents every prop, the layouts and themes, composing your own layout from `IncrediCard.Field` and `IncrediCard.MaskedField`, accessibility, and how the card treats sensitive data.
 
 ## Developing
 

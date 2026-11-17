@@ -1,4 +1,4 @@
-// The landing page at the site root (incredicard.markfight.com/). It renders
+// The landing page at the site root (incredicard.dev/). It renders
 // the component from src/ through its public API, the way an app would. The
 // Storybook is built separately into site-dist/storybook/; see pages.yml.
 //

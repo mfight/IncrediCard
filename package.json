@@ -4,7 +4,7 @@
   "description": "A credit-card entry form for React with a dimensional card that mirrors what's typed, built on real, accessible fields.",
   "license": "Apache-2.0",
   "author": "Mark Fight",
-  "homepage": "https://incredicard.markfight.com/",
+  "homepage": "https://incredicard.dev/",
   "type": "module",
   "repository": {
     "type": "git",
