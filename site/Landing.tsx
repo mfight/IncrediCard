@@ -527,7 +527,7 @@ function Support() {
             If IncrediCard made your checkout a little better, a small tip is always appreciated.
           </p>
         </div>
-        <a className={`${styles.primaryButton} ${styles.quietButton}`} href={DONATION_URL}>
+        <a className={`${styles.primaryButton} ${styles.quietButton} ${styles.iconFirst}`} href={DONATION_URL}>
           <HeartIcon /> Leave a tip
         </a>
       </div>
@@ -609,7 +609,7 @@ function ArrowIcon() {
 
 function HeartIcon() {
   return (
-    <Icon className={styles.heartIcon}>
+    <Icon className={styles.buttonIcon}>
       <path d="m12 19.5-7.4-7.4a4.53 4.53 0 0 1 6.4-6.4l1 1 1-1a4.53 4.53 0 0 1 6.4 6.4z" />
     </Icon>
   );
@@ -643,7 +643,7 @@ function ProcessorIcon() {
 
 function FlipIcon() {
   return (
-    <Icon className={styles.flipIcon}>
+    <Icon className={styles.buttonIcon}>
       <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" />
       <path d="M19.5 4.5v4h-4" />
     </Icon>
