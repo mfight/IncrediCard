@@ -107,12 +107,6 @@ $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
   }
 }
 
-.arrowIcon {
-  width: 1em;
-  height: 1em;
-  flex: none;
-}
-
 // --- Hero -------------------------------------------------------------------
 
 .hero {
@@ -633,7 +627,7 @@ $fan-height: 16.5rem;
   font-size: 0.875rem;
 }
 
-// A button's icon, a step larger than its text.
+// A button's or link's icon, a step larger than its text.
 .buttonIcon {
   width: 1.25em;
   height: 1.25em;

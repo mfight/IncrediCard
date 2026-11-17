@@ -601,7 +601,7 @@ function CardIcon() {
 
 function ArrowIcon() {
   return (
-    <Icon className={styles.arrowIcon}>
+    <Icon className={styles.buttonIcon}>
       <path d="M7 17 17 7M9 7h8v8" />
     </Icon>
   );
