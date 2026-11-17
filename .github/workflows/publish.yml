@@ -30,6 +30,10 @@ jobs:
             echo "::error::The tag is $GITHUB_REF_NAME, but package.json says $expected."
             exit 1
           fi
+      # The changelog entry becomes the GitHub release's notes, so a version
+      # without one stops here, before anything is staged.
+      - name: Find the version's changelog entry
+        run: node scripts/release-notes.mjs "$GITHUB_REF_NAME" > /dev/null
 
   # The same jobs CI runs on every push, so a release passes exactly the
   # checks main does.
@@ -60,3 +64,20 @@ jobs:
       # Packs with the prepack build, the same as `npm publish`, then uploads
       # the release to npm's staging area instead of publishing it.
       - run: npm stage publish
+
+  # The tag's GitHub release, with the version's changelog entry as its
+  # notes. A draft, since the version isn't installable until a maintainer
+  # approves it on npm; publishing the draft afterward announces it to
+  # anyone watching the repository.
+  github-release:
+    name: Draft the GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - run: node scripts/release-notes.mjs "$GITHUB_REF_NAME" > release-notes.md
+      - run: gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "$GITHUB_REF_NAME" --notes-file release-notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -43,25 +43,35 @@ Reports that one of these has slipped are especially welcome.
 
 For maintainers. Releases come from GitHub Actions (`.github/workflows/publish.yml`), never from a laptop, and each one waits for a maintainer's approval before it's public.
 
-1. Set the new version without tagging, and commit it:
+1. In `CHANGELOG.md`, turn the `## [Unreleased]` section into the version's entry, `## [1.2.3] - YYYY-MM-DD`, and start a fresh, empty `## [Unreleased]` above it. Update the compare links at the end of the file. The entry becomes the GitHub release's notes. (Between releases, note each change under Unreleased as it lands.)
+
+2. Set the new version without tagging, and commit it with the changelog entry:
 
    ```sh
    npm version 1.2.3 --no-git-tag-version
    ```
 
-2. Push the commit, then tag it and push the tag:
+3. Push the commit, then tag it and push the tag:
 
    ```sh
    git tag v1.2.3 && git push origin v1.2.3
    ```
 
-   The tag starts the release. It stops if the tag doesn't match the version in `package.json`, or if any CI check fails. Otherwise it stages the version on npm, where it isn't installable yet.
+   The tag starts the release. It stops if the tag doesn't match the version in `package.json`, if the changelog has no entry for it, or if any CI check fails. Otherwise it stages the version on npm, where it isn't installable yet, and drafts a GitHub release with the changelog entry as its notes.
 
-3. Approve it with two-factor authentication, in the package's Staged Packages tab on npmjs.com or from a terminal:
+4. Approve it with two-factor authentication, in the package's Staged Packages tab on npmjs.com or from a terminal:
 
    ```sh
    npm stage list incredicard
    npm stage approve <stage-id>
    ```
 
-   Approving publishes it as `latest`, with a provenance statement linking it to the commit and the workflow run that built it. To discard a staged version instead, use `npm stage reject <stage-id>`.
+   Approving publishes it as `latest`, with a provenance statement linking it to the commit and the workflow run that built it. To discard a staged version instead, use `npm stage reject <stage-id>`, and delete the draft release.
+
+5. Publish the draft release, on the repository's Releases page or from a terminal:
+
+   ```sh
+   gh release edit v1.2.3 --draft=false
+   ```
+
+   It's a draft until then so that nobody watching the repository hears about a version they can't install yet.

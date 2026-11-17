@@ -25,7 +25,7 @@ Install it from npm:
 npm install incredicard
 ```
 
-It needs React 19.2 or later.
+It needs React 19.2 or later. What changed in each version is in the [changelog](https://github.com/mfight/IncrediCard/blob/main/CHANGELOG.md).
 
 ## Using it
 
