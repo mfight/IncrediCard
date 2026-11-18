@@ -144,12 +144,14 @@ $hero-gap: 2.25rem;
 }
 
 .heroTitle {
-  max-width: 14ch;
+  // Wide enough for the title to set in two lines on a desktop at its
+  // letter spacing.
+  max-width: 16ch;
   margin: 0 auto;
   font-size: clamp(2.75rem, 7vw, 5.5rem);
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.0125em;
   text-wrap: balance;
 }
 
