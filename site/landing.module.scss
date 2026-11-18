@@ -7,6 +7,13 @@ $gutter: 1.25rem;
 // Two-thirds of the page's content width: the measure for section titles and
 // their intros, wide enough that they don't wrap into a narrow column.
 $text-measure: math.div(($page-width - 2 * $gutter) * 2, 3);
+// Narrower than the 375px phones: the header links no longer fit beside
+// the wordmark, and a card at its narrowest (17.4375rem) no longer fits a
+// padded tile.
+$narrow: "(max-width: 23.4rem)";
+// The display-only cards there show smaller, keeping the tiles' padding:
+// 80% of the card's narrowest fits the layout tiles at 320px.
+$narrow-card-zoom: 0.8;
 // The space between the hero's intro and its buttons, and again between the
 // buttons and the cards.
 $hero-gap: 2.25rem;
@@ -60,6 +67,15 @@ $hero-gap: 2.25rem;
   max-width: $page-width;
   margin: 0 auto;
   padding: 1.25rem $gutter;
+
+  // Just the wordmark, centered; the hero and footer carry the links.
+  @media #{$narrow} {
+    justify-content: center;
+
+    nav {
+      display: none;
+    }
+  }
 }
 
 .brand {
@@ -367,6 +383,10 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 .panelCard {
   width: 100%;
   max-width: 20rem;
+
+  @media #{$narrow} {
+    zoom: $narrow-card-zoom;
+  }
 }
 
 .panelTitle {
@@ -451,6 +471,10 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 .themeCard {
   width: 100%;
   max-width: 20rem;
+
+  @media #{$narrow} {
+    zoom: $narrow-card-zoom;
+  }
 }
 
 // The theme's name on the left, its Flip card button on the right.
