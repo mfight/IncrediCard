@@ -294,11 +294,11 @@ export const INCREDICARD_THEMES = {
       // to. The printed face's highlight is softer than the on-card fields',
       // which read as lighter, raised plastic.
       faceEmboss: {
-        highlight: { color: "rgb(255 255 255 / 60%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
+        highlight: { color: "rgb(255 255 255 / 75%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
         stroke: "0.0562rem",
       },
       floatingFieldEmboss: {
-        highlight: { color: "rgb(255 255 255 / 90%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
+        highlight: { color: "rgb(255 255 255)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
         stroke: "0.05rem",
       },
     },

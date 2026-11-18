@@ -721,7 +721,7 @@ export const LightingEffectsAndItsOldName: Story = {
 // shadow is the highlight: up and to the left at rest, toward a pointer at
 // the lower right, and back to rest when the pointer leaves. The first, the
 // tight shadow under each character, stays put throughout.
-const restingHighlight = /^rgba\(255, 255, 255, 0\.9\) -1px -1px /;
+const restingHighlight = /^rgb\(255, 255, 255\) -1px -1px /;
 
 // A computed `text-shadow`'s layers, each as its own string.
 function shadowLayers(input: HTMLElement) {
@@ -2232,7 +2232,7 @@ export const ListFieldsUseDefaultType: Story = {
     for (const field of ["name", "number", "expiration"]) {
       const style = getComputedStyle(onCard(field));
       expect(style.textShadow).toBe(
-        "rgba(0, 0, 0, 0) 0px 0px 0px, rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0) 0px 0px 0px",
+        "rgba(0, 0, 0, 0) 0px 0px 0px, rgb(255, 255, 255) -1px -1px 0.4992px, rgba(0, 0, 0, 0) 0px 0px 0px",
       );
       expect(style.webkitTextStrokeWidth).toBe("0.8px");
     }
