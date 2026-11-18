@@ -324,7 +324,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 800;
   line-height: 1.05;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.0125em;
   text-wrap: balance;
 }
 
@@ -746,6 +746,20 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 }
 
 // A button that opens with an icon sits closer to the edge on that side.
+// "Leave a tip" in the dark: the hero's filled light-blue button rather than
+// a raised surface, so it stands out on the gray band as it does on white.
+.tipButton {
+  @media (prefers-color-scheme: dark) {
+    border-color: transparent;
+    background: var(--site-accent-soft);
+    color: var(--site-accent-ink);
+
+    &:hover {
+      background: var(--site-on-dark);
+    }
+  }
+}
+
 .iconFirst {
   padding-inline-start: 0.875rem;
 }

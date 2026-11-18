@@ -581,7 +581,7 @@ function Support() {
           </p>
           <p className={styles.supportAside}>Sorry their payment form isn’t this nice.</p>
         </div>
-        <a className={`${styles.primaryButton} ${styles.quietButton} ${styles.iconFirst}`} href={DONATION_URL}>
+        <a className={`${styles.primaryButton} ${styles.quietButton} ${styles.tipButton} ${styles.iconFirst}`} href={DONATION_URL}>
           <HeartIcon /> Leave a tip
         </a>
       </div>
