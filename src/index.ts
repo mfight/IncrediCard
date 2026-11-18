@@ -6,7 +6,13 @@ import { IncrediCardBase } from "./IncrediCard";
 import { IncrediCardField } from "./IncrediCardField";
 import { IncrediCardMaskedField } from "./IncrediCardMaskedField";
 
-export const IncrediCard = Object.assign(IncrediCardBase, {
+// Typed by name rather than inferred: an inferred type is written out into
+// the published declarations prop by prop, without the props' doc comments,
+// so editors would show apps neither the docs nor a `@deprecated` strike.
+export const IncrediCard: typeof IncrediCardBase & {
+  Field: typeof IncrediCardField;
+  MaskedField: typeof IncrediCardMaskedField;
+} = Object.assign(IncrediCardBase, {
   Field: IncrediCardField,
   MaskedField: IncrediCardMaskedField,
 });

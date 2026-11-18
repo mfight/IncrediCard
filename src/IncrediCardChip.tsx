@@ -32,7 +32,7 @@ import { INCREDICARD_DRAG_EVENT, type IncrediCardDragDetail } from "./IncrediCar
 // components.
 //
 // Inert (attaches nothing) unless `active` is true--the caller passes
-// `true` once `chipReflection` and/or `holofoil` is set (the
+// `true` once `lightingEffects` and/or `holofoil` is set (the
 // hologram's pointer response reuses these same properties), so the
 // plain default case (neither) adds no listener at all. Also inert
 // under `prefers-reduced-motion`--WCAG's "Animation from Interactions"

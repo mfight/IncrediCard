@@ -84,9 +84,9 @@ export type IncrediCardEmbeddedFaceProps = {
    * fonts from `.cardNameField`/`.cardPrintField` in IncrediCard.module.scss,
    * applied by IncrediCard.tsx, not from this component. */
   faceLayout?: IncrediCardFaceLayout;
-  /** Default true. Forwarded straight to `IncrediCardChip`'s
-   * `reflection` prop. */
-  chipReflection?: boolean;
+  /** Default true. The card's light: the chip's reflection, and the face's
+   * gloss on a theme with one. See `lightingEffects` on IncrediCard. */
+  lightingEffects?: boolean;
   /** Default false. See the identical prop on IncrediCardFace.tsx;
    * renders on the front face's background only. */
   /** What's behind the card, on a refracting theme, for browsers that can't
@@ -192,7 +192,7 @@ export function IncrediCardEmbeddedFace({
   flipped,
   flipAngleDeg,
   faceLayout = "printed",
-  chipReflection = true,
+  lightingEffects = true,
   holofoil = false,
   gloss = false,
   glassBackdrop,
@@ -257,7 +257,7 @@ export function IncrediCardEmbeddedFace({
   // hologram's pointer response; see useIncrediCardChipLight's header
   // comment in IncrediCardChip.tsx.
   const chipLightRef = useIncrediCardChipLight(
-    chipReflection || holofoil,
+    lightingEffects || holofoil,
   );
   // Same `.faceWrapper` root, a separate hook/listener; see
   // useIncrediCardTilt's header comment for why this isn't folded into
@@ -322,7 +322,7 @@ export function IncrediCardEmbeddedFace({
           {holofoil ? <IncrediCardHologram /> : null}
           <div className={styles.topRow}>
             <span className={styles.chipOffset}>
-              <IncrediCardChip reflection={chipReflection} />
+              <IncrediCardChip reflection={lightingEffects} />
             </span>
             {/* The top-right corner is intentionally empty: the
                 mark or name in the bottom-right corner already

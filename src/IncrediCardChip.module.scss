@@ -42,7 +42,7 @@
 // carries them down to here. No animation/transition of its own: the
 // motion comes entirely from that ancestor rewriting the properties on
 // each pointermove (already gated behind `prefers-reduced-motion` and
-// `chipReflection` there, not repeated here)--absent that (no
+// `lightingEffects` there, not repeated here)--absent that (no
 // listener ever attached, or the pointer simply hasn't moved over the
 // card yet this mount), the `50%`/`50%` fallback centers a static, still
 // subtle highlight rather than rendering nothing at all.

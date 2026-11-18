@@ -6,6 +6,8 @@ All notable changes to IncrediCard are recorded here. The format follows [Keep a
 
 ### Changed
 
+- `chipReflection` is renamed `lightingEffects`, since the light it turns on reaches more than the chip. `chipReflection` still works but is deprecated and will be removed in a later release; if both are given, `lightingEffects` wins.
+
 - The package includes `CHANGELOG.md`, and the README links to it.
 - Each release's GitHub release is drafted from its changelog entry.
 - The package lists a funding link, shown by `npm fund` and on the package's npm page.

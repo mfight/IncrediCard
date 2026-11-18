@@ -216,7 +216,7 @@ function Hero() {
                 side={slotOf(index) === "front" && HERO_TURNS[theme] ? frontSide : "front"}
                 theme={theme}
                 tilt
-                chipReflection
+                lightingEffects
                 holofoil
                 reach={0.6}
                 {...cardBase}
@@ -262,7 +262,7 @@ function Experience() {
               className={styles.panelCard}
               layout="floating"
               tilt
-              chipReflection
+              lightingEffects
               value={floating.value}
               side={floating.side}
               acceptanceMarks={demoAcceptanceMarks}
@@ -283,7 +283,7 @@ function Experience() {
               className={`${styles.panelCard} ${styles.panelCardStacked}`}
               layout="stacked"
               tilt
-              chipReflection
+              lightingEffects
               value={stacked.value}
               side={stacked.side}
               acceptanceMarks={demoAcceptanceMarks}
@@ -395,7 +395,7 @@ function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number
           className={styles.themeCard}
           theme={theme}
           tilt
-          chipReflection
+          lightingEffects
           holofoil
           {...cardBase}
           value={typed?.value ?? value}
@@ -508,7 +508,7 @@ const USAGE = `import "incredicard/styles.css";
 import { IncrediCard } from "incredicard";
 
 export function PaymentForm() {
-  return <IncrediCard id="payment" tilt chipReflection />;
+  return <IncrediCard id="payment" tilt lightingEffects />;
 }`;
 
 function Install() {

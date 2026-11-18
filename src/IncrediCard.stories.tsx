@@ -140,7 +140,7 @@ const meta = {
       // Every theme themes.ts declares, so a new one appears here too.
       options: Object.keys(INCREDICARD_THEMES),
     },
-    chipReflection: {
+    lightingEffects: {
       control: "boolean",
     },
     holofoil: {
@@ -335,7 +335,7 @@ export const GlassKnownBackdrop: Story = {
     layout: "floating",
     defaultValue: FILLED,
     tilt: true,
-    chipReflection: true,
+    lightingEffects: true,
   },
 };
 
@@ -682,6 +682,41 @@ export const AutocompleteTokens: Story = {
   },
 };
 
+// `lightingEffects` and its deprecated name, `chipReflection`: on by default,
+// either name turns it off, and the new name wins when both are given.
+export const LightingEffectsAndItsOldName: Story = {
+  tags: ["!dev"],
+  args: { id: "story-lighting-effects" },
+  render: (args) => {
+    const { lightingEffects: _lightingEffects, ...rest } = cardProps(args);
+    return (
+      <div className={themedStyles.examples}>
+        <div data-testid="default">
+          <IncrediCard {...rest} id={`${args.id}-default`} />
+        </div>
+        <div data-testid="new-off">
+          <IncrediCard {...rest} id={`${args.id}-new-off`} lightingEffects={false} />
+        </div>
+        <div data-testid="old-off">
+          <IncrediCard {...rest} id={`${args.id}-old-off`} chipReflection={false} />
+        </div>
+        <div data-testid="both">
+          <IncrediCard {...rest} id={`${args.id}-both`} lightingEffects chipReflection={false} />
+        </div>
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const lit = (testId: string) =>
+      canvas.getByTestId(testId).querySelector("[data-chip-reflection]") !== null;
+    await expect(lit("default")).toBe(true);
+    await expect(lit("new-off")).toBe(false);
+    await expect(lit("old-off")).toBe(false);
+    await expect(lit("both")).toBe(true);
+  },
+};
+
 // Every other story renders the "stacked" layout at its narrowest supported
 // width, since Storybook's `layout: "centered"` parameter doesn't stretch its
 // subject wide enough to reach the row-layout switch. This story is wide
@@ -834,7 +869,7 @@ export const ReducedMotion: Story = {
     holofoil: true,
     tilt: true,
     scale: true,
-    chipReflection: true,
+    lightingEffects: true,
     defaultValue: {
       cardholderName: "Alex Rivera",
       cardNumber: "4242424242424242",
@@ -882,9 +917,9 @@ const EFFECTS: Array<{ prop: string; description: string }> = [
       "The card grows when clicked or when a credit card input field takes focus. Uses a transform to prevent reflowing surrounding content.",
   },
   {
-    prop: "chipReflection",
+    prop: "lightingEffects",
     description:
-      "The chip catches the light from the pointer's direction. Follows device tilt on touch devices.",
+      "The card's light follows the pointer: the chip catches it, and so do the glass card's highlight and rim. Follows device tilt on touch devices.",
   },
 ];
 
@@ -895,7 +930,7 @@ export const Effects: Story = {
     holofoil: true,
     tilt: true,
     scale: true,
-    chipReflection: true,
+    lightingEffects: true,
   },
   render: (args) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -1066,7 +1101,7 @@ function DeviceTiltDemo(args: IncrediCardStoryArgs) {
       <div className={themedStyles.effectsLegend}>
         <p className={themedStyles.effectsLegendIntro}>
           On a phone or tablet, <code>holofoil</code>, <code>tilt</code> and{" "}
-          <code>chipReflection</code> follow the device instead of a pointer.
+          <code>lightingEffects</code> follow the device instead of a pointer.
           The card responds to however you are already holding it: the first
           reading becomes center, and a small wrist roll moves the effects
           through their full range.
@@ -1140,7 +1175,7 @@ export const DeviceTilt: Story = {
     holofoil: true,
     tilt: true,
     scale: true,
-    chipReflection: true,
+    lightingEffects: true,
   },
   render: (args) => <DeviceTiltDemo {...args} />,
 };
@@ -1943,7 +1978,7 @@ function AsTouchDevice({ children }: { children: React.ReactNode }) {
 // browser has no motion access to hand back to).
 export const TouchDragMovesLight: Story = {
   tags: ["!dev"],
-  args: { id: "story-touch-drag", theme: "glass", tilt: true, chipReflection: true },
+  args: { id: "story-touch-drag", theme: "glass", tilt: true, lightingEffects: true },
   render: (args) => (
     <AsTouchDevice>
       <IncrediCard {...cardProps(args)} defaultValue={FILLED} />

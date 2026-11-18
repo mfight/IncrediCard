@@ -47,9 +47,9 @@ export type IncrediCardFaceProps = {
    * artwork and fonts arrive as custom properties inherited from the
    * component root, so this face never needs the theme itself. */
   faceLayout?: IncrediCardFaceLayout;
-  /** Default true. Forwarded straight to `IncrediCardChip`'s
-   * `reflection` prop. */
-  chipReflection?: boolean;
+  /** Default true. The card's light: the chip's reflection, and the face's
+   * gloss on a theme with one. See `lightingEffects` on IncrediCard. */
+  lightingEffects?: boolean;
   /** What's behind the card, on a refracting theme, for browsers that can't
    * bend the live page. See IncrediCardBackdropCopy. */
   glassBackdrop?: IncrediCardGlassBackdrop;
@@ -169,7 +169,7 @@ export function IncrediCardFace({
   flipped,
   flipAngleDeg,
   faceLayout = "printed",
-  chipReflection = true,
+  lightingEffects = true,
   holofoil = false,
   gloss = false,
   glassBackdrop,
@@ -221,7 +221,7 @@ export function IncrediCardFace({
   // hologram's pointer response; see useIncrediCardChipLight's header
   // comment in IncrediCardChip.tsx.
   const chipLightRef = useIncrediCardChipLight(
-    chipReflection || holofoil,
+    lightingEffects || holofoil,
   );
   // Same `.faceWrapper` root, a separate hook/listener; see
   // useIncrediCardTilt's header comment for why this isn't folded into
@@ -314,7 +314,7 @@ export function IncrediCardFace({
           {holofoil ? <IncrediCardHologram /> : null}
           <div className={styles.topRow}>
             <span className={styles.chipOffset}>
-              <IncrediCardChip reflection={chipReflection} />
+              <IncrediCardChip reflection={lightingEffects} />
             </span>
             {/* The top-right corner is intentionally empty: the
                 mark or name in the bottom-right corner already

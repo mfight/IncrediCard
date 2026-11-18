@@ -212,8 +212,13 @@ type IncrediCardOwnProps = {
   /** Default "ribbons". A built-in theme's name (see themes.ts for what each
    * is), or a definition of your own (see `extendIncrediCardTheme`). */
   theme?: IncrediCardTheme | IncrediCardThemeDefinition;
-  /** Default true. Forwarded to whichever card face is active; see the
-   * `reflection` prop of `IncrediCardChip` (IncrediCardChip.tsx). */
+  /** Default true. The card's light follows the pointer across the card, or
+   * the device's tilt on a touch device: the chip catches it, and on "glass"
+   * so do the face's highlight and the rim's flares. Off under
+   * `prefers-reduced-motion`. */
+  lightingEffects?: boolean;
+  /** @deprecated Renamed `lightingEffects`, which it still sets for now;
+   * `lightingEffects` wins if both are given. */
   chipReflection?: boolean;
   /** Default false. An optional, restrained holographic foil effect on
    * the card's front background, behind the real content. See
@@ -406,7 +411,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
       id,
       layout = "floating",
       theme = "ribbons",
-      chipReflection = true,
+      lightingEffects: lightingEffectsProp,
+      chipReflection,
       holofoil = false,
       textTone = "light",
       glassBackdrop,
@@ -434,6 +440,8 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
     ref,
   ) {
     const labels = { ...DEFAULT_INCREDICARD_LABELS, ...labelsProp };
+    // The deprecated name still counts until it's removed; the new one wins.
+    const lightingEffects = lightingEffectsProp ?? chipReflection ?? true;
     // A field's autofill token, or, when the app turned autofill off, "off"
     // plus 1Password's own opt-out: password managers don't honor "off" on a
     // card form, and 1Password reads `data-1p-ignore` instead.
@@ -1367,7 +1375,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
             flipped={flipped}
             flipAngleDeg={flipTurns * 180}
             faceLayout={themeDefinition.faceLayout}
-            chipReflection={chipReflection}
+            lightingEffects={lightingEffects}
             holofoil={showsFoil}
             gloss={themeDefinition.face.specular > 0}
             glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
@@ -1402,7 +1410,7 @@ const IncrediCardBase = forwardRef<HTMLFieldSetElement, IncrediCardProps>(
                 flipped={flipped}
                 flipAngleDeg={flipTurns * 180}
                 faceLayout={themeDefinition.faceLayout}
-                chipReflection={chipReflection}
+                lightingEffects={lightingEffects}
                 holofoil={showsFoil}
                 gloss={themeDefinition.face.specular > 0}
                 glassBackdrop={themeDefinition.face.refraction ? glassBackdrop : undefined}
