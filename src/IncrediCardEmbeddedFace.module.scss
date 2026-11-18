@@ -10,6 +10,7 @@
 @use "./reveal-motion";
 @use "./reducedMotion/reduced-motion";
 @use "./cvc-panel";
+@use "./emboss";
 
 
 .faceWrapper {
@@ -505,7 +506,7 @@
   letter-spacing: 0.025em;
   text-transform: uppercase;
   font-family: var(--incredicard-name-font);
-  text-shadow: var(--incredicard-face-emboss);
+  @include emboss.emboss("face-emboss");
   text-rendering: geometricPrecision;
   // Onto the cardholder name's baseline; see the identical rule in
   // IncrediCardFace.module.scss.

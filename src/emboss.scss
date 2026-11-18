@@ -1,0 +1,106 @@
+// The card's raised-character shadow (a theme's `faceEmboss` and
+// `floatingFieldEmboss`; see themes.ts), put together on the text itself.
+//
+// A theme gives an emboss either as a `text-shadow` string, which is used as
+// it is, or as an `IncrediCardEmboss`: a highlight and a shadow, each with
+// its offset as lit from the card's upper left. That second kind turns to
+// face the card's light. The light's position is `--incredicard-light-lean-x`
+// and `-y`, from -1 at the card's left or top edge to 1 at its right or
+// bottom, written by useIncrediCardChipLight on the face while
+// `lightingEffects` or `holofoil` tracks the pointer or the device. Those are
+// only known here, below the face, which is why the theme writes the emboss
+// as parts and this puts them together: composed on the card's root, the
+// shadow would be worked out there, before the light ever reached it.
+//
+// The light is where the pointer is, with a little of the room's light from
+// the upper left mixed in (`$room-light`), so the type stays lit from roughly
+// above while the pointer is near the middle. The highlight turns around the
+// character to stay on the near side, and the faint cast shadow to stay on
+// the far one, each keeping its resting length. The tight shadow where the
+// character meets the card stays put: it's as dark as the type and nearly as
+// sharp, so if it moved, the character would seem to move with it.
+// Untracked, the light sits at the upper left and the turn is zero, so the
+// type looks exactly as it would with no light at all, which is also what
+// reduced motion and a touch device with no motion access see.
+//
+// A light almost straight over a character casts almost no shadow, so the
+// edges shorten as the light nears that point (`$overhead-reach`), rather than
+// spinning around it.
+
+@use "./reducedMotion/reduced-motion";
+
+// How far toward the upper left the room's light pulls the pointer's, in the
+// lean's own units.
+$room-light: 0.5;
+// Within this distance of the overhead point, in the same units, the edges
+// shorten toward nothing.
+$overhead-reach: 0.5;
+
+// An edge that turns with the light. `$optional` gives each part a harmless
+// fallback, for the cast shadow a theme can leave out: one missing part would
+// otherwise void the whole shadow.
+@function turning-edge($name, $edge, $optional: false) {
+  $part: --incredicard-#{$name}-#{$edge};
+  $turn: var(--incredicard-emboss-turn);
+  $reach: var(--incredicard-emboss-reach);
+  $x: "var(#{$part}-x)";
+  $y: "var(#{$part}-y)";
+  $blur: "var(#{$part}-blur)";
+  $color: "var(#{$part}-color)";
+  @if $optional {
+    $x: "var(#{$part}-x, 0px)";
+    $y: "var(#{$part}-y, 0px)";
+    $blur: "var(#{$part}-blur, 0px)";
+    $color: "var(#{$part}-color, transparent)";
+  }
+  @return "calc(#{$reach} * (#{$x} * cos(#{$turn}) - #{$y} * sin(#{$turn}))) " +
+    "calc(#{$reach} * (#{$x} * sin(#{$turn}) + #{$y} * cos(#{$turn}))) " + "#{$blur} #{$color}";
+}
+
+// The edge that stays put.
+@function fixed-edge($name, $edge) {
+  $part: --incredicard-#{$name}-#{$edge};
+  @return "var(#{$part}-x) var(#{$part}-y) var(#{$part}-blur) var(#{$part}-color)";
+}
+
+// `$name` is the emboss's property name without its prefix: "face-emboss" or
+// "floating-field-emboss". `$fallback` is what the text shows when the theme
+// has neither kind; leave it out to inherit, as an unset property would.
+@mixin emboss($name, $fallback: null) {
+  // Toward the light from the character, and how far.
+  --incredicard-emboss-light-x: calc(clamp(-1, var(--incredicard-light-lean-x, -1), 1) - #{$room-light});
+  --incredicard-emboss-light-y: calc(clamp(-1, var(--incredicard-light-lean-y, -1), 1) - #{$room-light});
+  // The resting light is up and to the left: -135deg.
+  --incredicard-emboss-turn: calc(
+    atan2(var(--incredicard-emboss-light-y), var(--incredicard-emboss-light-x)) + 135deg
+  );
+  --incredicard-emboss-reach: min(
+    1,
+    calc(hypot(var(--incredicard-emboss-light-x), var(--incredicard-emboss-light-y)) / #{$overhead-reach})
+  );
+  // Unset unless the theme gave its parts, so the `var()` below falls through.
+  --incredicard-#{$name}-turning: #{turning-edge($name, highlight)}, #{fixed-edge($name, shadow)},
+    #{turning-edge($name, cast-shadow, true)};
+
+  @if $fallback {
+    text-shadow: var(--incredicard-#{$name}, var(--incredicard-#{$name}-turning, #{$fallback}));
+  } @else {
+    text-shadow: var(--incredicard-#{$name}, var(--incredicard-#{$name}-turning));
+  }
+
+  // The same easing as the card's tilt and the glass's flares, and like them,
+  // none while the light is tracking, which would restart it on every move.
+  // Published as a property, so a rule with transitions of its own on the
+  // same text (the stacked card's clickable rows) can list it beside them
+  // rather than replace it.
+  --incredicard-emboss-transition: text-shadow 280ms cubic-bezier(0, 0, 0.2, 1);
+  transition: var(--incredicard-emboss-transition);
+
+  :global([data-light-tracking]) & {
+    --incredicard-emboss-transition: text-shadow 0s;
+  }
+
+  @include reduced-motion.reduced-motion {
+    --incredicard-emboss-transition: text-shadow 0s;
+  }
+}

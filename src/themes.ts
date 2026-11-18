@@ -158,13 +158,40 @@ export type IncrediCardThemeDefinition = {
      * floating card. Also sets the security code panel's height. */
     printFont: string | null;
     /** A raised-character shadow on the card's printed text, in the stacked
-     * layout. */
-    faceEmboss: string | null;
-    /** The shadow on a field sitting on the card, in the floating layout. */
-    floatingFieldEmboss: string | null;
+     * layout. A `text-shadow` string stays put; an `IncrediCardEmboss` turns
+     * to face the card's light while `lightingEffects` or `holofoil` tracks
+     * it. */
+    faceEmboss: string | IncrediCardEmboss | null;
+    /** The shadow on a field sitting on the card, in the floating layout.
+     * Takes the same two forms as `faceEmboss`. */
+    floatingFieldEmboss: string | IncrediCardEmboss | null;
   };
   /** Knobs this theme pins, ignoring any `--theme-*` override. */
   fixed: readonly IncrediCardThemeKnob[];
+};
+
+/** One edge of an `IncrediCardEmboss`: a `text-shadow` layer's color, its
+ * offset as CSS lengths, and its blur. The offset is where the edge sits
+ * with the light at the card's upper left, which is also where it rests
+ * whenever the light isn't being tracked. */
+export type IncrediCardEmbossEdge = {
+  color: string;
+  x: string;
+  y: string;
+  blur: string;
+};
+
+/** A raised-character shadow that follows the card's light. The highlight
+ * turns around the character to stay on the side facing the light. The
+ * shadow, where the character meets the card, stays put: a dark edge that
+ * moved would read as the character itself moving. The optional cast shadow
+ * turns to stay on the side away from the light; keep it faint and soft for
+ * the same reason. The turning edges keep their length as they go, so the
+ * type stays raised wherever the light is. */
+export type IncrediCardEmboss = {
+  highlight: IncrediCardEmbossEdge;
+  shadow: IncrediCardEmbossEdge;
+  castShadow?: IncrediCardEmbossEdge;
 };
 
 /** What `extendIncrediCardTheme` takes: any part of a definition. */
@@ -258,11 +285,19 @@ export const INCREDICARD_THEMES = {
       nameFont: '"IncrediCard OCR-A", ui-monospace, monospace',
       printFont: '"IncrediCard OCR-B", ui-monospace, monospace',
       // The printed face's shadow is darker than the on-card fields', which
-      // sit on the same face but read as lighter, raised plastic.
-      faceEmboss:
-        "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 60%), 0.0625rem 0.0938rem 0.0938rem rgb(0 0 0 / 35%)",
-      floatingFieldEmboss:
-        "-0.0625rem -0.0625rem 0.0312rem rgb(255 255 255 / 90%), 0.0625rem 0.0625rem 0.0625rem rgb(0 0 0 / 25%)",
+      // sit on the same face but read as lighter, raised plastic. The
+      // highlight and the faint cast shadow turn with the light; the tight
+      // shadow under each character doesn't.
+      faceEmboss: {
+        highlight: { color: "rgb(255 255 255 / 60%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
+        shadow: { color: "rgb(0 0 0 / 30%)", x: "0.0312rem", y: "0.0625rem", blur: "0.0625rem" },
+        castShadow: { color: "rgb(0 0 0 / 15%)", x: "0.0625rem", y: "0.0938rem", blur: "0.1875rem" },
+      },
+      floatingFieldEmboss: {
+        highlight: { color: "rgb(255 255 255 / 90%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
+        shadow: { color: "rgb(0 0 0 / 22%)", x: "0.0312rem", y: "0.0312rem", blur: "0.0312rem" },
+        castShadow: { color: "rgb(0 0 0 / 12%)", x: "0.0625rem", y: "0.0625rem", blur: "0.125rem" },
+      },
     },
     fixed: [],
   },
@@ -470,11 +505,36 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
   const type = {
     "--incredicard-name-font": theme.type.nameFont,
     "--incredicard-print-font": theme.type.printFont,
-    "--incredicard-face-emboss": theme.type.faceEmboss,
-    "--incredicard-floating-field-emboss": theme.type.floatingFieldEmboss,
   };
   for (const [name, value] of Object.entries(type)) {
     if (value !== null) style[name] = value;
+  }
+  // A string emboss is written whole. One that follows the light is written
+  // as its parts, because the light is only known further down the card,
+  // where the text is: a whole shadow composed here would be worked out
+  // here, before the light ever reached it. src/emboss.scss puts the parts
+  // together on the text itself.
+  const embosses = {
+    "--incredicard-face-emboss": theme.type.faceEmboss,
+    "--incredicard-floating-field-emboss": theme.type.floatingFieldEmboss,
+  };
+  for (const [name, emboss] of Object.entries(embosses)) {
+    if (emboss === null) continue;
+    if (typeof emboss === "string") {
+      style[name] = emboss;
+      continue;
+    }
+    for (const [edge, key] of [
+      ["highlight", "highlight"],
+      ["shadow", "shadow"],
+      ["cast-shadow", "castShadow"],
+    ] as const) {
+      const parts = emboss[key];
+      if (!parts) continue;
+      for (const part of ["color", "x", "y", "blur"] as const) {
+        style[`${name}-${edge}-${part}`] = parts[part];
+      }
+    }
   }
   return style as CSSProperties;
 }

@@ -10,6 +10,7 @@
 @use "./reveal-motion";
 @use "./reducedMotion/reduced-motion";
 @use "./cvc-panel";
+@use "./emboss";
 
 
 .faceWrapper {
@@ -368,7 +369,7 @@
   // Unset in a theme that has neither, which leaves both inherited,
   // exactly as if they weren't declared.
   font-family: var(--incredicard-name-font);
-  text-shadow: var(--incredicard-face-emboss);
+  @include emboss.emboss("face-emboss");
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -465,7 +466,7 @@
   letter-spacing: 0.025em;
   text-transform: uppercase;
   font-family: var(--incredicard-name-font);
-  text-shadow: var(--incredicard-face-emboss);
+  @include emboss.emboss("face-emboss");
   // Keeps each letter's true width. Chromium on Linux otherwise rounds it to
   // a whole pixel, which adds 2.8px across "MASTERCARD" in OCR-A at this size
   // and runs it out of the box.
@@ -568,7 +569,7 @@
 .number,
 .expiration {
   font-family: var(--incredicard-print-font);
-  text-shadow: var(--incredicard-face-emboss);
+  @include emboss.emboss("face-emboss");
 }
 
 // The "embossed" face layout (see themes.ts): the printed text set the
@@ -637,7 +638,11 @@
 // An invalid row keeps its red under the pointer, as an invalid field does.
 .faceWrapper[data-field-clicks] [data-field] {
   cursor: text;
-  transition: border-color 120ms ease;
+  // With the emboss's own easing (src/emboss.scss), which this would
+  // otherwise replace.
+  transition:
+    border-color 120ms ease,
+    var(--incredicard-emboss-transition, text-shadow 0s);
 
   @include reduced-motion.reduced-motion {
     transition: none;

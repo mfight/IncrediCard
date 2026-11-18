@@ -717,6 +717,77 @@ export const LightingEffectsAndItsOldName: Story = {
   },
 };
 
+// The vintage emboss turns to face the light. The first edge of the field's
+// shadow is the highlight: up and to the left at rest, toward a pointer at
+// the lower right, and back to rest when the pointer leaves. The second, the
+// tight shadow under each character, stays put throughout.
+const restingHighlight = /^rgba\(255, 255, 255, 0\.9\) -1px -1px /;
+
+// A computed `text-shadow`'s layers, each as its own string.
+function shadowLayers(input: HTMLElement) {
+  return getComputedStyle(input).textShadow.split(/,(?![^(]*\))/).map((layer) => layer.trim());
+}
+
+function highlightOffset(input: HTMLElement) {
+  const [x, y] = shadowLayers(input)[0]
+    .replace(/rgba?\([^)]*\)/g, "")
+    .trim()
+    .split(/\s+/)
+    .map(parseFloat);
+  return { x, y };
+}
+
+async function moveLightToLowerRight(canvasElement: HTMLElement, id: string) {
+  const input = canvasElement.querySelector<HTMLElement>(`#${id}-name`)!;
+  const face = input.closest<HTMLElement>("[data-face-layout]")!;
+  const rect = face.getBoundingClientRect();
+  face.dispatchEvent(
+    new PointerEvent("pointermove", {
+      pointerType: "mouse",
+      clientX: rect.left + rect.width * 0.95,
+      clientY: rect.top + rect.height * 0.95,
+    }),
+  );
+  return { input, face };
+}
+
+export const VintageEmbossFollowsTheLight: Story = {
+  tags: ["!dev"],
+  args: { id: "story-emboss-light", theme: "vintage", layout: "floating", defaultValue: FILLED },
+  play: async ({ canvasElement, args }) => {
+    const input = canvasElement.querySelector<HTMLElement>(`#${args.id}-name`)!;
+    await expect(getComputedStyle(input).textShadow).toMatch(restingHighlight);
+    const restingShadow = shadowLayers(input)[1];
+    const { face } = await moveLightToLowerRight(canvasElement, args.id);
+    await waitFor(() => {
+      const { x, y } = highlightOffset(input);
+      expect(x).toBeGreaterThan(0);
+      expect(y).toBeGreaterThan(0);
+    });
+    await expect(shadowLayers(input)[1]).toBe(restingShadow);
+    face.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
+    await waitFor(() => expect(getComputedStyle(input).textShadow).toMatch(restingHighlight));
+  },
+};
+
+// Reduced motion keeps the emboss where it rests: the light isn't tracked.
+export const VintageEmbossStaysPutWithReducedMotion: Story = {
+  tags: ["!dev"],
+  decorators: [withReducedMotion],
+  args: {
+    id: "story-emboss-still",
+    theme: "vintage",
+    layout: "floating",
+    reducedMotion: true,
+    defaultValue: FILLED,
+  },
+  play: async ({ canvasElement, args }) => {
+    const { input } = await moveLightToLowerRight(canvasElement, args.id);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await expect(getComputedStyle(input).textShadow).toMatch(restingHighlight);
+  },
+};
+
 // Every other story renders the "stacked" layout at its narrowest supported
 // width, since Storybook's `layout: "centered"` parameter doesn't stretch its
 // subject wide enough to reach the row-layout switch. This story is wide
@@ -919,7 +990,7 @@ const EFFECTS: Array<{ prop: string; description: string }> = [
   {
     prop: "lightingEffects",
     description:
-      "The card's light follows the pointer: the chip catches it, and so do the glass card's highlight and rim. Follows device tilt on touch devices.",
+      "The card's light follows the pointer: the chip catches it, so do the glass card's highlight and rim, and the vintage card's emboss turns to face it. Follows device tilt on touch devices.",
   },
 ];
 
@@ -2158,7 +2229,7 @@ export const ListFieldsUseDefaultType: Story = {
     expect(first(onCard("expiration"))).toBe('"IncrediCard OCR-B"');
     for (const field of ["name", "number", "expiration"]) {
       expect(getComputedStyle(onCard(field)).textShadow).toBe(
-        "rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0.25) 1px 1px 1px",
+        "rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0.22) 0.4992px 0.4992px 0.4992px, rgba(0, 0, 0, 0.12) 1px 1px 2px",
       );
     }
   },

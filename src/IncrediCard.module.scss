@@ -13,6 +13,7 @@
 // Figtree's license (SIL Open Font License 1.1), shipped alongside the
 // font file.
 @use "./reducedMotion/reduced-motion";
+@use "./emboss";
 
 @font-face {
   font-family: "IncrediCard Figtree";
@@ -173,7 +174,7 @@
 .cardNameField,
 .cardPrintField {
   :global(input) {
-    text-shadow: var(--incredicard-floating-field-emboss, none);
+    @include emboss.emboss("floating-field-emboss", none);
   }
 }
 

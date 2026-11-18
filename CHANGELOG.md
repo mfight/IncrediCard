@@ -4,6 +4,11 @@ All notable changes to IncrediCard are recorded here. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- A theme's `faceEmboss` and `floatingFieldEmboss` can be an emboss that follows the light, `{ highlight, shadow, castShadow }`, instead of a fixed `text-shadow` string. Its highlight and cast shadow turn to face the card's light while `lightingEffects` or `holofoil` tracks it; the shadow under each character stays put. Its types, `IncrediCardEmboss` and `IncrediCardEmbossEdge`, are exported. String embosses work as before.
+- The vintage card's emboss follows the light. Its resting look splits the old shadow into a tight one under each character and a faint, soft cast shadow.
+
 ### Changed
 
 - `chipReflection` is renamed `lightingEffects`, since the light it turns on reaches more than the chip. `chipReflection` still works but is deprecated and will be removed in a later release; if both are given, `lightingEffects` wins.

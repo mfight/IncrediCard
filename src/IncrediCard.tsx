@@ -213,9 +213,9 @@ type IncrediCardOwnProps = {
    * is), or a definition of your own (see `extendIncrediCardTheme`). */
   theme?: IncrediCardTheme | IncrediCardThemeDefinition;
   /** Default true. The card's light follows the pointer across the card, or
-   * the device's tilt on a touch device: the chip catches it, and on "glass"
-   * so do the face's highlight and the rim's flares. Off under
-   * `prefers-reduced-motion`. */
+   * the device's tilt on a touch device: the chip catches it, on "glass" so
+   * do the face's highlight and the rim's flares, and on "vintage" the
+   * emboss turns to face it. Off under `prefers-reduced-motion`. */
   lightingEffects?: boolean;
   /** @deprecated Renamed `lightingEffects`, which it still sets for now;
    * `lightingEffects` wins if both are given. */

@@ -32,6 +32,8 @@ export { extendIncrediCardTheme } from "./themes";
 export type { IncrediCardMotionAccess } from "./IncrediCardOrientation";
 export type { IncrediCardGlassBackdrop } from "./IncrediCardBackdropCopy";
 export type {
+  IncrediCardEmboss,
+  IncrediCardEmbossEdge,
   IncrediCardFaceLayout,
   IncrediCardHologramBlend,
   IncrediCardThemeDefinition,
