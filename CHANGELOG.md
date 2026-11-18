@@ -9,7 +9,7 @@ All notable changes to IncrediCard are recorded here. The format follows [Keep a
 - The package includes `CHANGELOG.md`, and the README links to it.
 - Each release's GitHub release is drafted from its changelog entry.
 - The package lists a funding link, shown by `npm fund` and on the package's npm page.
-- The Ribbons and Globe cards' edge glow is a fainter, near-neutral white instead of pale blue, so it reads as light on the card's edge rather than a blue cast on dark pages.
+- The Ribbons and Globe cards no longer have a pale blue glow around their edges, which read as a blue cast on dark pages.
 
 ## [0.2.0] - 2026-11-17
 
