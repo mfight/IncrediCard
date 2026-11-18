@@ -14,8 +14,9 @@
   --site-muted: #5d6372;
   --site-canvas: #fbfbf8;
   --site-line: #e2e2dc;
-  /* The cool tint behind the themes and support bands, their edge lines, and
-     the white panels and buttons set on them, with the buttons' outline. */
+  /* The cool tint behind the themes and support bands and the layout tiles,
+     the bands' edge lines, and the white panels and buttons set on the bands,
+     with the buttons' outline. */
   --site-tint: #f3f5f9;
   --site-tint-line: #e0e4e7;
   --site-control: #ffffff;
@@ -28,7 +29,6 @@
   --site-accent-soft: #e3efff;
   --site-accent-ink: #0a2a6e;
   --site-accent: #1a4fd6;
-  --site-panel-neutral: #ecece8;
   --site-panel-blue: #e5edf8;
   --site-code-surface: #0b1640;
   --site-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

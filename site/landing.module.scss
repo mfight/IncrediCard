@@ -355,18 +355,14 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   min-height: 22rem;
   padding: 2.5rem 1.5rem;
   border-radius: 1.25rem;
-}
-
-.panelNeutral {
-  background: var(--site-panel-neutral);
+  background: var(--site-tint);
 }
 
 // The stacked layout grows as its fields appear, so its panel holds the
 // height of the finished form and the card stays where it is.
-.panelBlue {
+.panelStacked {
   align-items: flex-start;
   min-height: 30rem;
-  background: var(--site-panel-blue);
 }
 
 .panelCard {

@@ -256,7 +256,7 @@ function Experience() {
 
       <div ref={panelsRef} className={styles.panels}>
         <figure className={styles.panelFigure}>
-          <PointerStage className={`${styles.panel} ${styles.panelNeutral}`} phase={1}>
+          <PointerStage className={styles.panel} phase={1}>
             <LiveCard
               id="experience-floating"
               className={styles.panelCard}
@@ -277,7 +277,7 @@ function Experience() {
         </figure>
 
         <figure className={styles.panelFigure}>
-          <PointerStage className={`${styles.panel} ${styles.panelBlue}`} phase={3}>
+          <PointerStage className={`${styles.panel} ${styles.panelStacked}`} phase={3}>
             <LiveCard
               id="experience-stacked"
               className={`${styles.panelCard} ${styles.panelCardStacked}`}
