@@ -717,9 +717,9 @@ export const LightingEffectsAndItsOldName: Story = {
   },
 };
 
-// The vintage emboss turns to face the light. The first edge of the field's
+// The vintage emboss turns to face the light. The second layer of the field's
 // shadow is the highlight: up and to the left at rest, toward a pointer at
-// the lower right, and back to rest when the pointer leaves. The second, the
+// the lower right, and back to rest when the pointer leaves. The first, the
 // tight shadow under each character, stays put throughout.
 const restingHighlight = /^rgba\(255, 255, 255, 0\.9\) -1px -1px /;
 
@@ -729,7 +729,7 @@ function shadowLayers(input: HTMLElement) {
 }
 
 function highlightOffset(input: HTMLElement) {
-  const [x, y] = shadowLayers(input)[0]
+  const [x, y] = shadowLayers(input)[1]
     .replace(/rgba?\([^)]*\)/g, "")
     .trim()
     .split(/\s+/)
@@ -756,17 +756,17 @@ export const VintageEmbossFollowsTheLight: Story = {
   args: { id: "story-emboss-light", theme: "vintage", layout: "floating", defaultValue: FILLED },
   play: async ({ canvasElement, args }) => {
     const input = canvasElement.querySelector<HTMLElement>(`#${args.id}-name`)!;
-    await expect(getComputedStyle(input).textShadow).toMatch(restingHighlight);
-    const restingShadow = shadowLayers(input)[1];
+    await expect(shadowLayers(input)[1]).toMatch(restingHighlight);
+    const restingShadow = shadowLayers(input)[0];
     const { face } = await moveLightToLowerRight(canvasElement, args.id);
     await waitFor(() => {
       const { x, y } = highlightOffset(input);
       expect(x).toBeGreaterThan(0);
       expect(y).toBeGreaterThan(0);
     });
-    await expect(shadowLayers(input)[1]).toBe(restingShadow);
+    await expect(shadowLayers(input)[0]).toBe(restingShadow);
     face.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
-    await waitFor(() => expect(getComputedStyle(input).textShadow).toMatch(restingHighlight));
+    await waitFor(() => expect(shadowLayers(input)[1]).toMatch(restingHighlight));
   },
 };
 
@@ -784,7 +784,7 @@ export const VintageEmbossStaysPutWithReducedMotion: Story = {
   play: async ({ canvasElement, args }) => {
     const { input } = await moveLightToLowerRight(canvasElement, args.id);
     await new Promise((resolve) => setTimeout(resolve, 100));
-    await expect(getComputedStyle(input).textShadow).toMatch(restingHighlight);
+    await expect(shadowLayers(input)[1]).toMatch(restingHighlight);
   },
 };
 
@@ -2229,7 +2229,7 @@ export const ListFieldsUseDefaultType: Story = {
     expect(first(onCard("expiration"))).toBe('"IncrediCard OCR-B"');
     for (const field of ["name", "number", "expiration"]) {
       expect(getComputedStyle(onCard(field)).textShadow).toBe(
-        "rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0.22) 0.4992px 0.4992px 0.4992px, rgba(0, 0, 0, 0.12) 1px 1px 2px",
+        "rgba(0, 0, 0, 0.06) 0.4992px 0.4992px 0.4992px, rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0.04) 1px 1px 2px",
       );
     }
   },

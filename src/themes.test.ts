@@ -81,7 +81,7 @@ describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme:
         expect(parts).toHaveLength(0);
       } else {
         expect(style).not.toHaveProperty(`--incredicard-${name}`);
-        expect(parts).toHaveLength(emboss.castShadow ? 12 : 8);
+        expect(parts).toHaveLength((emboss.castShadow ? 12 : 8) + (emboss.stroke ? 1 : 0));
         expect(style[`--incredicard-${name}-highlight-x`]).toBe(emboss.highlight.x);
         expect(style[`--incredicard-${name}-shadow-color`]).toBe(emboss.shadow.color);
       }
@@ -117,6 +117,8 @@ describe("incredicardThemeStyle", () => {
     });
     const style = incredicardThemeStyle(theme) as Record<string, string>;
     const parts = Object.keys(style).filter((p) => p.startsWith("--incredicard-face-emboss-"));
+    // The vintage base's stroke carries over through the merge only if the
+    // whole emboss is kept; this one replaces it.
     expect(parts).toHaveLength(8);
     expect(parts.some((p) => p.includes("cast-shadow"))).toBe(false);
   });

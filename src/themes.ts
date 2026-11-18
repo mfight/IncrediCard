@@ -192,6 +192,10 @@ export type IncrediCardEmboss = {
   highlight: IncrediCardEmbossEdge;
   shadow: IncrediCardEmbossEdge;
   castShadow?: IncrediCardEmbossEdge;
+  /** A thin outline in the text's own color, as a CSS length: weight the
+   * characters keep wherever the light is, so their shadows can stay light
+   * enough that moving them doesn't seem to move the characters. */
+  stroke?: string;
 };
 
 /** What `extendIncrediCardTheme` takes: any part of a definition. */
@@ -287,16 +291,20 @@ export const INCREDICARD_THEMES = {
       // The printed face's shadow is darker than the on-card fields', which
       // sit on the same face but read as lighter, raised plastic. The
       // highlight and the faint cast shadow turn with the light; the tight
-      // shadow under each character doesn't.
+      // shadow under each character doesn't. Both shadows are faint, so the
+      // highlight crossing them doesn't thin the characters, and the thin
+      // outline gives back the weight a darker shadow used to.
       faceEmboss: {
         highlight: { color: "rgb(255 255 255 / 60%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
-        shadow: { color: "rgb(0 0 0 / 30%)", x: "0.0312rem", y: "0.0625rem", blur: "0.0625rem" },
-        castShadow: { color: "rgb(0 0 0 / 15%)", x: "0.0625rem", y: "0.0938rem", blur: "0.1875rem" },
+        shadow: { color: "rgb(0 0 0 / 8%)", x: "0.0312rem", y: "0.0625rem", blur: "0.0625rem" },
+        castShadow: { color: "rgb(0 0 0 / 5%)", x: "0.0625rem", y: "0.0938rem", blur: "0.1875rem" },
+        stroke: "0.0469rem",
       },
       floatingFieldEmboss: {
         highlight: { color: "rgb(255 255 255 / 90%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
-        shadow: { color: "rgb(0 0 0 / 22%)", x: "0.0312rem", y: "0.0312rem", blur: "0.0312rem" },
-        castShadow: { color: "rgb(0 0 0 / 12%)", x: "0.0625rem", y: "0.0625rem", blur: "0.125rem" },
+        shadow: { color: "rgb(0 0 0 / 6%)", x: "0.0312rem", y: "0.0312rem", blur: "0.0312rem" },
+        castShadow: { color: "rgb(0 0 0 / 4%)", x: "0.0625rem", y: "0.0625rem", blur: "0.125rem" },
+        stroke: "0.0406rem",
       },
     },
     fixed: [],
@@ -535,6 +543,7 @@ export function incredicardThemeStyle(theme: IncrediCardThemeDefinition, refract
         style[`${name}-${edge}-${part}`] = parts[part];
       }
     }
+    if (emboss.stroke) style[`${name}-stroke`] = emboss.stroke;
   }
   return style as CSSProperties;
 }

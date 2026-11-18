@@ -26,6 +26,11 @@
 // A light almost straight over a character casts almost no shadow, so the
 // edges shorten as the light nears that point (`$overhead-reach`), rather than
 // spinning around it.
+//
+// Keep the shadows faint. A highlight that turns to the tight shadow's side
+// pales it, and a dark shadow lost that way thins the character on that side,
+// which reads as the character moving. An emboss's optional `stroke` gives
+// the characters their weight instead, wherever the light is.
 
 @use "./reducedMotion/reduced-motion";
 
@@ -79,8 +84,15 @@ $overhead-reach: 0.5;
     calc(hypot(var(--incredicard-emboss-light-x), var(--incredicard-emboss-light-y)) / #{$overhead-reach})
   );
   // Unset unless the theme gave its parts, so the `var()` below falls through.
-  --incredicard-#{$name}-turning: #{turning-edge($name, highlight)}, #{fixed-edge($name, shadow)},
+  // The fixed shadow is listed first, so it paints on top: a highlight that
+  // turned to the shadow's side would otherwise cover it, and the character
+  // would lose its shading there and seem to move away from it.
+  --incredicard-#{$name}-turning: #{fixed-edge($name, shadow)}, #{turning-edge($name, highlight)},
     #{turning-edge($name, cast-shadow, true)};
+
+  // The emboss's thin outline, in the text's own color; none for a string
+  // emboss or one without.
+  -webkit-text-stroke: var(--incredicard-#{$name}-stroke, 0px) currentColor;
 
   @if $fallback {
     text-shadow: var(--incredicard-#{$name}, var(--incredicard-#{$name}-turning, #{$fallback}));
