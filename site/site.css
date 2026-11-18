@@ -26,14 +26,41 @@
   --site-hero-bright: #0b5ae8;
   --site-on-dark: #ffffff;
   --site-on-dark-muted: #c9d6f5;
+  /* The hero's light-blue button and its navy label, the same in both
+     modes. */
   --site-accent-soft: #e3efff;
   --site-accent-ink: #0a2a6e;
+  /* Links and the white buttons' labels on the page's light surfaces. */
+  --site-link: #0a2a6e;
   --site-accent: #1a4fd6;
   --site-panel-blue: #e5edf8;
   --site-code-surface: #0b1640;
   --site-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   color-scheme: light;
+}
+
+/* The Storybook's dark palette: gray surfaces, navy lines, and its two
+   blues. The hero and the install band are dark in both modes, so their
+   colors stay. Panels and the white buttons sit a step lighter than the
+   bands, as raised surfaces do in the dark. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --site-ink: #ffffff;
+    --site-text: #d5def2;
+    --site-muted: #a3b1cf;
+    --site-canvas: #1b1c1d;
+    --site-line: #1e2c5e;
+    --site-tint: #222325;
+    --site-tint-line: #1e2c5e;
+    --site-control: #2c2d30;
+    --site-control-line: #3d4f86;
+    --site-link: #6d98f8;
+    --site-accent: #6d98f8;
+    --site-panel-blue: #26324f;
+
+    color-scheme: dark;
+  }
 }
 
 *,

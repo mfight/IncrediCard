@@ -34,7 +34,7 @@ $hero-gap: 2.25rem;
   padding: 0.5rem 0.875rem;
   border-radius: 0.5rem;
   background: var(--site-ink);
-  color: var(--site-on-dark);
+  color: var(--site-canvas);
   font-weight: 600;
   text-decoration: none;
 
@@ -113,7 +113,7 @@ $hero-gap: 2.25rem;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    color: var(--site-accent-ink);
+    color: var(--site-link);
     // The buttons' type: their weight, at the page's base size.
     font-weight: 650;
     text-decoration: none;
@@ -378,6 +378,24 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 .panelStacked {
   align-items: flex-start;
   min-height: 30rem;
+
+  // The component's fields ship light; in the dark, its own hooks set them
+  // into the page's palette.
+  @media (prefers-color-scheme: dark) {
+    --theme-incredicard-field-background: var(--site-canvas);
+    --theme-incredicard-field-background-readonly: var(--site-tint);
+    --theme-incredicard-field-background-disabled: var(--site-tint);
+    --theme-incredicard-field-border-color: var(--site-control-line);
+    --theme-incredicard-field-border-color-hover: #5b6fa8;
+    --theme-incredicard-field-border-color-disabled: var(--site-control);
+    --theme-incredicard-field-color: var(--site-ink);
+    --theme-incredicard-field-color-disabled: var(--site-muted);
+    --theme-incredicard-field-label-color: var(--site-text);
+    --theme-incredicard-field-placeholder-color: #8693b0;
+    --theme-incredicard-field-description-color: var(--site-muted);
+    --theme-incredicard-field-focus-color: var(--site-accent);
+    --theme-incredicard-field-error-color: #f87171;
+  }
 }
 
 .panelCard {
@@ -525,7 +543,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
     border: 0.0625rem solid var(--site-control-line);
     border-radius: 0.625rem;
     background: var(--site-control);
-    color: var(--site-accent-ink);
+    color: var(--site-link);
     font: inherit;
     font-size: 0.875rem;
     font-weight: 650;
@@ -549,7 +567,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   inset-inline-end: 0.625rem;
   width: 1.25em;
   height: 1.25em;
-  color: var(--site-accent-ink);
+  color: var(--site-link);
   font-size: 0.875rem;
   pointer-events: none;
 }
@@ -691,7 +709,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 .quietButton {
   border: 0.0625rem solid var(--site-control-line);
   background: var(--site-control);
-  color: var(--site-accent-ink);
+  color: var(--site-link);
 
   &:hover {
     background: var(--site-panel-blue);
@@ -764,7 +782,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    color: var(--site-accent-ink);
+    color: var(--site-link);
     // The header links' weight.
     font-weight: 650;
     @include focus-ring;
@@ -776,7 +794,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   font-size: 0.875rem;
 
   a {
-    color: var(--site-accent-ink);
+    color: var(--site-link);
     @include focus-ring;
   }
 }
