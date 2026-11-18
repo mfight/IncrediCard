@@ -323,7 +323,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   color: var(--site-ink);
   font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1;
   letter-spacing: -0.0125em;
   text-wrap: balance;
 }
@@ -333,7 +333,6 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   text-wrap: pretty;
   margin-block-start: 1.25rem;
   font-size: 1.1875rem;
-  line-height: 1.65;
 
   code {
     color: var(--site-ink);
@@ -547,7 +546,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
     font: inherit;
     font-size: 0.875rem;
     font-weight: 650;
-    line-height: 1.6;
+    line-height: 1.5;
     cursor: pointer;
     transition: background-color 150ms ease;
 
@@ -689,6 +688,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 
 .supportTitle {
   color: var(--site-ink);
+  line-height: 1;
   font-size: 1.75rem;
   font-weight: 750;
   letter-spacing: -0.0125em;

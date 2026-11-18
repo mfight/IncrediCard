@@ -85,7 +85,7 @@ body {
   color: var(--site-text);
   font-family: "IncrediCard Site Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 1.0625rem;
-  line-height: 1.6;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
