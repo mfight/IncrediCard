@@ -81,9 +81,9 @@ describe.each(Object.entries(INCREDICARD_THEMES))("the %s theme", (_name, theme:
         expect(parts).toHaveLength(0);
       } else {
         expect(style).not.toHaveProperty(`--incredicard-${name}`);
-        expect(parts).toHaveLength((emboss.castShadow ? 12 : 8) + (emboss.stroke ? 1 : 0));
+        const edges = 1 + (emboss.shadow ? 1 : 0) + (emboss.castShadow ? 1 : 0);
+        expect(parts).toHaveLength(edges * 4 + (emboss.stroke ? 1 : 0));
         expect(style[`--incredicard-${name}-highlight-x`]).toBe(emboss.highlight.x);
-        expect(style[`--incredicard-${name}-shadow-color`]).toBe(emboss.shadow.color);
       }
     }
   });
@@ -97,30 +97,28 @@ describe("incredicardThemeStyle", () => {
     expect(style["--incredicard-face-color"]).toBe("var(--theme-incredicard-face-color, #ffffff)");
   });
 
-  it("keeps the vintage emboss lit from the upper left at rest", () => {
+  it("keeps the vintage emboss a highlight lit from the upper left, with an outline", () => {
     // Where the light isn't tracked, the highlight is up and to the left of
-    // each character and both shadows down and to the right of it.
+    // each character. No dark edge: one made the characters seem to move.
     for (const emboss of [INCREDICARD_THEMES.vintage.type.faceEmboss, INCREDICARD_THEMES.vintage.type.floatingFieldEmboss]) {
       expect(parseFloat(emboss.highlight.x)).toBeLessThan(0);
       expect(parseFloat(emboss.highlight.y)).toBeLessThan(0);
-      for (const edge of [emboss.shadow, emboss.castShadow]) {
-        expect(parseFloat(edge.x)).toBeGreaterThan(0);
-        expect(parseFloat(edge.y)).toBeGreaterThan(0);
-      }
+      expect(emboss).not.toHaveProperty("shadow");
+      expect(emboss).not.toHaveProperty("castShadow");
+      expect(parseFloat(emboss.stroke)).toBeGreaterThan(0);
     }
   });
 
-  it("writes an emboss without a cast shadow as its other two edges", () => {
+  it("writes only the edges an emboss has", () => {
     const edge = { color: "black", x: "1px", y: "1px", blur: "0px" };
     const theme = extendIncrediCardTheme("vintage", {
       type: { faceEmboss: { highlight: { ...edge, x: "-1px", y: "-1px" }, shadow: edge } },
     });
     const style = incredicardThemeStyle(theme) as Record<string, string>;
+    // This emboss replaces the base's whole, stroke and all.
     const parts = Object.keys(style).filter((p) => p.startsWith("--incredicard-face-emboss-"));
-    // The vintage base's stroke carries over through the merge only if the
-    // whole emboss is kept; this one replaces it.
     expect(parts).toHaveLength(8);
-    expect(parts.some((p) => p.includes("cast-shadow"))).toBe(false);
+    expect(parts.some((p) => p.includes("cast-shadow") || p.endsWith("-stroke"))).toBe(false);
   });
 
   it("leaves a null font unset, so the text inherits", () => {

@@ -182,15 +182,15 @@ export type IncrediCardEmbossEdge = {
 };
 
 /** A raised-character shadow that follows the card's light. The highlight
- * turns around the character to stay on the side facing the light. The
- * shadow, where the character meets the card, stays put: a dark edge that
- * moved would read as the character itself moving. The optional cast shadow
- * turns to stay on the side away from the light; keep it faint and soft for
- * the same reason. The turning edges keep their length as they go, so the
- * type stays raised wherever the light is. */
+ * turns around the character to stay on the side facing the light, keeping
+ * its length, so the type stays raised wherever the light is. The optional
+ * shadow, where the character meets the card, stays put, and the optional
+ * cast shadow turns to stay on the side away from the light. Dark edges are
+ * best left out or kept very faint: one that moves, or one the turning
+ * highlight washes out, reads as the character itself moving. */
 export type IncrediCardEmboss = {
   highlight: IncrediCardEmbossEdge;
-  shadow: IncrediCardEmbossEdge;
+  shadow?: IncrediCardEmbossEdge;
   castShadow?: IncrediCardEmbossEdge;
   /** A thin outline in the text's own color, as a CSS length: weight the
    * characters keep wherever the light is, so their shadows can stay light
@@ -288,23 +288,18 @@ export const INCREDICARD_THEMES = {
     type: {
       nameFont: '"IncrediCard OCR-A", ui-monospace, monospace',
       printFont: '"IncrediCard OCR-B", ui-monospace, monospace',
-      // The printed face's shadow is darker than the on-card fields', which
-      // sit on the same face but read as lighter, raised plastic. The
-      // highlight and the faint cast shadow turn with the light; the tight
-      // shadow under each character doesn't. Both shadows are faint, so the
-      // highlight crossing them doesn't thin the characters, and the thin
-      // outline gives back the weight a darker shadow used to.
+      // Only a highlight, which turns with the light: any dark edge, moving
+      // or washed out by the highlight passing over it, made the characters
+      // seem to move. The thin outline gives them the weight a shadow used
+      // to. The printed face's highlight is softer than the on-card fields',
+      // which read as lighter, raised plastic.
       faceEmboss: {
         highlight: { color: "rgb(255 255 255 / 60%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
-        shadow: { color: "rgb(0 0 0 / 8%)", x: "0.0312rem", y: "0.0625rem", blur: "0.0625rem" },
-        castShadow: { color: "rgb(0 0 0 / 5%)", x: "0.0625rem", y: "0.0938rem", blur: "0.1875rem" },
-        stroke: "0.0469rem",
+        stroke: "0.0562rem",
       },
       floatingFieldEmboss: {
         highlight: { color: "rgb(255 255 255 / 90%)", x: "-0.0625rem", y: "-0.0625rem", blur: "0.0312rem" },
-        shadow: { color: "rgb(0 0 0 / 6%)", x: "0.0312rem", y: "0.0312rem", blur: "0.0312rem" },
-        castShadow: { color: "rgb(0 0 0 / 4%)", x: "0.0625rem", y: "0.0625rem", blur: "0.125rem" },
-        stroke: "0.0406rem",
+        stroke: "0.05rem",
       },
     },
     fixed: [],

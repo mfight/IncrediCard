@@ -15,10 +15,9 @@
 // The light is where the pointer is, with a little of the room's light from
 // the upper left mixed in (`$room-light`), so the type stays lit from roughly
 // above while the pointer is near the middle. The highlight turns around the
-// character to stay on the near side, and the faint cast shadow to stay on
-// the far one, each keeping its resting length. The tight shadow where the
-// character meets the card stays put: it's as dark as the type and nearly as
-// sharp, so if it moved, the character would seem to move with it.
+// character to stay on the near side, and an optional cast shadow to stay on
+// the far one, each keeping its resting length. An optional shadow where the
+// character meets the card stays put.
 // Untracked, the light sits at the upper left and the turn is zero, so the
 // type looks exactly as it would with no light at all, which is also what
 // reduced motion and a touch device with no motion access see.
@@ -27,10 +26,11 @@
 // edges shorten as the light nears that point (`$overhead-reach`), rather than
 // spinning around it.
 //
-// Keep the shadows faint. A highlight that turns to the tight shadow's side
-// pales it, and a dark shadow lost that way thins the character on that side,
-// which reads as the character moving. An emboss's optional `stroke` gives
-// the characters their weight instead, wherever the light is.
+// Dark edges are best left out, as the vintage theme does. A shadow that
+// moves carries dark with it, and a fixed one the turning highlight washes
+// out thins the character on that side; either reads as the character
+// moving. An emboss's optional `stroke` gives the characters their weight
+// instead, wherever the light is.
 
 @use "./reducedMotion/reduced-motion";
 
@@ -62,10 +62,10 @@ $overhead-reach: 0.5;
     "calc(#{$reach} * (#{$x} * sin(#{$turn}) + #{$y} * cos(#{$turn}))) " + "#{$blur} #{$color}";
 }
 
-// The edge that stays put.
+// The edge that stays put, which a theme can leave out.
 @function fixed-edge($name, $edge) {
   $part: --incredicard-#{$name}-#{$edge};
-  @return "var(#{$part}-x) var(#{$part}-y) var(#{$part}-blur) var(#{$part}-color)";
+  @return "var(#{$part}-x, 0px) var(#{$part}-y, 0px) var(#{$part}-blur, 0px) var(#{$part}-color, transparent)";
 }
 
 // `$name` is the emboss's property name without its prefix: "face-emboss" or

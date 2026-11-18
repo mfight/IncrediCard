@@ -2227,10 +2227,14 @@ export const ListFieldsUseDefaultType: Story = {
     expect(first(onCard("name"))).toBe('"IncrediCard OCR-A"');
     expect(first(onCard("number"))).toBe('"IncrediCard OCR-B"');
     expect(first(onCard("expiration"))).toBe('"IncrediCard OCR-B"');
+    // At rest: the highlight up and to the left, the two shadow places the
+    // theme leaves empty, and the thin outline.
     for (const field of ["name", "number", "expiration"]) {
-      expect(getComputedStyle(onCard(field)).textShadow).toBe(
-        "rgba(0, 0, 0, 0.06) 0.4992px 0.4992px 0.4992px, rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0.04) 1px 1px 2px",
+      const style = getComputedStyle(onCard(field));
+      expect(style.textShadow).toBe(
+        "rgba(0, 0, 0, 0) 0px 0px 0px, rgba(255, 255, 255, 0.9) -1px -1px 0.4992px, rgba(0, 0, 0, 0) 0px 0px 0px",
       );
+      expect(style.webkitTextStrokeWidth).toBe("0.8px");
     }
   },
 };

@@ -6,8 +6,8 @@ All notable changes to IncrediCard are recorded here. The format follows [Keep a
 
 ### Added
 
-- A theme's `faceEmboss` and `floatingFieldEmboss` can be an emboss that follows the light, `{ highlight, shadow, castShadow, stroke }`, instead of a fixed `text-shadow` string. Its highlight and cast shadow turn to face the card's light while `lightingEffects` or `holofoil` tracks it; the shadow under each character stays put. Its types, `IncrediCardEmboss` and `IncrediCardEmbossEdge`, are exported. String embosses work as before.
-- The vintage card's emboss follows the light. Its resting look trades the old dark shadow for a faint tight one under each character, a fainter soft cast shadow and a thin outline, so the characters keep their weight and stay put as the light moves.
+- A theme's `faceEmboss` and `floatingFieldEmboss` can be an emboss that follows the light, `{ highlight, shadow, castShadow, stroke }`, instead of a fixed `text-shadow` string. Its highlight, and an optional cast shadow, turn with the card's light while `lightingEffects` or `holofoil` tracks it; an optional shadow under each character stays put, and an optional `stroke` outlines the characters. Its types, `IncrediCardEmboss` and `IncrediCardEmbossEdge`, are exported. String embosses work as before.
+- The vintage card's emboss follows the light. It's now a highlight with a thin outline and no dark shadow, so the characters keep their weight and stay put as the light moves.
 
 ### Changed
 
