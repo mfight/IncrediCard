@@ -304,7 +304,6 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 
 .sectionTitle {
   max-width: $text-measure;
-  margin-block-start: 0.625rem;
   color: var(--site-ink);
   font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 800;
@@ -647,7 +646,6 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 }
 
 .supportTitle {
-  margin-block-start: 0.5rem;
   color: var(--site-ink);
   font-size: 1.75rem;
   font-weight: 750;
