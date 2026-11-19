@@ -5,6 +5,7 @@ import { demoAcceptanceMarks } from "../demo/acceptanceMarks";
 import { SAMPLE_CARDS } from "../demo/sampleCards";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypeOut, useTypedValue } from "./useTypedValue";
+import { cobaltTheme } from "./cobaltTheme";
 import styles from "./landing.module.scss";
 
 const STORYBOOK = "/storybook/";
@@ -259,6 +260,7 @@ function Experience() {
           <PointerStage className={styles.panel} phase={1}>
             <LiveCard
               id="experience-floating"
+              theme={cobaltTheme}
               className={styles.panelCard}
               layout="floating"
               tilt
@@ -280,6 +282,7 @@ function Experience() {
           <PointerStage className={`${styles.panel} ${styles.panelStacked}`} phase={3}>
             <LiveCard
               id="experience-stacked"
+              theme={cobaltTheme}
               className={`${styles.panelCard} ${styles.panelCardStacked}`}
               layout="stacked"
               tilt
