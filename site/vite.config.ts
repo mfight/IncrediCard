@@ -12,7 +12,9 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root,
-  publicDir: false,
+  // site/public/ is copied to the site root as is: the share image, which
+  // social previews fetch by its full URL.
+  publicDir: "public",
   css: { modules: { generateScopedName: "[local]-[hash:base64:5]" } },
   server: { port: Number(process.env.PORT) || 6007 },
   build: {
