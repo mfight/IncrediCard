@@ -330,6 +330,11 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   text-wrap: balance;
 }
 
+// A title whose lines are set by hand and run longer than the usual measure.
+.sectionTitleWide {
+  max-width: 56rem;
+}
+
 .sectionLede {
   max-width: $text-measure;
   text-wrap: pretty;

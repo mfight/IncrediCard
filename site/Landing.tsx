@@ -248,7 +248,7 @@ function Experience() {
   return (
     <section id="features" className={styles.section} aria-labelledby="experience-title">
       <p className={styles.eyebrow}>Flexible by Design</p>
-      <h2 id="experience-title" className={styles.sectionTitle}>
+      <h2 id="experience-title" className={`${styles.sectionTitle} ${styles.sectionTitleWide}`}>
         A familiar card.{" "}
         <br />A natural fit for your checkout.
       </h2>
@@ -406,7 +406,7 @@ function Themes() {
   return (
     <section className={styles.themesBand} aria-labelledby="themes-title">
       <div className={styles.section}>
-        <p className={styles.eyebrow}>Make it yours</p>
+        <p className={styles.eyebrow}>Themes that fit your style</p>
         <h2 id="themes-title" className={styles.sectionTitle}>
           Ready-made looks. Room to make your own.
         </h2>
