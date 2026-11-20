@@ -247,13 +247,14 @@ function Experience() {
 
   return (
     <section id="features" className={styles.section} aria-labelledby="experience-title">
-      <p className={styles.eyebrow}>Flexible layouts</p>
+      <p className={styles.eyebrow}>Flexible by Design</p>
       <h2 id="experience-title" className={styles.sectionTitle}>
-        One card. Two layouts.
+        A familiar card. A natural fit for your checkout.
       </h2>
       <p className={styles.sectionLede}>
-        Enter details directly on the card or in a labeled form below it. Both layouts respond as you
-        type, paste, or autofill.
+        Choose between fields on a card or in a labeled form below it. Automatic network recognition,
+        optional visual effects, and support for your processor’s hosted fields make it easy to shape
+        the experience around your checkout.
       </p>
 
       <div ref={panelsRef} className={styles.panels}>
