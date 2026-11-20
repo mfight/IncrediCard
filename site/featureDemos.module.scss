@@ -138,7 +138,8 @@ $card-height: math.div($card-width, 1.586);
 .pieceRest,
 .pieceOut,
 .pieceIn,
-.staticPiece {
+.pieceFadeOut,
+.pieceFadeIn {
   @extend %piece-place;
 }
 
@@ -272,11 +273,6 @@ $card-height: math.div($card-width, 1.586);
   border-color: rgb(255 255 255 / 60%);
 }
 
-// A readable, stationary example when motion is reduced.
-.staticPiece {
-  transform: translate(-8%, 8%) rotate(-4deg);
-}
-
 .piece {
   border-radius: 0.5rem;
   isolation: isolate;
@@ -293,4 +289,43 @@ $card-height: math.div($card-width, 1.586);
 
 @media (prefers-reduced-motion: reduce) {
   .float { transition: none; }
+}
+
+// With reduced motion: out, a short pause, then the next in, without moving.
+$fade-duration: 350ms;
+$fade-pause: 150ms;
+
+.fadeOut,
+.pieceFadeOut {
+  animation: fadeOut $fade-duration ease both;
+}
+
+.fadeIn,
+.pieceFadeIn {
+  animation: fadeIn $fade-duration ease $fade-pause both;
+}
+
+.pieceFadeOut,
+.pieceFadeIn {
+  filter: drop-shadow(0 0.1rem 0.15rem rgb(0 0 0 / 35%));
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }

@@ -3,10 +3,11 @@
 // and zoomed to its column, so the three line up and fit at any width.
 //
 // The page gives each one turn at a time (`act`, a number that changes for
-// each new turn and is 0 between them) as its column reaches the middle of
-// the screen, and each calls `onActDone` when its turn is over. Where the
-// three share a row, they take turns; stacked, each runs while it's
-// centered. Nothing runs off screen.
+// each new turn and is 0 between them), and each calls `onActDone` when its
+// turn is over. A column starts as the page scrolls it into place (side by
+// side, the three start one after another as the row rises; stacked, each
+// as it reaches the middle) and keeps taking turns while it's on screen.
+// Nothing runs off screen.
 //
 // Reveal: a turn types out the next of four networks' numbers; the details
 // and the network's mark appear once the number is complete, then it holds.
@@ -17,7 +18,8 @@
 // its socket and drops in the next, each in a different field style, then
 // holds. A swap under way always finishes, so no piece is left in mid-air.
 //
-// Reduced motion shows static examples, with Depth resting at its tilt with
+// With reduced motion, Reveal and Processor fade out, pause briefly and fade
+// back in with the next network or piece, and Depth rests at its tilt with
 // still foil.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -138,17 +140,47 @@ export function RevealDemo({ act, onActDone }: DemoProps) {
   const reduced = usePrefersReducedMotion();
   const [turn, setTurn] = useState(0);
   const [lastAct, setLastAct] = useState(act);
-  // Each new turn types the next network from empty.
+  // With reduced motion: "out" fades the card away, "in" brings the next
+  // network's back after a short pause, "shown" holds it.
+  const [fade, setFade] = useState<"shown" | "out" | "in">("shown");
+  // The turn whose fade has finished, so its hold can end it.
+  const [faded, setFaded] = useState(0);
+  // Each new turn moves to the next network: typed from empty, or faded in.
   if (act !== lastAct) {
     setLastAct(act);
-    if (act !== 0 && !reduced) setTurn((value) => value + 1);
+    if (act === 0) setFade("shown");
+    else if (reduced) setFade("out");
+    else setTurn((value) => value + 1);
   }
   const card = REVEAL_NETWORKS[turn % REVEAL_NETWORKS.length];
   const running = act !== 0;
 
+  useEffect(() => {
+    if (!reduced || act === 0 || fade !== "shown" || faded !== act) return;
+    const timer = window.setTimeout(onActDone, HOLD_MS);
+    return () => window.clearTimeout(timer);
+  }, [reduced, act, fade, faded, onActDone]);
+
+  const handleFadeEnd = (event: React.AnimationEvent) => {
+    // The card's own reveal animations bubble here too.
+    if (event.target !== event.currentTarget) return;
+    if (fade === "out") {
+      setTurn((value) => value + 1);
+      setFade("in");
+    } else if (fade === "in") {
+      setFaded(act);
+      setFade("shown");
+    }
+  };
+
   return (
-    <Scene running={running}>
-      <RevealTurn key={turn} card={card} typed={!reduced && turn > 0} running={running} onDone={onActDone} />
+    <Scene running={running || fade !== "shown"}>
+      <div
+        className={fade === "out" ? styles.fadeOut : fade === "in" ? styles.fadeIn : undefined}
+        onAnimationEnd={handleFadeEnd}
+      >
+        <RevealTurn key={turn} card={card} typed={!reduced && turn > 0} running={running} onDone={onActDone} />
+      </div>
     </Scene>
   );
 }
@@ -236,7 +268,7 @@ export function ProcessorDemo({ act, onActDone }: DemoProps) {
   const [swapped, setSwapped] = useState(0);
   if (act !== lastAct) {
     setLastAct(act);
-    if (act !== 0 && !reduced) setPhase("out");
+    if (act !== 0) setPhase("out");
   }
   const look = PIECE_STYLES[turn % PIECE_STYLES.length];
 
@@ -246,7 +278,8 @@ export function ProcessorDemo({ act, onActDone }: DemoProps) {
     return () => window.clearTimeout(timer);
   }, [act, phase, swapped, onActDone]);
 
-  const handleEnd = () => {
+  const handleEnd = (event: React.AnimationEvent) => {
+    if (event.target !== event.currentTarget) return;
     if (phase === "out") {
       setTurn((value) => value + 1);
       setPhase("in");
@@ -256,12 +289,16 @@ export function ProcessorDemo({ act, onActDone }: DemoProps) {
     }
   };
 
-  const motion = reduced
-    ? styles.staticPiece
-    : phase === "out"
-      ? styles.pieceOut
+  // With reduced motion the piece fades out and the next fades in, in place.
+  const motion =
+    phase === "out"
+      ? reduced
+        ? styles.pieceFadeOut
+        : styles.pieceOut
       : phase === "in"
-        ? styles.pieceIn
+        ? reduced
+          ? styles.pieceFadeIn
+          : styles.pieceIn
         : styles.pieceRest;
 
   return (

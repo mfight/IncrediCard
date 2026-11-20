@@ -324,59 +324,65 @@ const FEATURES: { demo: (props: DemoProps) => React.ReactNode; title: string; te
   },
 ];
 
-// The middle of the screen, as an IntersectionObserver root margin: a
-// column runs while it crosses the band through the viewport's center.
-const CENTER_BAND = "-35% 0px -35% 0px";
+// Where on the screen each column starts, as a fraction of the viewport's
+// height from the top. Side by side, the row's top edge starts them one after
+// another as it rises, first at 70%; stacked, a column starts when its middle
+// rises past 60%.
+const ROW_STARTS = [0.7, 0.55, 0.4];
+const STACKED_START = 0.6;
 
-// The features, each with its demo. A demo gets one turn at a time while its
-// column crosses the middle of the screen. Where the columns share a row they
-// all cross it together, so they take turns, first to last and around again;
-// stacked, each runs on its own while it's centered. Reduced motion gives no
-// turns: the demos show still examples.
+// The features, each with its demo. Scrolling a column into place starts it,
+// and it keeps taking turns, one after another, until it leaves the screen;
+// coming back starts it again.
 function FeatureList() {
   const listRef = useRef<HTMLUListElement>(null);
-  const reduced = usePrefersReducedMotion();
-  const [centered, setCentered] = useState<boolean[]>(() => FEATURES.map(() => false));
-  // Whose turn it is (-1: no one's) and a count that changes with each turn.
-  const [turn, setTurn] = useState({ index: -1, token: 0 });
-  const centeredRef = useRef(centered);
+  const [running, setRunning] = useState<boolean[]>(() => FEATURES.map(() => false));
+  // Each column's turn count, moved on as each turn ends.
+  const [tokens, setTokens] = useState<number[]>(() => FEATURES.map(() => 1));
+  const runningRef = useRef(running);
 
   useEffect(() => {
-    centeredRef.current = centered;
-  }, [centered]);
+    runningRef.current = running;
+  }, [running]);
 
   useEffect(() => {
-    const items = [...(listRef.current?.children ?? [])];
-    const observer = new IntersectionObserver(
-      (entries) =>
-        setCentered((previous) => {
-          const next = [...previous];
-          for (const entry of entries) next[items.indexOf(entry.target)] = entry.isIntersecting;
-          return next;
-        }),
-      { rootMargin: CENTER_BAND },
-    );
-    items.forEach((item) => observer.observe(item));
-    return () => observer.disconnect();
+    const items = [...(listRef.current?.children ?? [])] as HTMLElement[];
+    const started = items.map(() => false);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const height = window.innerHeight;
+      const rects = items.map((item) => item.getBoundingClientRect());
+      const sideBySide = rects.every((rect) => Math.abs(rect.top - rects[0].top) < 1);
+      const next = rects.map((rect, index) => {
+        if (rect.bottom <= 0 || rect.top >= height) return (started[index] = false);
+        const reached = sideBySide
+          ? rects[0].top <= height * ROW_STARTS[index]
+          : rect.top + rect.height / 2 <= height * STACKED_START;
+        if (reached) started[index] = true;
+        return started[index];
+      });
+      setRunning((previous) => (previous.every((value, index) => value === next[index]) ? previous : next));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
-  // A column reaching the middle with no one running, or the running one
-  // leaving it, starts the first centered column's turn.
-  const first = reduced ? -1 : centered.indexOf(true);
-  const runningCentered = turn.index >= 0 && centered[turn.index] && !reduced;
-  if (!runningCentered && first !== turn.index) {
-    setTurn({ index: first, token: turn.token + 1 });
-  }
-
-  // When a turn ends, the next centered column after it goes, around again.
+  // A turn that ends while its column still runs starts the next.
   const [onDone] = useState(() =>
     FEATURES.map((_, index) => () =>
-      setTurn((current) => {
-        if (current.index !== index) return current;
-        const now = centeredRef.current;
-        const order = FEATURES.map((__, step) => (index + 1 + step) % FEATURES.length);
-        return { index: order.find((candidate) => now[candidate]) ?? -1, token: current.token + 1 };
-      }),
+      setTokens((current) =>
+        runningRef.current[index] ? current.map((token, at) => (at === index ? token + 1 : token)) : current,
+      ),
     ),
   );
 
@@ -384,7 +390,7 @@ function FeatureList() {
     <ul ref={listRef} className={styles.features}>
       {FEATURES.map(({ demo: Demo, title, text }, index) => (
         <li key={title} className={styles.feature}>
-          <Demo act={turn.index === index ? turn.token : 0} onActDone={onDone[index]} />
+          <Demo act={running[index] ? tokens[index] : 0} onActDone={onDone[index]} />
           <h3 className={styles.featureTitle}>{title}</h3>
           <p className={styles.featureText}>{text}</p>
         </li>
