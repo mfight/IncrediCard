@@ -253,15 +253,38 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
   // the length of the flip: it eases flat and turns over, then picks the
   // pointer up again. Before paint, in the same commit as the new side:
   // after it, the turn would already have been drawn without its animation.
+  //
+  // The phone's tilt doesn't stop either, and it writes the same transform
+  // the flip animates, restarting the flip's easing on every reading. So in
+  // tilt mode the card's tilt is off for the flip too, and comes back
+  // measured from wherever the phone is then, with no jump.
   const { side } = cardProps;
   const lastSideRef = useRef(side);
+  const [shownSide, setShownSide] = useState(side);
+  const [turning, setTurning] = useState(false);
+  if (side !== shownSide) {
+    setShownSide(side);
+    if (mode === "tilt") setTurning(true);
+  }
   useLayoutEffect(() => {
     if (side === lastSideRef.current) return;
     lastSideRef.current = side;
     pausedUntilRef.current = performance.now() + FLIP_PAUSE_MS;
     leave();
+    if (mode === "tilt") {
+      // Now, before paint, rather than when the card's own effect lets go
+      // of the tilt just after it.
+      const el = face();
+      el?.style.removeProperty("--incredicard-tilt-x");
+      el?.style.removeProperty("--incredicard-tilt-y");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [side]);
+  useEffect(() => {
+    if (!turning) return;
+    const timer = window.setTimeout(() => setTurning(false), FLIP_PAUSE_MS);
+    return () => window.clearTimeout(timer);
+  }, [turning]);
 
   // Out of the tab order, including fields that appear later (the card
   // reveals the rest once the number is valid) and anything re-rendered.
@@ -289,7 +312,7 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
     >
       {/* No flip control: nobody can press it here. The page turns the
           card with `side` instead. */}
-      <IncrediCard autoComplete={false} {...cardProps} {...(asleep ? ASLEEP : {})} flippable={false} />
+      <IncrediCard autoComplete={false} {...cardProps} {...(asleep ? ASLEEP : turning ? { tilt: false } : {})} flippable={false} />
       {children}
     </div>
   );
