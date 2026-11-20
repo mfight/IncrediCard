@@ -6,6 +6,7 @@ import { SAMPLE_CARDS } from "../demo/sampleCards";
 import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./LiveCard";
 import { SAMPLE_VALUE, useTypeOut, useTypedValue } from "./useTypedValue";
 import { cobaltTheme } from "./cobaltTheme";
+import { DepthDemo, ProcessorDemo, RevealDemo, type DemoProps } from "./FeatureDemos";
 import styles from "./landing.module.scss";
 
 const STORYBOOK = "/storybook/";
@@ -299,32 +300,95 @@ function Experience() {
         </figure>
       </div>
 
-      <ul className={styles.features}>
-        <li className={styles.feature}>
-          <RevealIcon />
-          <h3 className={styles.featureTitle}>Reveal details as needed</h3>
-          <p className={styles.featureText}>
-            Start with the card number. The remaining fields appear once it passes a format check.
-          </p>
-        </li>
-        <li className={styles.feature}>
-          <DepthIcon />
-          <h3 className={styles.featureTitle}>Add a little depth</h3>
-          <p className={styles.featureText}>
-            Bring the card to life with reflections, holographic foil, tilt, and zoom on focus. Every
-            effect is optional and respects reduced motion.
-          </p>
-        </li>
-        <li className={styles.feature}>
-          <ProcessorIcon />
-          <h3 className={styles.featureTitle}>Bring your own processor</h3>
-          <p className={styles.featureText}>
-            Use your processor’s hosted fields for the number, expiration, and security code.
-            IncrediCard coordinates the card, flip, and keyboard navigation around them.
-          </p>
-        </li>
-      </ul>
+      <FeatureList />
     </section>
+  );
+}
+
+const FEATURES: { demo: (props: DemoProps) => React.ReactNode; title: string; text: string }[] = [
+  {
+    demo: RevealDemo,
+    title: "Reveal details as needed",
+    text: "Start with the card number. The remaining fields appear once it passes a format check.",
+  },
+  {
+    demo: DepthDemo,
+    title: "Add a little depth",
+    text: "Bring the card to life with reflections, holographic foil, tilt, and zoom on focus. Every effect is optional and respects reduced motion.",
+  },
+  {
+    demo: ProcessorDemo,
+    title: "Bring your own processor",
+    text: "Use your processor’s hosted fields for the number, expiration, and security code. IncrediCard coordinates the card, flip, and keyboard navigation around them.",
+  },
+];
+
+// The middle of the screen, as an IntersectionObserver root margin: a
+// column runs while it crosses the band through the viewport's center.
+const CENTER_BAND = "-35% 0px -35% 0px";
+
+// The features, each with its demo. A demo gets one turn at a time while its
+// column crosses the middle of the screen. Where the columns share a row they
+// all cross it together, so they take turns, first to last and around again;
+// stacked, each runs on its own while it's centered. Reduced motion gives no
+// turns: the demos show still examples.
+function FeatureList() {
+  const listRef = useRef<HTMLUListElement>(null);
+  const reduced = usePrefersReducedMotion();
+  const [centered, setCentered] = useState<boolean[]>(() => FEATURES.map(() => false));
+  // Whose turn it is (-1: no one's) and a count that changes with each turn.
+  const [turn, setTurn] = useState({ index: -1, token: 0 });
+  const centeredRef = useRef(centered);
+
+  useEffect(() => {
+    centeredRef.current = centered;
+  }, [centered]);
+
+  useEffect(() => {
+    const items = [...(listRef.current?.children ?? [])];
+    const observer = new IntersectionObserver(
+      (entries) =>
+        setCentered((previous) => {
+          const next = [...previous];
+          for (const entry of entries) next[items.indexOf(entry.target)] = entry.isIntersecting;
+          return next;
+        }),
+      { rootMargin: CENTER_BAND },
+    );
+    items.forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, []);
+
+  // A column reaching the middle with no one running, or the running one
+  // leaving it, starts the first centered column's turn.
+  const first = reduced ? -1 : centered.indexOf(true);
+  const runningCentered = turn.index >= 0 && centered[turn.index] && !reduced;
+  if (!runningCentered && first !== turn.index) {
+    setTurn({ index: first, token: turn.token + 1 });
+  }
+
+  // When a turn ends, the next centered column after it goes, around again.
+  const [onDone] = useState(() =>
+    FEATURES.map((_, index) => () =>
+      setTurn((current) => {
+        if (current.index !== index) return current;
+        const now = centeredRef.current;
+        const order = FEATURES.map((__, step) => (index + 1 + step) % FEATURES.length);
+        return { index: order.find((candidate) => now[candidate]) ?? -1, token: current.token + 1 };
+      }),
+    ),
+  );
+
+  return (
+    <ul ref={listRef} className={styles.features}>
+      {FEATURES.map(({ demo: Demo, title, text }, index) => (
+        <li key={title} className={styles.feature}>
+          <Demo act={turn.index === index ? turn.token : 0} onActDone={onDone[index]} />
+          <h3 className={styles.featureTitle}>{title}</h3>
+          <p className={styles.featureText}>{text}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -633,10 +697,10 @@ function Footer() {
 // --- Icons ----------------------------------------------------------------
 // Decorative: each sits beside text that says the same thing.
 
-function Icon({ children, className }: { children: React.ReactNode; className?: string }) {
+function Icon({ children, className }: { children: React.ReactNode; className: string }) {
   return (
     <svg
-      className={className ?? styles.icon}
+      className={className}
       viewBox="0 0 24 24"
       aria-hidden="true"
       focusable="false"
@@ -676,31 +740,8 @@ function HeartIcon() {
   );
 }
 
-function RevealIcon() {
-  return (
-    <Icon>
-      <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
-      <path d="M8 12h8" />
-    </Icon>
-  );
-}
 
-function DepthIcon() {
-  return (
-    <Icon>
-      <path d="M10 4.5 11.6 9a1.5 1.5 0 0 0 .9.9L17 11.5l-4.5 1.6a1.5 1.5 0 0 0-.9.9L10 18.5 8.4 14a1.5 1.5 0 0 0-.9-.9L3 11.5l4.5-1.6a1.5 1.5 0 0 0 .9-.9z" />
-      <path d="M18 3v4M16 5h4M18.5 15.5v3M17 17h3" />
-    </Icon>
-  );
-}
 
-function ProcessorIcon() {
-  return (
-    <Icon>
-      <path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9V6z" />
-    </Icon>
-  );
-}
 
 function FlipIcon() {
   return (

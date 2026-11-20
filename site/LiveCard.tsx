@@ -67,9 +67,11 @@ export function useOnScreen(ref: React.RefObject<Element | null>) {
 type StageProps = ComponentProps<"div"> & {
   /** Where the idle path starts, so neighboring stages don't move in step. */
   phase?: number;
+  /** False holds the stage still, its cards at rest, until it's true. */
+  active?: boolean;
 };
 
-export function PointerStage({ phase = 0, children, ...rest }: StageProps) {
+export function PointerStage({ phase = 0, active = true, children, ...rest }: StageProps) {
   const ref = useRef<HTMLDivElement>(null);
   const listeners = useRef(new Set<Listener>());
   const [subscribe] = useState(() => (listener: Listener) => {
@@ -81,8 +83,20 @@ export function PointerStage({ phase = 0, children, ...rest }: StageProps) {
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || reduced || !onScreen) return;
-    const emit = (point: Point) => listeners.current.forEach((listener) => listener(point));
+    if (!el || reduced || !onScreen || !active) return;
+    // Also published on the stage itself, as --stage-x and --stage-y (-0.5
+    // to 0.5, unset at rest), so the page can move things with the same
+    // signal the cards' light follows.
+    const emit = (point: Point) => {
+      listeners.current.forEach((listener) => listener(point));
+      if (point) {
+        el.style.setProperty("--stage-x", point.x.toFixed(4));
+        el.style.setProperty("--stage-y", point.y.toFixed(4));
+      } else {
+        el.style.removeProperty("--stage-x");
+        el.style.removeProperty("--stage-y");
+      }
+    };
 
     let pointerInside = false;
     let frame = 0;
@@ -124,7 +138,7 @@ export function PointerStage({ phase = 0, children, ...rest }: StageProps) {
       stopIdle();
       emit(null);
     };
-  }, [reduced, onScreen, phase]);
+  }, [reduced, onScreen, phase, active]);
 
   return (
     <StageContext.Provider value={subscribe}>

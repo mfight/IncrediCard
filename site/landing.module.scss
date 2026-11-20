@@ -430,14 +430,10 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   border-block-start: 0.0625rem solid var(--site-line);
 
   @media (min-width: 56rem) {
-    grid-template-columns: repeat(3, 1fr);
+    // minmax: the demo scenes zoom to their columns, so they mustn't widen
+    // them first.
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-}
-
-.icon {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: var(--site-accent);
 }
 
 .featureTitle {
