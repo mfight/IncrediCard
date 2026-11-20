@@ -224,24 +224,66 @@ $hero-gap: 2.25rem;
   @include focus-ring(var(--site-on-dark));
 }
 
-// Under the fan, on an iPhone only: turns on the phone's tilt.
-.motionButton {
+// Under the fan, on phones only: whether the cards follow the phone's tilt.
+// Not shown under reduced motion, where the cards hold still anyway.
+.tiltToggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
   margin-block-start: 1.5rem;
-  padding: 0.5rem 1rem;
-  border: 0.0625rem solid var(--site-on-dark-muted);
-  border-radius: 62.5rem;
-  background: transparent;
   color: var(--site-on-dark);
-  font: inherit;
   font-size: 0.9375rem;
   font-weight: 650;
   cursor: pointer;
+}
 
-  &:hover {
-    border-color: var(--site-on-dark);
+// The real checkbox, kept for its semantics and focus, under the drawn switch.
+.tiltSwitchInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.tiltSwitch {
+  position: relative;
+  flex: none;
+  width: 2.5rem;
+  height: 1.5rem;
+  border: 0.0625rem solid var(--site-on-dark-muted);
+  border-radius: 62.5rem;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0.1875rem;
+    inset-inline-start: 0.1875rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: var(--site-on-dark);
+    transition: transform 150ms ease;
   }
 
-  @include focus-ring(var(--site-on-dark));
+  .tiltSwitchInput:checked + & {
+    border-color: var(--site-accent-soft);
+    background: var(--site-accent-soft);
+
+    &::before {
+      background: var(--site-accent-ink);
+      transform: translateX(1rem);
+    }
+  }
+
+  .tiltSwitchInput:focus-visible + & {
+    outline: 0.125rem solid var(--site-on-dark);
+    outline-offset: 0.1875rem;
+  }
 }
 
 // The fanned cards. Each card is centered on the stage and moved out to its

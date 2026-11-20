@@ -7,7 +7,7 @@ import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./
 import { SAMPLE_VALUE, useTypeOut, useTypedValue } from "./useTypedValue";
 import { cobaltTheme } from "./cobaltTheme";
 import { DepthDemo, ProcessorDemo, RevealDemo, type DemoProps } from "./FeatureDemos";
-import { askForMotion, useCanAskForMotion } from "./motion";
+import { setFollowTilt, useTiltToggle } from "./motion";
 import styles from "./landing.module.scss";
 
 const STORYBOOK = "/storybook/";
@@ -232,23 +232,32 @@ function Hero() {
             in Vintage, and a Mastercard card in Globe.
           </p>
         </div>
-        <MotionButton />
+        <TiltToggle />
       </PointerStage>
     </section>
   );
 }
 
-// On an iPhone the cards can follow the phone's tilt, but only once iOS has
-// been asked, and only from a tap. Shown just there, until it's answered;
-// either way the cards keep moving on their own path.
-function MotionButton() {
-  const canAsk = useCanAskForMotion();
+// On a phone the cards can follow its tilt. On an iPhone that needs iOS's
+// permission, asked only from a tap, so switching this on is what asks.
+// Switched off, the cards go back to moving on their own. Hidden where the
+// tilt can't reach the cards: no sensor, a hovering pointer, or a refusal.
+function TiltToggle() {
+  const state = useTiltToggle();
   const reduced = usePrefersReducedMotion();
-  if (!canAsk || reduced) return null;
+  if (state === "hidden" || reduced) return null;
   return (
-    <button type="button" className={styles.motionButton} onClick={askForMotion}>
-      Tilt to explore
-    </button>
+    <label className={styles.tiltToggle}>
+      <input
+        type="checkbox"
+        role="switch"
+        className={styles.tiltSwitchInput}
+        checked={state === "on"}
+        onChange={(event) => setFollowTilt(event.target.checked)}
+      />
+      <span className={styles.tiltSwitch} aria-hidden="true" />
+      Follow device tilt
+    </label>
   );
 }
 
