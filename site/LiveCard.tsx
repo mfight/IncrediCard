@@ -57,15 +57,15 @@ export function usePrefersReducedMotion() {
 }
 
 /** Whether the element is on screen, so off-screen motion can stop. */
-export function useOnScreen(ref: React.RefObject<Element | null>) {
+export function useOnScreen(ref: React.RefObject<Element | null>, rootMargin = "0px") {
   const [onScreen, setOnScreen] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting), { rootMargin });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [ref]);
+  }, [ref, rootMargin]);
   return onScreen;
 }
 
@@ -170,6 +170,9 @@ function touchEvent(type: string, el: HTMLElement, x?: number, y?: number) {
   });
 }
 
+// The effects that follow the phone's tilt, off for a card far from view.
+const ASLEEP = { tilt: false, lightingEffects: false, holofoil: false };
+
 type LiveCardProps = Omit<ComponentProps<typeof IncrediCard>, "ref"> & {
   className?: string;
   /** Written to the wrapper as `data-position`, for the page's own layout. */
@@ -183,6 +186,13 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
   const ref = useRef<HTMLDivElement>(null);
   const subscribe = useContext(StageContext);
   const mode = useMotionMode();
+  // Every card follows the phone's tilt on its own, wherever it is on the
+  // page, and each reading repaints it. A dozen cards at once made the ones
+  // in view stutter, so a card more than half a screen away sets its
+  // effects aside until it comes near. Its look at rest changes, but out of
+  // sight.
+  const near = useOnScreen(ref, "50% 0px");
+  const asleep = mode === "tilt" && !near;
   // How the stage is reaching the card right now: a hovering mouse, a finger
   // pressed on it, or not at all.
   const contactRef = useRef<"mouse" | "touch" | null>(null);
@@ -279,7 +289,7 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
     >
       {/* No flip control: nobody can press it here. The page turns the
           card with `side` instead. */}
-      <IncrediCard autoComplete={false} {...cardProps} flippable={false} />
+      <IncrediCard autoComplete={false} {...cardProps} {...(asleep ? ASLEEP : {})} flippable={false} />
       {children}
     </div>
   );
