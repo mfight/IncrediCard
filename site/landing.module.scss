@@ -224,6 +224,26 @@ $hero-gap: 2.25rem;
   @include focus-ring(var(--site-on-dark));
 }
 
+// Under the fan, on an iPhone only: turns on the phone's tilt.
+.motionButton {
+  margin-block-start: 1.5rem;
+  padding: 0.5rem 1rem;
+  border: 0.0625rem solid var(--site-on-dark-muted);
+  border-radius: 62.5rem;
+  background: transparent;
+  color: var(--site-on-dark);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--site-on-dark);
+  }
+
+  @include focus-ring(var(--site-on-dark));
+}
+
 // The fanned cards. Each card is centered on the stage and moved out to its
 // slot, so a card changing slots slides there.
 //

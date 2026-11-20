@@ -7,6 +7,7 @@ import { LiveCard, PointerStage, useOnScreen, usePrefersReducedMotion } from "./
 import { SAMPLE_VALUE, useTypeOut, useTypedValue } from "./useTypedValue";
 import { cobaltTheme } from "./cobaltTheme";
 import { DepthDemo, ProcessorDemo, RevealDemo, type DemoProps } from "./FeatureDemos";
+import { askForMotion, useCanAskForMotion } from "./motion";
 import styles from "./landing.module.scss";
 
 const STORYBOOK = "/storybook/";
@@ -231,8 +232,23 @@ function Hero() {
             in Vintage, and a Mastercard card in Globe.
           </p>
         </div>
+        <MotionButton />
       </PointerStage>
     </section>
+  );
+}
+
+// On an iPhone the cards can follow the phone's tilt, but only once iOS has
+// been asked, and only from a tap. Shown just there, until it's answered;
+// either way the cards keep moving on their own path.
+function MotionButton() {
+  const canAsk = useCanAskForMotion();
+  const reduced = usePrefersReducedMotion();
+  if (!canAsk || reduced) return null;
+  return (
+    <button type="button" className={styles.motionButton} onClick={askForMotion}>
+      Tilt to explore
+    </button>
   );
 }
 

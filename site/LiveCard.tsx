@@ -14,6 +14,10 @@
 // card inside it, scaled to the card. While the pointer is elsewhere, the
 // stage plays a slow path of its own, so the cards keep moving. Under reduced
 // motion it plays nothing; the component calms its own effects there too.
+//
+// On a phone the card follows touch signals rather than a pointer, so the
+// path is replayed as a finger dragging across it, until the card can read
+// the phone's own tilt and follows that instead (see motion.ts).
 
 import {
   createContext,
@@ -26,6 +30,7 @@ import {
   type ReactNode,
 } from "react";
 import { IncrediCard } from "../src";
+import { useMotionMode } from "./motion";
 
 const FOCUSABLE = "a[href], button, input, select, textarea, [tabindex], [contenteditable]";
 
@@ -149,6 +154,22 @@ export function PointerStage({ phase = 0, active = true, children, ...rest }: St
   );
 }
 
+// The replayed finger's pointer ID: any fixed number, so the card can match a
+// press to its moves and its lift.
+const TOUCH_POINTER_ID = 7171;
+
+/** A replayed finger's event on the card, at its center unless placed. */
+function touchEvent(type: string, el: HTMLElement, x?: number, y?: number) {
+  const rect = el.getBoundingClientRect();
+  return new PointerEvent(type, {
+    pointerType: "touch",
+    pointerId: TOUCH_POINTER_ID,
+    isPrimary: true,
+    clientX: x ?? rect.left + rect.width / 2,
+    clientY: y ?? rect.top + rect.height / 2,
+  });
+}
+
 type LiveCardProps = Omit<ComponentProps<typeof IncrediCard>, "ref"> & {
   className?: string;
   /** Written to the wrapper as `data-position`, for the page's own layout. */
@@ -161,7 +182,10 @@ type LiveCardProps = Omit<ComponentProps<typeof IncrediCard>, "ref"> & {
 export function LiveCard({ className, position, reach = 0.8, children, ...cardProps }: LiveCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const subscribe = useContext(StageContext);
-  const insideRef = useRef(false);
+  const mode = useMotionMode();
+  // How the stage is reaching the card right now: a hovering mouse, a finger
+  // pressed on it, or not at all.
+  const contactRef = useRef<"mouse" | "touch" | null>(null);
   const pausedUntilRef = useRef(0);
 
   // The card's own pointer listeners sit on the face wrapper, the one element
@@ -169,13 +193,16 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
   // theme change can replace it.
   const face = () => ref.current?.querySelector<HTMLElement>("[data-face-layout]") ?? null;
   const leave = () => {
-    if (insideRef.current) face()?.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
-    insideRef.current = false;
+    const el = face();
+    if (contactRef.current === "mouse") el?.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
+    if (contactRef.current === "touch") el?.dispatchEvent(touchEvent("pointerup", el));
+    contactRef.current = null;
   };
 
   useEffect(() => {
-    if (!subscribe) return;
-    return subscribe((point) => {
+    // With the phone's tilt live, the card follows the phone instead.
+    if (!subscribe || mode === "tilt") return;
+    const unsubscribe = subscribe((point) => {
       const el = face();
       if (!el) return;
       if (!point) {
@@ -183,19 +210,32 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
         return;
       }
       if (performance.now() < pausedUntilRef.current) return;
-      insideRef.current = true;
       const rect = el.getBoundingClientRect();
-      el.dispatchEvent(
-        new PointerEvent("pointermove", {
-          pointerType: "mouse",
-          clientX: rect.left + rect.width * (0.5 + point.x * reach),
-          clientY: rect.top + rect.height * (0.5 + point.y * reach),
-        }),
-      );
+      const x = rect.left + rect.width * (0.5 + point.x * reach);
+      const y = rect.top + rect.height * (0.5 + point.y * reach);
+      if (mode === "pointer") {
+        contactRef.current = "mouse";
+        el.dispatchEvent(new PointerEvent("pointermove", { pointerType: "mouse", clientX: x, clientY: y }));
+        return;
+      }
+      // On a touch device the card ignores a hovering pointer, so the path
+      // arrives as a finger instead: pressed at the card's center, dragged
+      // along the path, lifted when the stage stops. The card measures a drag
+      // from where the press began, so from the center it lands where the
+      // pointer would have.
+      if (contactRef.current !== "touch") {
+        contactRef.current = "touch";
+        el.dispatchEvent(touchEvent("pointerdown", el));
+      }
+      el.dispatchEvent(touchEvent("pointermove", el, x, y));
     });
+    return () => {
+      unsubscribe();
+      leave();
+    };
     // `face` and `leave` read only refs, so they needn't be dependencies.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subscribe, reach]);
+  }, [subscribe, reach, mode]);
 
   // While a pointer is driving the tilt, the card turns its flip animation
   // off so the two don't fight, and the stage's idle path never stops moving.
