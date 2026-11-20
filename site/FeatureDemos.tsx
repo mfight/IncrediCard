@@ -226,25 +226,13 @@ export function DepthDemo({ act, onActDone }: DemoProps) {
 
 const PIECE_STYLES = ["plain", "filled", "outlined"] as const;
 
-// The piece's outline: a rectangle with a tab rising from its top edge and a
-// notch cut into its right side, in a 100 by 60 box.
-const PIECE_PATH =
-  "M4 6 H58 C61 6 62 4.5 61 2.8 C59.6 0.3 61.6 -2.5 66 -2.5 C70.4 -2.5 72.4 0.3 71 2.8 C70 4.5 71 6 74 6 H96 " +
-  "C98.2 6 100 7.8 100 10 V24 C100 26.5 98.6 27.2 97 26 C94.8 24.4 91.5 25.8 91.5 30 C91.5 34.2 94.8 35.6 97 34 " +
-  "C98.6 32.8 100 33.5 100 36 V56 C100 58.2 98.2 60 96 60 H4 C1.8 60 0 58.2 0 56 V10 C0 7.8 1.8 6 4 6 Z";
-
-function PieceShape({ className }: { className: string }) {
-  return (
-    <svg className={className} viewBox="0 -3 100 63.5" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path d={PIECE_PATH} vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
-
+// A piece: the processor's fields on glass. The glass (and the slot under
+// it) fades away once the piece is placed, so its fields sit on the card as
+// if they were the card's own.
 function Piece({ look }: { look: (typeof PIECE_STYLES)[number] }) {
   return (
     <div className={`${styles.piece} ${styles[look]}`}>
-      <PieceShape className={styles.pieceGlass} />
+      <div className={styles.pieceGlass} />
       <div className={styles.pieceFields}>
         <span className={`${styles.pieceField} ${styles.pieceNumber}`}>4242 4242 4242 4242</span>
         <span className={`${styles.pieceField} ${styles.pieceExpiration}`}>08/29</span>
@@ -254,63 +242,98 @@ function Piece({ look }: { look: (typeof PIECE_STYLES)[number] }) {
   );
 }
 
-// How long the new piece holds in place before the turn is over.
-const PIECE_HOLD_MS = 1800;
+// The card under the piece shows no fields of its own: the piece's are its.
+const NO_PLACEHOLDERS = {
+  cardNumberPlaceholder: "",
+  cardholderNamePlaceholder: "",
+  expirationPlaceholder: "",
+  cvcPlaceholder: "",
+};
+
+// A turn, step by step:
+//   "merged": the piece sits on the card, its glass and slot gone;
+//   "unmerge": the slot and glass fade back in;
+//   "out": the piece lifts and leaves to the right (with reduced motion,
+//     fades out where it is, then "gap", a short pause);
+//   "in": the next arrives from the left and drops into the slot (with
+//     reduced motion, fades in where it is);
+//   "merge": the slot and glass fade away again;
+// then it holds before the turn is over.
+type PiecePhase = "merged" | "unmerge" | "out" | "gap" | "in" | "merge";
+
+const PIECE_MS = {
+  beforeTurn: 250,
+  glass: 350,
+  move: 1100,
+  fade: 350,
+  gap: 150,
+  hold: 1800,
+};
 
 export function ProcessorDemo({ act, onActDone }: DemoProps) {
   const reduced = usePrefersReducedMotion();
-  // "out": the piece lifts and leaves to the right; "in": the next arrives
-  // from the left and drops in; "rest": it sits in the socket.
-  const [phase, setPhase] = useState<"rest" | "out" | "in">("rest");
+  const [phase, setPhase] = useState<PiecePhase>("merged");
   const [turn, setTurn] = useState(0);
-  const [lastAct, setLastAct] = useState(act);
-  // The turn whose swap has finished, so its hold can end it.
-  const [swapped, setSwapped] = useState(0);
-  if (act !== lastAct) {
-    setLastAct(act);
-    if (act !== 0) setPhase("out");
-  }
+  // The turn whose swap has begun, so each turn swaps once.
+  const [started, setStarted] = useState(0);
   const look = PIECE_STYLES[turn % PIECE_STYLES.length];
 
+  // A new turn starts its swap once the piece is settled.
   useEffect(() => {
-    if (act === 0 || phase !== "rest" || swapped !== act) return;
-    const timer = window.setTimeout(onActDone, PIECE_HOLD_MS);
+    if (act === 0 || started === act || phase !== "merged") return;
+    const timer = window.setTimeout(() => {
+      setStarted(act);
+      setPhase("unmerge");
+    }, PIECE_MS.beforeTurn);
     return () => window.clearTimeout(timer);
-  }, [act, phase, swapped, onActDone]);
+  }, [act, started, phase]);
 
-  const handleEnd = (event: React.AnimationEvent) => {
-    if (event.target !== event.currentTarget) return;
-    if (phase === "out") {
-      setTurn((value) => value + 1);
-      setPhase("in");
-    } else if (phase === "in") {
-      setSwapped(act);
-      setPhase("rest");
-    }
-  };
+  // Each step leads to the next. A swap under way finishes even once the
+  // turn is taken away, so no piece is left in mid-air.
+  useEffect(() => {
+    const steps: Partial<Record<PiecePhase, [PiecePhase, number]>> = {
+      unmerge: ["out", PIECE_MS.glass],
+      out: reduced ? ["gap", PIECE_MS.fade] : ["in", PIECE_MS.move],
+      gap: ["in", PIECE_MS.gap],
+      in: ["merge", reduced ? PIECE_MS.fade : PIECE_MS.move],
+      merge: ["merged", PIECE_MS.glass],
+    };
+    const step = steps[phase];
+    if (!step) return;
+    const [next, duration] = step;
+    const timer = window.setTimeout(() => {
+      if (next === "in") setTurn((value) => value + 1);
+      setPhase(next);
+    }, duration);
+    return () => window.clearTimeout(timer);
+  }, [phase, reduced]);
 
-  // With reduced motion the piece fades out and the next fades in, in place.
-  const motion =
-    phase === "out"
-      ? reduced
-        ? styles.pieceFadeOut
-        : styles.pieceOut
-      : phase === "in"
-        ? reduced
-          ? styles.pieceFadeIn
-          : styles.pieceIn
-        : styles.pieceRest;
+  // Settled after its swap, the piece holds, and the turn is over.
+  useEffect(() => {
+    if (act === 0 || phase !== "merged" || started !== act) return;
+    const timer = window.setTimeout(onActDone, PIECE_MS.hold);
+    return () => window.clearTimeout(timer);
+  }, [act, phase, started, onActDone]);
+
+  const timing = {
+    "--piece-glass": `${PIECE_MS.glass}ms`,
+    "--piece-move": `${PIECE_MS.move}ms`,
+    "--piece-fade": `${PIECE_MS.fade}ms`,
+  } as React.CSSProperties;
 
   return (
-    // A swap under way finishes even once the turn is taken away.
-    <Scene running={act !== 0 || phase !== "rest"} clip>
-      <div className={styles.processor}>
-        <LiveCard id="feature-processor" className={styles.card} {...cardProps} value={revealValue("")} />
+    <Scene running={act !== 0 || phase !== "merged"} clip>
+      <div className={styles.processor} data-phase={phase} data-reduced={reduced ? "" : undefined} style={timing}>
+        <LiveCard
+          id="feature-processor"
+          className={styles.card}
+          {...cardProps}
+          labels={NO_PLACEHOLDERS}
+          value={revealValue("")}
+        />
         {/* Where the processor's fields go. */}
-        <div className={styles.socket}>
-          <PieceShape className={styles.socketShape} />
-        </div>
-        <div className={motion} onAnimationEnd={handleEnd}>
+        <div className={styles.socket} />
+        <div className={styles.pieceMotion}>
           <Piece look={look} />
         </div>
       </div>
