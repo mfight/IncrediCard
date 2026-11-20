@@ -249,7 +249,8 @@ function Experience() {
     <section id="features" className={styles.section} aria-labelledby="experience-title">
       <p className={styles.eyebrow}>Flexible by Design</p>
       <h2 id="experience-title" className={styles.sectionTitle}>
-        A familiar card. A natural fit for your checkout.
+        A familiar card.{" "}
+        <br />A natural fit for your checkout.
       </h2>
       <p className={styles.sectionLede}>
         Choose between fields on a card or in a labeled form below it. Automatic network recognition,
