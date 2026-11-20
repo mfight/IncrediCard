@@ -408,7 +408,8 @@ function Themes() {
       <div className={styles.section}>
         <p className={styles.eyebrow}>Themes that fit your style</p>
         <h2 id="themes-title" className={styles.sectionTitle}>
-          Ready-made looks. Room to make your own.
+          Ready-made looks.{" "}
+          <br />Room to make your own.
         </h2>
         <p className={styles.sectionLede}>
           Choose from four built-in themes, customize an existing look, or create your own. Adjust
