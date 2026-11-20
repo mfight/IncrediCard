@@ -101,6 +101,20 @@ export function useMotionMode(): MotionMode {
   return useSyncExternalStore(subscribe, getMode);
 }
 
+function getSensorLive() {
+  return !hasHoverPointer() && tiltReadable();
+}
+
+/**
+ * Whether the card itself is listening to the phone's tilt. True even with
+ * "Follow device tilt" off: the switch only decides what the page sends,
+ * and once the card can read the tilt it listens regardless, held off only
+ * while the replayed finger is down.
+ */
+export function useSensorLive(): boolean {
+  return useSyncExternalStore(subscribe, getSensorLive);
+}
+
 export type TiltToggle = "hidden" | "on" | "off";
 
 function getToggle(): TiltToggle {

@@ -30,7 +30,7 @@ import {
   type ReactNode,
 } from "react";
 import { IncrediCard } from "../src";
-import { useMotionMode } from "./motion";
+import { useMotionMode, useSensorLive } from "./motion";
 
 const FOCUSABLE = "a[href], button, input, select, textarea, [tabindex], [contenteditable]";
 
@@ -158,15 +158,14 @@ export function PointerStage({ phase = 0, active = true, children, ...rest }: St
 // press to its moves and its lift.
 const TOUCH_POINTER_ID = 7171;
 
-/** A replayed finger's event on the card, at its center unless placed. */
-function touchEvent(type: string, el: HTMLElement, x?: number, y?: number) {
-  const rect = el.getBoundingClientRect();
+/** A replayed finger's event on the card, at a point on the page. */
+function touchEvent(type: string, x: number, y: number) {
   return new PointerEvent(type, {
     pointerType: "touch",
     pointerId: TOUCH_POINTER_ID,
     isPrimary: true,
-    clientX: x ?? rect.left + rect.width / 2,
-    clientY: y ?? rect.top + rect.height / 2,
+    clientX: x,
+    clientY: y,
   });
 }
 
@@ -186,17 +185,24 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
   const ref = useRef<HTMLDivElement>(null);
   const subscribe = useContext(StageContext);
   const mode = useMotionMode();
-  // Every card follows the phone's tilt on its own, wherever it is on the
+  // Whether the card is listening to the phone's tilt itself, which it does
+  // once it can, even with "Follow device tilt" off.
+  const sensorLive = useSensorLive();
+  // A listening card follows the tilt on its own, wherever it is on the
   // page, and each reading repaints it. A dozen cards at once made the ones
   // in view stutter, so a card more than half a screen away sets its
   // effects aside until it comes near. Its look at rest changes, but out of
   // sight.
   const near = useOnScreen(ref, "50% 0px");
-  const asleep = mode === "tilt" && !near;
+  const asleep = sensorLive && !near;
   // How the stage is reaching the card right now: a hovering mouse, a finger
   // pressed on it, or not at all.
   const contactRef = useRef<"mouse" | "touch" | null>(null);
+  // Where the replayed finger pressed, in the page's coordinates.
+  const pressRef = useRef({ x: 0, y: 0 });
   const pausedUntilRef = useRef(0);
+  // True from a flip until the card has its tilt back (see the flip effect).
+  const turningRef = useRef(false);
 
   // The card's own pointer listeners sit on the face wrapper, the one element
   // in either layout carrying `data-face-layout`. Looked up each time, since a
@@ -205,7 +211,7 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
   const leave = () => {
     const el = face();
     if (contactRef.current === "mouse") el?.dispatchEvent(new PointerEvent("pointerleave", { pointerType: "mouse" }));
-    if (contactRef.current === "touch") el?.dispatchEvent(touchEvent("pointerup", el));
+    if (contactRef.current === "touch") el?.dispatchEvent(touchEvent("pointerup", pressRef.current.x, pressRef.current.y));
     contactRef.current = null;
   };
 
@@ -219,25 +225,38 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
         leave();
         return;
       }
-      if (performance.now() < pausedUntilRef.current) return;
+      if (performance.now() < pausedUntilRef.current || turningRef.current) return;
       const rect = el.getBoundingClientRect();
-      const x = rect.left + rect.width * (0.5 + point.x * reach);
-      const y = rect.top + rect.height * (0.5 + point.y * reach);
       if (mode === "pointer") {
         contactRef.current = "mouse";
-        el.dispatchEvent(new PointerEvent("pointermove", { pointerType: "mouse", clientX: x, clientY: y }));
+        el.dispatchEvent(
+          new PointerEvent("pointermove", {
+            pointerType: "mouse",
+            clientX: rect.left + rect.width * (0.5 + point.x * reach),
+            clientY: rect.top + rect.height * (0.5 + point.y * reach),
+          }),
+        );
         return;
       }
       // On a touch device the card ignores a hovering pointer, so the path
       // arrives as a finger instead: pressed at the card's center, dragged
       // along the path, lifted when the stage stops. The card measures a drag
       // from where the press began, so from the center it lands where the
-      // pointer would have.
+      // pointer would have. Moves are placed from the press point, not the
+      // card's center now: when the fan slides a card to another slot, the
+      // slide would otherwise count as dragging and tip it all the way over.
       if (contactRef.current !== "touch") {
         contactRef.current = "touch";
-        el.dispatchEvent(touchEvent("pointerdown", el));
+        pressRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        el.dispatchEvent(touchEvent("pointerdown", pressRef.current.x, pressRef.current.y));
       }
-      el.dispatchEvent(touchEvent("pointermove", el, x, y));
+      el.dispatchEvent(
+        touchEvent(
+          "pointermove",
+          pressRef.current.x + rect.width * point.x * reach,
+          pressRef.current.y + rect.height * point.y * reach,
+        ),
+      );
     });
     return () => {
       unsubscribe();
@@ -255,23 +274,28 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
   // after it, the turn would already have been drawn without its animation.
   //
   // The phone's tilt doesn't stop either, and it writes the same transform
-  // the flip animates, restarting the flip's easing on every reading. So in
-  // tilt mode the card's tilt is off for the flip too, and comes back
-  // measured from wherever the phone is then, with no jump.
+  // the flip animates, restarting the flip's easing on every reading. So
+  // wherever the card is listening to it, the card's tilt is off for the
+  // flip too, and comes back measured from wherever the phone is then, with
+  // no jump. That includes "Follow device tilt" switched off: the lifted
+  // finger would otherwise hand the tilt back to the phone mid-flip. The
+  // stage waits until the card's tilt is back, so a press isn't sent to a
+  // card that isn't listening for one.
   const { side } = cardProps;
   const lastSideRef = useRef(side);
   const [shownSide, setShownSide] = useState(side);
   const [turning, setTurning] = useState(false);
   if (side !== shownSide) {
     setShownSide(side);
-    if (mode === "tilt") setTurning(true);
+    if (sensorLive) setTurning(true);
   }
   useLayoutEffect(() => {
     if (side === lastSideRef.current) return;
     lastSideRef.current = side;
     pausedUntilRef.current = performance.now() + FLIP_PAUSE_MS;
     leave();
-    if (mode === "tilt") {
+    if (sensorLive) {
+      turningRef.current = true;
       // Now, before paint, rather than when the card's own effect lets go
       // of the tilt just after it.
       const el = face();
@@ -281,6 +305,9 @@ export function LiveCard({ className, position, reach = 0.8, children, ...cardPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [side]);
   useEffect(() => {
+    // After the card's own effects in this commit, so its tilt is listening
+    // again before the stage resumes.
+    turningRef.current = turning;
     if (!turning) return;
     const timer = window.setTimeout(() => setTurning(false), FLIP_PAUSE_MS);
     return () => window.clearTimeout(timer);
