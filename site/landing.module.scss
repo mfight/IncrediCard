@@ -562,6 +562,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 
 // The theme's name on the left, its Flip card button on the right.
 .themeHeader {
+  container-type: inline-size;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -579,6 +580,15 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   font-size: 1.3125rem;
   font-weight: 700;
   letter-spacing: -0.025em;
+
+  // Where the title, its note and the controls can't share a line, the note
+  // ("(default)") goes under the title, so the title, the network menu and
+  // Flip card still can. Measured from the panel, not the screen: the panels
+  // narrow again where the grid turns to two columns.
+  @container (width < 26rem) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .themeNote {
