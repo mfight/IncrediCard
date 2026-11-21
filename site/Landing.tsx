@@ -450,11 +450,6 @@ function Themes() {
   );
 }
 
-// Shorter names for the theme panels' network menu. A native select is as
-// wide as its longest option, and "American Express" kept the panel's title,
-// menu and Flip button from sharing one line on a phone.
-const SHORT_NETWORK_NAMES: Partial<Record<CardNetwork, string>> = { amex: "Amex" };
-
 // The sample details on another network's test number.
 function sampleValue(network: CardNetwork): IncrediCardValue {
   const card = SAMPLE_CARDS.find((entry) => entry.network === network) ?? SAMPLE_CARDS[0];
@@ -522,7 +517,7 @@ function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number
             >
               {SAMPLE_CARDS.map((card) => (
                 <option key={card.network} value={card.network}>
-                  {SHORT_NETWORK_NAMES[card.network] ?? card.name}
+                  {card.name}
                 </option>
               ))}
             </select>
