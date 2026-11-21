@@ -560,7 +560,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   }
 }
 
-// The theme's name on the left, its Flip card button on the right.
+// The theme's name on the left, its Flip button on the right.
 .themeHeader {
   container-type: inline-size;
   display: flex;
@@ -583,7 +583,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
 
   // Where the title, its note and the controls can't share a line, the note
   // ("(default)") goes under the title, so the title, the network menu and
-  // Flip card still can. Measured from the panel, not the screen: the panels
+  // Flip still can. Measured from the panel, not the screen: the panels
   // narrow again where the grid turns to two columns.
   @container (width < 26rem) {
     flex-direction: column;
@@ -803,7 +803,7 @@ $fan-card-inset: math.div($fan-height - math.div($fan-card, 1.586), 2);
   font-size: 0.875rem;
 }
 
-// Flip card, while the picked network's card can't turn over.
+// Flip, while the picked network's card can't turn over.
 .quietButton:disabled {
   border-color: var(--site-tint-line);
   color: var(--site-muted);

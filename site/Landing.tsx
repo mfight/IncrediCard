@@ -452,7 +452,7 @@ function Themes() {
 
 // Shorter names for the theme panels' network menu. A native select is as
 // wide as its longest option, and "American Express" kept the panel's title,
-// menu and Flip card button from sharing one line on a phone.
+// menu and Flip button from sharing one line on a phone.
 const SHORT_NETWORK_NAMES: Partial<Record<CardNetwork, string>> = { amex: "Amex" };
 
 // The sample details on another network's test number.
@@ -461,7 +461,7 @@ function sampleValue(network: CardNetwork): IncrediCardValue {
   return { ...SAMPLE_VALUE, cardNumber: card.cardNumber, cvc: card.cvc ?? SAMPLE_VALUE.cvc };
 }
 
-// One theme's card, with a network picker and a Flip card button. The card
+// One theme's card, with a network picker and a Flip button. The card
 // itself stays display-only; those two are the controls. Picking a network
 // types the details out again, turning over for the security code where
 // the network prints it on the back, and ends face-up.
@@ -536,7 +536,7 @@ function ThemeItem({ theme, name, note, summary, index }: (typeof THEMES)[number
             onClick={flip}
           >
             <FlipIcon />
-            Flip card<span className={styles.visuallyHidden}>: {name}</span>
+            Flip<span className={styles.visuallyHidden}> card: {name}</span>
           </button>
         </div>
       </div>
